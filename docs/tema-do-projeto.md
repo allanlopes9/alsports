@@ -21,3 +21,17 @@ Produtos esportivos.
 - Bolas
 - Meias
 - Acessórios esportivos
+
+## Recurso inicial
+
+### Produto
+
+O recurso principal da API será o produto esportivo.
+
+Cada produto possuirá inicialmente:
+
+- id;
+- nome;
+- preco;
+- categoria;
+- quantidade.
