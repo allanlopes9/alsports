@@ -1,37 +1,39 @@
 # AL Sports
 
-## Tema
+## Identificação
 
-Loja de artigos esportivos.
+- Nome do projeto: alsports
+- Tema: controle de uma loja de artigos esportivos
+- Objetivo em uma frase: cadastrar produtos esportivos e organizá-los por categoria
 
-## Descrição
+## Entidade de classificação
 
-A AL Sports é uma API para controle de uma loja de artigos esportivos,
-permitindo o gerenciamento dos produtos disponíveis para venda.
+- Nome no singular: CategoriaProduto
+- Nome no plural: CategoriasProduto
+- Exemplo 1: Camisas
+- Exemplo 2: Calçados
 
-## Domínio inicial
+## Entidade principal
 
-Produtos esportivos.
+- Nome no singular: Produto
+- Nome no plural: Produtos
+- Código único: Código do produto
+- Descrição: Nome do produto
+- Medida quantitativa: Quantidade em estoque
+- Valor monetário: Preço de venda
+- Data relevante: Data de cadastro
+- Status: Ativo ou inativo
+
+## Relacionamento
+
+- Uma categoria pode possuir vários produtos.
+- Cada produto pertence a uma categoria.
 
 ## Exemplos de produtos
 
-- Camisetas esportivas
+- Camiseta esportiva
 - Shorts
 - Tênis
-- Bolas
-- Meias
+- Bola
+- Meia
 - Acessórios esportivos
-
-## Recurso inicial
-
-### Produto
-
-O recurso principal da API será o produto esportivo.
-
-Cada produto possuirá inicialmente:
-
-- id;
-- nome;
-- preco;
-- categoria;
-- quantidade.
