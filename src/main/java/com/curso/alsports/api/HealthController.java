@@ -1,15 +1,13 @@
-package com.curso.alsports.controller;
+package com.curso.alsports.api;
 
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api")
 public class HealthController {
 
-    @GetMapping("/health")
+    @GetMapping("/api/health")
     public String health() {
-        return "AL Sports API funcionando!";
+        return "OK";
     }
 }
