@@ -27,4 +27,28 @@ public class CategoriaProdutoService {
     public CategoriaProduto buscarPorId(Long id) {
         return repository.findById(id).orElse(null);
     }
+
+    public CategoriaProduto atualizar(Long id, CategoriaProduto categoria) {
+        CategoriaProduto categoriaExistente = repository.findById(id).orElse(null);
+
+        if (categoriaExistente == null) {
+            return null;
+        }
+
+        categoriaExistente.setNome(categoria.getNome());
+        categoriaExistente.setAtivo(categoria.getAtivo());
+
+        return repository.save(categoriaExistente);
+    }
+
+    public boolean excluir(Long id) {
+        if (!repository.existsById(id)) {
+            return false;
+        }
+
+        repository.deleteById(id);
+        return true;
+    }
+
+
 }

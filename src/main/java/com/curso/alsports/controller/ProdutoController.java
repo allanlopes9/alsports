@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -48,5 +50,31 @@ public class ProdutoController {
         }
 
         return ResponseEntity.ok(produto);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Produto> atualizar(
+            @PathVariable Long id,
+            @RequestBody Produto produto) {
+
+        Produto produtoAtualizado = service.atualizar(id, produto);
+
+        if (produtoAtualizado == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(produtoAtualizado);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+
+        boolean excluido = service.excluir(id);
+
+        if (!excluido) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.noContent().build();
     }
 }

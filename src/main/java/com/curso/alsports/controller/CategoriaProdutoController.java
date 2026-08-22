@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.curso.alsports.model.CategoriaProduto;
 import com.curso.alsports.service.CategoriaProdutoService;
 
+import org.springframework.web.bind.annotation.PutMapping;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
+
 @RestController
 @RequestMapping("/categorias")
 public class CategoriaProdutoController {
@@ -48,5 +52,31 @@ public class CategoriaProdutoController {
         }
 
         return ResponseEntity.ok(categoria);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CategoriaProduto> atualizar(
+            @PathVariable Long id,
+            @RequestBody CategoriaProduto categoria) {
+
+        CategoriaProduto categoriaAtualizada = service.atualizar(id, categoria);
+
+        if (categoriaAtualizada == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(categoriaAtualizada);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+
+        boolean excluido = service.excluir(id);
+
+        if (!excluido) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.noContent().build();
     }
 }
