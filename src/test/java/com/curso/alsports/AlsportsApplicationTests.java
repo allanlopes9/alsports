@@ -47,5 +47,10 @@ class AlsportsApplicationTests {
 		assertThat(produtoSalvo.getId()).isNotNull();
 		assertThat(produtoSalvo.getNome()).isEqualTo("Bola de Teste");
 		assertThat(produtoSalvo.getCategoria().getId()).isEqualTo(categoria.getId());
+
+		assertThat(produtoSalvo.getQuantidade()).isEqualTo(10);
+		assertThat(produtoSalvo.getPreco()).isEqualByComparingTo("99.90");
+		assertThat(produtoSalvo.getUnidadeMedida()).isEqualTo("UN");
+		assertThat(produtoSalvo.getAtivo()).isTrue();
 	}
 }
