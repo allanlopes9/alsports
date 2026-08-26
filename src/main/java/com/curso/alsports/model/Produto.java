@@ -8,6 +8,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.JoinColumn;
 
 @Entity
 public class Produto {
@@ -23,7 +26,11 @@ public class Produto {
     private Boolean ativo;
     private String unidadeMedida;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "categoria_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_produto_categoria"))
     private CategoriaProduto categoria;
 
     public Long getId() {
