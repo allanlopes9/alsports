@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-01-add-fk-produto-categoria
+      author: allan
+      comment: Cria o relacionamento entre produto e categoria de produto.
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: produto
+            baseColumnNames: categoria_id
+            referencedTableName: categoria_produto
+            referencedColumnNames: id
+            constraintName: fk_produto_categoria
+
+      rollback:
+        - dropForeignKeyConstraint:
+            baseTableName: produto
+            constraintName: fk_produto_categoria
