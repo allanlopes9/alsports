@@ -21,6 +21,7 @@ public class Produto {
     private BigDecimal preco;
     private LocalDate dataCadastro;
     private Boolean ativo;
+    private String unidadeMedida;
 
     @ManyToOne
     private CategoriaProduto categoria;
@@ -71,6 +72,14 @@ public class Produto {
 
     public void setAtivo(Boolean ativo) {
         this.ativo = ativo;
+    }
+
+    public String getUnidadeMedida() {
+        return unidadeMedida;
+    }
+
+    public void setUnidadeMedida(String unidadeMedida) {
+        this.unidadeMedida = unidadeMedida;
     }
 
     public CategoriaProduto getCategoria() {
