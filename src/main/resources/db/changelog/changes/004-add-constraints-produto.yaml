@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-01-unique-nome-produto
+      author: allan
+      comment: Garante que o nome do produto seja único.
+      changes:
+        - addUniqueConstraint:
+            tableName: produto
+            columnNames: nome
+            constraintName: uk_produto_nome
+      rollback:
+        - dropUniqueConstraint:
+            tableName: produto
+            constraintName: uk_produto_nome
+
+  - changeSet:
+      id: 004-02-check-quantidade-produto
+      author: allan
+      comment: Impede quantidade negativa no estoque.
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE produto
+              ADD CONSTRAINT ck_produto_quantidade
+              CHECK (quantidade >= 0)
+      rollback:
+        - sql:
+            sql: >
+              ALTER TABLE produto
+              DROP CONSTRAINT ck_produto_quantidade
+
+  - changeSet:
+      id: 004-03-check-preco-produto
+      author: allan
+      comment: Impede preço negativo.
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE produto
+              ADD CONSTRAINT ck_produto_preco
+              CHECK (preco >= 0)
+      rollback:
+        - sql:
+            sql: >
+              ALTER TABLE produto
+              DROP CONSTRAINT ck_produto_preco

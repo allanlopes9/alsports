@@ -34,7 +34,7 @@ class AlsportsApplicationTests {
 		categoria = categoriaProdutoRepository.save(categoria);
 
 		Produto produto = new Produto();
-		produto.setNome("Bola de Teste");
+		produto.setNome("Bola de Teste Automatizado");
 		produto.setQuantidade(10);
 		produto.setPreco(new BigDecimal("99.90"));
 		produto.setDataCadastro(LocalDate.now());
@@ -45,7 +45,7 @@ class AlsportsApplicationTests {
 		Produto produtoSalvo = produtoRepository.save(produto);
 
 		assertThat(produtoSalvo.getId()).isNotNull();
-		assertThat(produtoSalvo.getNome()).isEqualTo("Bola de Teste");
+		assertThat(produtoSalvo.getNome()).isEqualTo("Bola de Teste Automatizado");
 		assertThat(produtoSalvo.getCategoria().getId()).isEqualTo(categoria.getId());
 
 		assertThat(produtoSalvo.getQuantidade()).isEqualTo(10);
