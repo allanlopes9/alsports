@@ -40,6 +40,7 @@ public class ProdutoService {
         produtoExistente.setPreco(produto.getPreco());
         produtoExistente.setDataCadastro(produto.getDataCadastro());
         produtoExistente.setAtivo(produto.getAtivo());
+        produtoExistente.setUnidadeMedida(produto.getUnidadeMedida());
         produtoExistente.setCategoria(produto.getCategoria());
 
         return repository.save(produtoExistente);
