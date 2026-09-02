@@ -3,6 +3,7 @@ package com.curso.alsports.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,6 +22,10 @@ public class Produto {
 
     private String nome;
     private Integer quantidade;
+
+    @Column(name = "estoque_minimo", nullable = false, precision = 18, scale = 3)
+    private BigDecimal estoqueMinimo;
+
     private BigDecimal preco;
     private LocalDate dataCadastro;
     private Boolean ativo;
@@ -32,6 +37,12 @@ public class Produto {
             nullable = false,
             foreignKey = @ForeignKey(name = "fk_produto_categoria"))
     private CategoriaProduto categoria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "fornecedor_id",
+            foreignKey = @ForeignKey(name = "fk_produto_fornecedor"))
+    private Fornecedor fornecedor;
 
     public Long getId() {
         return id;
@@ -55,6 +66,14 @@ public class Produto {
 
     public void setQuantidade(Integer quantidade) {
         this.quantidade = quantidade;
+    }
+
+    public BigDecimal getEstoqueMinimo() {
+        return estoqueMinimo;
+    }
+
+    public void setEstoqueMinimo(BigDecimal estoqueMinimo) {
+        this.estoqueMinimo = estoqueMinimo;
     }
 
     public BigDecimal getPreco() {
@@ -95,5 +114,13 @@ public class Produto {
 
     public void setCategoria(CategoriaProduto categoria) {
         this.categoria = categoria;
+    }
+
+    public Fornecedor getFornecedor() {
+        return fornecedor;
+    }
+
+    public void setFornecedor(Fornecedor fornecedor) {
+        this.fornecedor = fornecedor;
     }
 }

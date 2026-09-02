@@ -73,6 +73,24 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+
+			<plugin>
+				<groupId>org.liquibase</groupId>
+				<artifactId>liquibase-maven-plugin</artifactId>
+				<version>5.0.3</version>
+				<configuration>
+					<url>${env.DB_DIFF_URL}</url>
+					<username>${env.DB_DIFF_USERNAME}</username>
+					<password>${env.DB_DIFF_PASSWORD}</password>
+
+					<referenceUrl>${env.DB_REFERENCE_URL}</referenceUrl>
+					<referenceUsername>${env.DB_REFERENCE_USERNAME}</referenceUsername>
+					<referencePassword>${env.DB_REFERENCE_PASSWORD}</referencePassword>
+
+					<changeLogFile>src/main/resources/db/changelog/db.changelog-master.yaml</changeLogFile>
+					<diffChangeLogFile>target/liquibase-diff/changelog-gerado.yaml</diffChangeLogFile>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

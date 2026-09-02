@@ -40,6 +40,7 @@ class AlsportsApplicationTests {
 		Produto produto = new Produto();
 		produto.setNome("Bola de Teste Automatizado " + System.currentTimeMillis());
 		produto.setQuantidade(10);
+		produto.setEstoqueMinimo(new BigDecimal("0.000"));
 		produto.setPreco(new BigDecimal("99.90"));
 		produto.setDataCadastro(LocalDate.now());
 		produto.setAtivo(true);
@@ -69,6 +70,7 @@ class AlsportsApplicationTests {
 		Produto produto = new Produto();
 		produto.setNome("Tênis de Teste " + System.currentTimeMillis());
 		produto.setQuantidade(5);
+		produto.setEstoqueMinimo(new BigDecimal("0.000"));
 		produto.setPreco(new BigDecimal("199.90"));
 		produto.setDataCadastro(LocalDate.now());
 		produto.setAtivo(true);
@@ -96,6 +98,7 @@ class AlsportsApplicationTests {
 		Produto produto = new Produto();
 		produto.setNome("Produto Dirty Checking " + System.currentTimeMillis());
 		produto.setQuantidade(10);
+		produto.setEstoqueMinimo(new BigDecimal("0.000"));
 		produto.setPreco(new BigDecimal("50.00"));
 		produto.setDataCadastro(LocalDate.now());
 		produto.setAtivo(true);
@@ -109,6 +112,7 @@ class AlsportsApplicationTests {
 		Produto produtoAtualizado = new Produto();
 		produtoAtualizado.setNome("Produto Atualizado " + System.currentTimeMillis());
 		produtoAtualizado.setQuantidade(20);
+		produtoAtualizado.setEstoqueMinimo(new BigDecimal("0.000"));
 		produtoAtualizado.setPreco(new BigDecimal("75.00"));
 		produtoAtualizado.setDataCadastro(LocalDate.now());
 		produtoAtualizado.setAtivo(true);
@@ -137,6 +141,7 @@ class AlsportsApplicationTests {
 		Produto produto = new Produto();
 		produto.setNome(nomeProduto);
 		produto.setQuantidade(10);
+		produto.setEstoqueMinimo(new BigDecimal("0.000"));
 		produto.setPreco(new BigDecimal("100.00"));
 		produto.setDataCadastro(LocalDate.now());
 		produto.setAtivo(true);
