@@ -10,6 +10,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
+import com.curso.alsports.dto.CategoriaProdutoMapper;
+import com.curso.alsports.dto.CategoriaProdutoRequest;
+import com.curso.alsports.dto.CategoriaProdutoResponse;
+
 import com.curso.alsports.model.CategoriaProduto;
 import com.curso.alsports.service.CategoriaProdutoService;
 
@@ -28,21 +34,28 @@ public class CategoriaProdutoController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoriaProduto> salvar(
-            @RequestBody CategoriaProduto categoria) {
+    public ResponseEntity<CategoriaProdutoResponse> salvar(
+            @Valid @RequestBody CategoriaProdutoRequest request) {
+
+        CategoriaProduto categoria = CategoriaProdutoMapper.toEntity(request);
 
         CategoriaProduto categoriaSalva = service.salvar(categoria);
 
-        return ResponseEntity.ok(categoriaSalva);
+        return ResponseEntity.ok(
+                CategoriaProdutoMapper.toResponse(categoriaSalva));
     }
 
     @GetMapping
-    public ResponseEntity<List<CategoriaProduto>> listar() {
-        return ResponseEntity.ok(service.listar());
+    public ResponseEntity<List<CategoriaProdutoResponse>> listar() {
+        return ResponseEntity.ok(
+                service.listar()
+                        .stream()
+                        .map(CategoriaProdutoMapper::toResponse)
+                        .toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CategoriaProduto> buscarPorId(
+    public ResponseEntity<CategoriaProdutoResponse> buscarPorId(
             @PathVariable Long id) {
 
         CategoriaProduto categoria = service.buscarPorId(id);
@@ -51,13 +64,16 @@ public class CategoriaProdutoController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(categoria);
+        return ResponseEntity.ok(
+                CategoriaProdutoMapper.toResponse(categoria));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoriaProduto> atualizar(
+    public ResponseEntity<CategoriaProdutoResponse> atualizar(
             @PathVariable Long id,
-            @RequestBody CategoriaProduto categoria) {
+            @Valid @RequestBody CategoriaProdutoRequest request) {
+
+        CategoriaProduto categoria = CategoriaProdutoMapper.toEntity(request);
 
         CategoriaProduto categoriaAtualizada = service.atualizar(id, categoria);
 
@@ -65,7 +81,8 @@ public class CategoriaProdutoController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(categoriaAtualizada);
+        return ResponseEntity.ok(
+                CategoriaProdutoMapper.toResponse(categoriaAtualizada));
     }
 
     @DeleteMapping("/{id}")

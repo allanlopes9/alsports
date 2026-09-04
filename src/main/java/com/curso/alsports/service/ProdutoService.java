@@ -68,11 +68,13 @@ public class ProdutoService {
 
         produtoExistente.setNome(produto.getNome());
         produtoExistente.setQuantidade(produto.getQuantidade());
+        produtoExistente.setEstoqueMinimo(produto.getEstoqueMinimo());
         produtoExistente.setPreco(produto.getPreco());
         produtoExistente.setDataCadastro(produto.getDataCadastro());
         produtoExistente.setAtivo(produto.getAtivo());
         produtoExistente.setUnidadeMedida(produto.getUnidadeMedida());
         produtoExistente.setCategoria(produto.getCategoria());
+        produtoExistente.setFornecedor(produto.getFornecedor());
 
         return produtoExistente;
     }

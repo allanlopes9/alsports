@@ -12,6 +12,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
+import com.curso.alsports.dto.ProdutoMapper;
+import com.curso.alsports.dto.ProdutoRequest;
+import com.curso.alsports.dto.ProdutoResponse;
+
+import com.curso.alsports.model.CategoriaProduto;
+import com.curso.alsports.model.Fornecedor;
+import com.curso.alsports.repository.CategoriaProdutoRepository;
+import com.curso.alsports.repository.FornecedorRepository;
+
 import com.curso.alsports.model.Produto;
 import com.curso.alsports.service.ProdutoService;
 
@@ -21,26 +32,59 @@ public class ProdutoController {
 
     private final ProdutoService service;
 
-    public ProdutoController(ProdutoService service) {
+    private final CategoriaProdutoRepository categoriaProdutoRepository;
+    private final FornecedorRepository fornecedorRepository;
+
+    public ProdutoController(
+            ProdutoService service,
+            CategoriaProdutoRepository categoriaProdutoRepository,
+            FornecedorRepository fornecedorRepository) {
+
         this.service = service;
+        this.categoriaProdutoRepository = categoriaProdutoRepository;
+        this.fornecedorRepository = fornecedorRepository;
     }
 
     @PostMapping
-    public ResponseEntity<Produto> salvar(
-            @RequestBody Produto produto) {
+    public ResponseEntity<ProdutoResponse> salvar(
+            @Valid @RequestBody ProdutoRequest request) {
+
+        CategoriaProduto categoria = categoriaProdutoRepository
+                .findById(request.getCategoriaId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Categoria não encontrada: " + request.getCategoriaId()));
+
+        Fornecedor fornecedor = null;
+
+        if (request.getFornecedorId() != null) {
+            fornecedor = fornecedorRepository
+                    .findById(request.getFornecedorId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Fornecedor não encontrado: " + request.getFornecedorId()));
+        }
+
+        Produto produto = ProdutoMapper.toEntity(
+                request,
+                categoria,
+                fornecedor);
 
         Produto produtoSalvo = service.salvar(produto);
 
-        return ResponseEntity.ok(produtoSalvo);
+        return ResponseEntity.ok(
+                ProdutoMapper.toResponse(produtoSalvo));
     }
 
     @GetMapping
-    public ResponseEntity<List<Produto>> listar() {
-        return ResponseEntity.ok(service.listar());
+    public ResponseEntity<List<ProdutoResponse>> listar() {
+        return ResponseEntity.ok(
+                service.listar()
+                        .stream()
+                        .map(ProdutoMapper::toResponse)
+                        .toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Produto> buscarPorId(
+    public ResponseEntity<ProdutoResponse> buscarPorId(
             @PathVariable Long id) {
 
         Produto produto = service.buscarPorId(id);
@@ -49,13 +93,33 @@ public class ProdutoController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(produto);
+        return ResponseEntity.ok(
+                ProdutoMapper.toResponse(produto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Produto> atualizar(
+    public ResponseEntity<ProdutoResponse> atualizar(
             @PathVariable Long id,
-            @RequestBody Produto produto) {
+            @Valid @RequestBody ProdutoRequest request) {
+
+        CategoriaProduto categoria = categoriaProdutoRepository
+                .findById(request.getCategoriaId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Categoria não encontrada: " + request.getCategoriaId()));
+
+        Fornecedor fornecedor = null;
+
+        if (request.getFornecedorId() != null) {
+            fornecedor = fornecedorRepository
+                    .findById(request.getFornecedorId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Fornecedor não encontrado: " + request.getFornecedorId()));
+        }
+
+        Produto produto = ProdutoMapper.toEntity(
+                request,
+                categoria,
+                fornecedor);
 
         Produto produtoAtualizado = service.atualizar(id, produto);
 
@@ -63,7 +127,8 @@ public class ProdutoController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(produtoAtualizado);
+        return ResponseEntity.ok(
+                ProdutoMapper.toResponse(produtoAtualizado));
     }
 
     @DeleteMapping("/{id}")
