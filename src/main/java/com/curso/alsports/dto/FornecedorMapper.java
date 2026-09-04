@@ -2,12 +2,12 @@ package com.curso.alsports.dto;
 
 import com.curso.alsports.model.Fornecedor;
 
-public final class FornecedorMapper {
+import org.springframework.stereotype.Component;
 
-    private FornecedorMapper() {
-    }
+@Component
+public class FornecedorMapper {
 
-    public static FornecedorResponse toResponse(Fornecedor fornecedor) {
+    public FornecedorResponse toResponse(Fornecedor fornecedor) {
         FornecedorResponse response = new FornecedorResponse();
         response.setId(fornecedor.getId());
         response.setRazaoSocial(fornecedor.getRazaoSocial());
@@ -16,7 +16,7 @@ public final class FornecedorMapper {
         return response;
     }
 
-    public static Fornecedor toEntity(FornecedorRequest request) {
+    public Fornecedor toEntity(FornecedorRequest request) {
         Fornecedor fornecedor = new Fornecedor();
         fornecedor.setRazaoSocial(request.getRazaoSocial());
         fornecedor.setCnpj(request.getCnpj());

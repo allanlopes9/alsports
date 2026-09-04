@@ -4,12 +4,23 @@ import com.curso.alsports.model.CategoriaProduto;
 import com.curso.alsports.model.Fornecedor;
 import com.curso.alsports.model.Produto;
 
-public final class ProdutoMapper {
+import org.springframework.stereotype.Component;
 
-    private ProdutoMapper() {
+@Component
+public class ProdutoMapper {
+
+    private final CategoriaProdutoMapper categoriaProdutoMapper;
+    private final FornecedorMapper fornecedorMapper;
+
+    public ProdutoMapper(
+            CategoriaProdutoMapper categoriaProdutoMapper,
+            FornecedorMapper fornecedorMapper) {
+
+        this.categoriaProdutoMapper = categoriaProdutoMapper;
+        this.fornecedorMapper = fornecedorMapper;
     }
 
-    public static ProdutoResponse toResponse(Produto produto) {
+    public ProdutoResponse toResponse(Produto produto) {
         ProdutoResponse response = new ProdutoResponse();
 
         response.setId(produto.getId());
@@ -23,18 +34,18 @@ public final class ProdutoMapper {
 
         if (produto.getCategoria() != null) {
             response.setCategoria(
-                    CategoriaProdutoMapper.toResponse(produto.getCategoria()));
+                    categoriaProdutoMapper.toResponse(produto.getCategoria()));
         }
 
         if (produto.getFornecedor() != null) {
             response.setFornecedor(
-                    FornecedorMapper.toResponse(produto.getFornecedor()));
+                    fornecedorMapper.toResponse(produto.getFornecedor()));
         }
 
         return response;
     }
 
-    public static Produto toEntity(
+    public Produto toEntity(
             ProdutoRequest request,
             CategoriaProduto categoria,
             Fornecedor fornecedor) {

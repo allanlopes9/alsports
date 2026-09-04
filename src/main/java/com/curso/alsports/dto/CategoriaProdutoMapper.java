@@ -2,12 +2,12 @@ package com.curso.alsports.dto;
 
 import com.curso.alsports.model.CategoriaProduto;
 
-public final class CategoriaProdutoMapper {
+import org.springframework.stereotype.Component;
 
-    private CategoriaProdutoMapper() {
-    }
+@Component
+public class CategoriaProdutoMapper {
 
-    public static CategoriaProdutoResponse toResponse(CategoriaProduto categoria) {
+    public CategoriaProdutoResponse toResponse(CategoriaProduto categoria) {
         CategoriaProdutoResponse response = new CategoriaProdutoResponse();
         response.setId(categoria.getId());
         response.setNome(categoria.getNome());
@@ -15,7 +15,7 @@ public final class CategoriaProdutoMapper {
         return response;
     }
 
-    public static CategoriaProduto toEntity(CategoriaProdutoRequest request) {
+    public CategoriaProduto toEntity(CategoriaProdutoRequest request) {
         CategoriaProduto categoria = new CategoriaProduto();
         categoria.setNome(request.getNome());
         categoria.setAtivo(request.getAtivo());

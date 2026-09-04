@@ -9,18 +9,25 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import org.springframework.http.converter.HttpMessageNotReadableException;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ResponseEntity<ErroResponse> tratarNaoEncontrado(
-            RecursoNaoEncontradoException ex) {
+            RecursoNaoEncontradoException ex,
+            HttpServletRequest request) {
 
         ErroResponse erro = new ErroResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
                 "Recurso não encontrado",
-                ex.getMessage());
+                ex.getMessage(),
+                request.getRequestURI(),
+                null);
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
@@ -29,13 +36,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecursoDuplicadoException.class)
     public ResponseEntity<ErroResponse> tratarDuplicado(
-            RecursoDuplicadoException ex) {
+            RecursoDuplicadoException ex,
+            HttpServletRequest request) {
 
         ErroResponse erro = new ErroResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
                 "Recurso duplicado",
-                ex.getMessage());
+                ex.getMessage(),
+                request.getRequestURI(),
+                null);
 
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
@@ -44,20 +54,42 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErroResponse> tratarValidacao(
-            MethodArgumentNotValidException ex) {
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
 
-        String mensagem = ex.getBindingResult()
+        Map<String, String> fields = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .findFirst()
-                .orElse("Dados inválidos");
+                .collect(java.util.stream.Collectors.toMap(
+                        error -> error.getField(),
+                        error -> error.getDefaultMessage(),
+                        (mensagem1, mensagem2) -> mensagem1));
 
         ErroResponse erro = new ErroResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Erro de validação",
-                mensagem);
+                "Um ou mais campos possuem dados inválidos.",
+                request.getRequestURI(),
+                fields);
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(erro);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErroResponse> tratarJsonInvalido(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
+
+        ErroResponse erro = new ErroResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "JSON inválido",
+                "O corpo da requisição está malformado ou contém dados inválidos.",
+                request.getRequestURI(),
+                null);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)

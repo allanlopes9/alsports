@@ -8,15 +8,42 @@ import org.springframework.transaction.annotation.Transactional;
 import com.curso.alsports.exception.RecursoDuplicadoException;
 import com.curso.alsports.exception.RecursoNaoEncontradoException;
 import com.curso.alsports.model.Produto;
+import com.curso.alsports.model.CategoriaProduto;
+import com.curso.alsports.model.Fornecedor;
 import com.curso.alsports.repository.ProdutoRepository;
+
+import com.curso.alsports.repository.CategoriaProdutoRepository;
+import com.curso.alsports.repository.FornecedorRepository;
 
 @Service
 public class ProdutoService {
 
     private final ProdutoRepository repository;
+    private final CategoriaProdutoRepository categoriaProdutoRepository;
+    private final FornecedorRepository fornecedorRepository;
 
-    public ProdutoService(ProdutoRepository repository) {
+    public ProdutoService(
+            ProdutoRepository repository,
+            CategoriaProdutoRepository categoriaProdutoRepository,
+            FornecedorRepository fornecedorRepository) {
+
         this.repository = repository;
+        this.categoriaProdutoRepository = categoriaProdutoRepository;
+        this.fornecedorRepository = fornecedorRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public CategoriaProduto buscarCategoriaPorId(Long id) {
+        return categoriaProdutoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Categoria não encontrada: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public Fornecedor buscarFornecedorPorId(Long id) {
+        return fornecedorRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Fornecedor não encontrado: " + id));
     }
 
     @Transactional

@@ -20,8 +20,6 @@ import com.curso.alsports.dto.ProdutoResponse;
 
 import com.curso.alsports.model.CategoriaProduto;
 import com.curso.alsports.model.Fornecedor;
-import com.curso.alsports.repository.CategoriaProdutoRepository;
-import com.curso.alsports.repository.FornecedorRepository;
 
 import com.curso.alsports.model.Produto;
 import com.curso.alsports.service.ProdutoService;
@@ -31,47 +29,40 @@ import com.curso.alsports.service.ProdutoService;
 public class ProdutoController {
 
     private final ProdutoService service;
-
-    private final CategoriaProdutoRepository categoriaProdutoRepository;
-    private final FornecedorRepository fornecedorRepository;
+    private final ProdutoMapper produtoMapper;
 
     public ProdutoController(
             ProdutoService service,
-            CategoriaProdutoRepository categoriaProdutoRepository,
-            FornecedorRepository fornecedorRepository) {
+            ProdutoMapper produtoMapper) {
 
         this.service = service;
-        this.categoriaProdutoRepository = categoriaProdutoRepository;
-        this.fornecedorRepository = fornecedorRepository;
+        this.produtoMapper = produtoMapper;
     }
 
     @PostMapping
     public ResponseEntity<ProdutoResponse> salvar(
             @Valid @RequestBody ProdutoRequest request) {
 
-        CategoriaProduto categoria = categoriaProdutoRepository
-                .findById(request.getCategoriaId())
-                .orElseThrow(() -> new RuntimeException(
-                        "Categoria não encontrada: " + request.getCategoriaId()));
+        CategoriaProduto categoria = service.buscarCategoriaPorId(
+                request.getCategoriaId());
 
         Fornecedor fornecedor = null;
 
         if (request.getFornecedorId() != null) {
-            fornecedor = fornecedorRepository
-                    .findById(request.getFornecedorId())
-                    .orElseThrow(() -> new RuntimeException(
-                            "Fornecedor não encontrado: " + request.getFornecedorId()));
+            fornecedor = service.buscarFornecedorPorId(
+                    request.getFornecedorId());
         }
 
-        Produto produto = ProdutoMapper.toEntity(
+        Produto produto = produtoMapper.toEntity(
                 request,
                 categoria,
                 fornecedor);
 
         Produto produtoSalvo = service.salvar(produto);
 
-        return ResponseEntity.ok(
-                ProdutoMapper.toResponse(produtoSalvo));
+        return ResponseEntity
+                .created(java.net.URI.create("/produtos/" + produtoSalvo.getId()))
+                .body(produtoMapper.toResponse(produtoSalvo));
     }
 
     @GetMapping
@@ -79,7 +70,7 @@ public class ProdutoController {
         return ResponseEntity.ok(
                 service.listar()
                         .stream()
-                        .map(ProdutoMapper::toResponse)
+                        .map(produtoMapper::toResponse)
                         .toList());
     }
 
@@ -89,12 +80,8 @@ public class ProdutoController {
 
         Produto produto = service.buscarPorId(id);
 
-        if (produto == null) {
-            return ResponseEntity.notFound().build();
-        }
-
         return ResponseEntity.ok(
-                ProdutoMapper.toResponse(produto));
+                produtoMapper.toResponse(produto));
     }
 
     @PutMapping("/{id}")
@@ -102,43 +89,31 @@ public class ProdutoController {
             @PathVariable Long id,
             @Valid @RequestBody ProdutoRequest request) {
 
-        CategoriaProduto categoria = categoriaProdutoRepository
-                .findById(request.getCategoriaId())
-                .orElseThrow(() -> new RuntimeException(
-                        "Categoria não encontrada: " + request.getCategoriaId()));
+        CategoriaProduto categoria = service.buscarCategoriaPorId(
+                request.getCategoriaId());
 
         Fornecedor fornecedor = null;
 
         if (request.getFornecedorId() != null) {
-            fornecedor = fornecedorRepository
-                    .findById(request.getFornecedorId())
-                    .orElseThrow(() -> new RuntimeException(
-                            "Fornecedor não encontrado: " + request.getFornecedorId()));
+            fornecedor = service.buscarFornecedorPorId(
+                    request.getFornecedorId());
         }
 
-        Produto produto = ProdutoMapper.toEntity(
+        Produto produto = produtoMapper.toEntity(
                 request,
                 categoria,
                 fornecedor);
 
         Produto produtoAtualizado = service.atualizar(id, produto);
 
-        if (produtoAtualizado == null) {
-            return ResponseEntity.notFound().build();
-        }
-
         return ResponseEntity.ok(
-                ProdutoMapper.toResponse(produtoAtualizado));
+                produtoMapper.toResponse(produtoAtualizado));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
 
-        boolean excluido = service.excluir(id);
-
-        if (!excluido) {
-            return ResponseEntity.notFound().build();
-        }
+        service.excluir(id);
 
         return ResponseEntity.noContent().build();
     }

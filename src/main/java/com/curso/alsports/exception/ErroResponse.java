@@ -1,6 +1,7 @@
 package com.curso.alsports.exception;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 public class ErroResponse {
 
@@ -8,6 +9,8 @@ public class ErroResponse {
     private int status;
     private String erro;
     private String mensagem;
+    private String path;
+    private Map<String, String> fields;
 
     public ErroResponse() {
     }
@@ -22,6 +25,22 @@ public class ErroResponse {
         this.status = status;
         this.erro = erro;
         this.mensagem = mensagem;
+    }
+
+    public ErroResponse(
+            LocalDateTime timestamp,
+            int status,
+            String erro,
+            String mensagem,
+            String path,
+            Map<String, String> fields) {
+
+        this.timestamp = timestamp;
+        this.status = status;
+        this.erro = erro;
+        this.mensagem = mensagem;
+        this.path = path;
+        this.fields = fields;
     }
 
     public LocalDateTime getTimestamp() {
@@ -54,5 +73,21 @@ public class ErroResponse {
 
     public void setMensagem(String mensagem) {
         this.mensagem = mensagem;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public Map<String, String> getFields() {
+        return fields;
+    }
+
+    public void setFields(Map<String, String> fields) {
+        this.fields = fields;
     }
 }

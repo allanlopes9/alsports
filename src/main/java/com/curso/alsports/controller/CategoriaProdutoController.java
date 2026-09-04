@@ -3,9 +3,11 @@ package com.curso.alsports.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,34 +17,35 @@ import jakarta.validation.Valid;
 import com.curso.alsports.dto.CategoriaProdutoMapper;
 import com.curso.alsports.dto.CategoriaProdutoRequest;
 import com.curso.alsports.dto.CategoriaProdutoResponse;
-
 import com.curso.alsports.model.CategoriaProduto;
 import com.curso.alsports.service.CategoriaProdutoService;
-
-import org.springframework.web.bind.annotation.PutMapping;
-
-import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/categorias")
 public class CategoriaProdutoController {
 
     private final CategoriaProdutoService service;
+    private final CategoriaProdutoMapper categoriaProdutoMapper;
 
-    public CategoriaProdutoController(CategoriaProdutoService service) {
+    public CategoriaProdutoController(
+            CategoriaProdutoService service,
+            CategoriaProdutoMapper categoriaProdutoMapper) {
+
         this.service = service;
+        this.categoriaProdutoMapper = categoriaProdutoMapper;
     }
 
     @PostMapping
     public ResponseEntity<CategoriaProdutoResponse> salvar(
             @Valid @RequestBody CategoriaProdutoRequest request) {
 
-        CategoriaProduto categoria = CategoriaProdutoMapper.toEntity(request);
+        CategoriaProduto categoria = categoriaProdutoMapper.toEntity(request);
 
         CategoriaProduto categoriaSalva = service.salvar(categoria);
 
-        return ResponseEntity.ok(
-                CategoriaProdutoMapper.toResponse(categoriaSalva));
+        return ResponseEntity
+                .created(java.net.URI.create("/categorias/" + categoriaSalva.getId()))
+                .body(categoriaProdutoMapper.toResponse(categoriaSalva));
     }
 
     @GetMapping
@@ -50,7 +53,7 @@ public class CategoriaProdutoController {
         return ResponseEntity.ok(
                 service.listar()
                         .stream()
-                        .map(CategoriaProdutoMapper::toResponse)
+                        .map(categoriaProdutoMapper::toResponse)
                         .toList());
     }
 
@@ -60,12 +63,8 @@ public class CategoriaProdutoController {
 
         CategoriaProduto categoria = service.buscarPorId(id);
 
-        if (categoria == null) {
-            return ResponseEntity.notFound().build();
-        }
-
         return ResponseEntity.ok(
-                CategoriaProdutoMapper.toResponse(categoria));
+                categoriaProdutoMapper.toResponse(categoria));
     }
 
     @PutMapping("/{id}")
@@ -73,26 +72,19 @@ public class CategoriaProdutoController {
             @PathVariable Long id,
             @Valid @RequestBody CategoriaProdutoRequest request) {
 
-        CategoriaProduto categoria = CategoriaProdutoMapper.toEntity(request);
+        CategoriaProduto categoria = categoriaProdutoMapper.toEntity(request);
 
-        CategoriaProduto categoriaAtualizada = service.atualizar(id, categoria);
-
-        if (categoriaAtualizada == null) {
-            return ResponseEntity.notFound().build();
-        }
+        CategoriaProduto categoriaAtualizada =
+                service.atualizar(id, categoria);
 
         return ResponseEntity.ok(
-                CategoriaProdutoMapper.toResponse(categoriaAtualizada));
+                categoriaProdutoMapper.toResponse(categoriaAtualizada));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
 
-        boolean excluido = service.excluir(id);
-
-        if (!excluido) {
-            return ResponseEntity.notFound().build();
-        }
+        service.excluir(id);
 
         return ResponseEntity.noContent().build();
     }
