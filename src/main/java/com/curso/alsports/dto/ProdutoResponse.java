@@ -6,6 +6,7 @@ import java.time.LocalDate;
 public class ProdutoResponse {
 
     private Long id;
+    private String codigoBarras;
     private String nome;
     private Integer quantidade;
     private BigDecimal estoqueMinimo;
@@ -15,6 +16,14 @@ public class ProdutoResponse {
     private String unidadeMedida;
     private CategoriaProdutoResponse categoria;
     private FornecedorResponse fornecedor;
+
+    public String getCodigoBarras() {
+        return codigoBarras;
+    }
+
+    public void setCodigoBarras(String codigoBarras) {
+        this.codigoBarras = codigoBarras;
+    }
 
     public Long getId() {
         return id;

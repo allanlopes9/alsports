@@ -1,10 +1,8 @@
 package com.curso.alsports.dto;
 
-import com.curso.alsports.model.CategoriaProduto;
-import com.curso.alsports.model.Fornecedor;
-import com.curso.alsports.model.Produto;
-
 import org.springframework.stereotype.Component;
+
+import com.curso.alsports.model.Produto;
 
 @Component
 public class ProdutoMapper {
@@ -24,6 +22,7 @@ public class ProdutoMapper {
         ProdutoResponse response = new ProdutoResponse();
 
         response.setId(produto.getId());
+        response.setCodigoBarras(produto.getCodigoBarras());
         response.setNome(produto.getNome());
         response.setQuantidade(produto.getQuantidade());
         response.setEstoqueMinimo(produto.getEstoqueMinimo());
@@ -45,13 +44,10 @@ public class ProdutoMapper {
         return response;
     }
 
-    public Produto toEntity(
-            ProdutoRequest request,
-            CategoriaProduto categoria,
-            Fornecedor fornecedor) {
-
+    public Produto toEntity(ProdutoRequest request) {
         Produto produto = new Produto();
 
+        produto.setCodigoBarras(request.getCodigoBarras());
         produto.setNome(request.getNome());
         produto.setQuantidade(request.getQuantidade());
         produto.setEstoqueMinimo(request.getEstoqueMinimo());
@@ -59,8 +55,6 @@ public class ProdutoMapper {
         produto.setDataCadastro(request.getDataCadastro());
         produto.setAtivo(request.getAtivo());
         produto.setUnidadeMedida(request.getUnidadeMedida());
-        produto.setCategoria(categoria);
-        produto.setFornecedor(fornecedor);
 
         return produto;
     }

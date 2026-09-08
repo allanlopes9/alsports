@@ -4,12 +4,17 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.NotBlank;
 
 public class ProdutoRequest {
+
+    @NotBlank
+    @Size(max = 50)
+    private String codigoBarras;
 
     @NotBlank
     @Size(max = 150)
@@ -38,9 +43,19 @@ public class ProdutoRequest {
     private String unidadeMedida;
 
     @NotNull
+    @Positive
     private Long categoriaId;
 
+    @Positive
     private Long fornecedorId;
+
+    public String getCodigoBarras() {
+        return codigoBarras;
+    }
+
+    public void setCodigoBarras(String codigoBarras) {
+        this.codigoBarras = codigoBarras;
+    }
 
     public String getNome() {
         return nome;

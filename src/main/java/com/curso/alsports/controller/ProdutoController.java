@@ -1,13 +1,14 @@
 package com.curso.alsports.controller;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,10 +18,6 @@ import jakarta.validation.Valid;
 import com.curso.alsports.dto.ProdutoMapper;
 import com.curso.alsports.dto.ProdutoRequest;
 import com.curso.alsports.dto.ProdutoResponse;
-
-import com.curso.alsports.model.CategoriaProduto;
-import com.curso.alsports.model.Fornecedor;
-
 import com.curso.alsports.model.Produto;
 import com.curso.alsports.service.ProdutoService;
 
@@ -43,25 +40,14 @@ public class ProdutoController {
     public ResponseEntity<ProdutoResponse> salvar(
             @Valid @RequestBody ProdutoRequest request) {
 
-        CategoriaProduto categoria = service.buscarCategoriaPorId(
-                request.getCategoriaId());
-
-        Fornecedor fornecedor = null;
-
-        if (request.getFornecedorId() != null) {
-            fornecedor = service.buscarFornecedorPorId(
-                    request.getFornecedorId());
-        }
-
-        Produto produto = produtoMapper.toEntity(
-                request,
-                categoria,
-                fornecedor);
-
-        Produto produtoSalvo = service.salvar(produto);
+        Produto produto = produtoMapper.toEntity(request);
+        Produto produtoSalvo = service.cadastrar(
+                produto,
+                request.getCategoriaId(),
+                request.getFornecedorId());
 
         return ResponseEntity
-                .created(java.net.URI.create("/produtos/" + produtoSalvo.getId()))
+                .created(URI.create("/produtos/" + produtoSalvo.getId()))
                 .body(produtoMapper.toResponse(produtoSalvo));
     }
 
@@ -89,22 +75,13 @@ public class ProdutoController {
             @PathVariable Long id,
             @Valid @RequestBody ProdutoRequest request) {
 
-        CategoriaProduto categoria = service.buscarCategoriaPorId(
-                request.getCategoriaId());
+        Produto produto = produtoMapper.toEntity(request);
 
-        Fornecedor fornecedor = null;
-
-        if (request.getFornecedorId() != null) {
-            fornecedor = service.buscarFornecedorPorId(
-                    request.getFornecedorId());
-        }
-
-        Produto produto = produtoMapper.toEntity(
-                request,
-                categoria,
-                fornecedor);
-
-        Produto produtoAtualizado = service.atualizar(id, produto);
+        Produto produtoAtualizado = service.atualizar(
+                id,
+                produto,
+                request.getCategoriaId(),
+                request.getFornecedorId());
 
         return ResponseEntity.ok(
                 produtoMapper.toResponse(produtoAtualizado));
@@ -112,7 +89,6 @@ public class ProdutoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
-
         service.excluir(id);
 
         return ResponseEntity.noContent().build();

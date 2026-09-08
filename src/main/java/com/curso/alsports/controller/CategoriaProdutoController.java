@@ -1,5 +1,6 @@
 package com.curso.alsports.controller;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -44,7 +45,7 @@ public class CategoriaProdutoController {
         CategoriaProduto categoriaSalva = service.salvar(categoria);
 
         return ResponseEntity
-                .created(java.net.URI.create("/categorias/" + categoriaSalva.getId()))
+                .created(URI.create("/categorias/" + categoriaSalva.getId()))
                 .body(categoriaProdutoMapper.toResponse(categoriaSalva));
     }
 

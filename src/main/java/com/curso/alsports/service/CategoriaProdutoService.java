@@ -37,7 +37,6 @@ public class CategoriaProdutoService {
 
     @Transactional
     public CategoriaProduto atualizar(Long id, CategoriaProduto categoria) {
-
         CategoriaProduto categoriaExistente = repository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "Categoria não encontrada: " + id));
@@ -50,7 +49,6 @@ public class CategoriaProdutoService {
 
     @Transactional
     public boolean excluir(Long id) {
-
         if (!repository.existsById(id)) {
             throw new RecursoNaoEncontradoException(
                     "Categoria não encontrada: " + id);

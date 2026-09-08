@@ -1,6 +1,7 @@
 package com.curso.alsports.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class FornecedorRequest {
@@ -10,7 +11,7 @@ public class FornecedorRequest {
     private String razaoSocial;
 
     @NotBlank
-    @Size(max = 14)
+    @Pattern(regexp = "\\d{14}")
     private String cnpj;
 
     public String getRazaoSocial() {

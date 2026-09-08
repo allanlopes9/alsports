@@ -1,0 +1,64 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-01-add-codigo-barras-produto
+      author: allan
+      changes:
+        - addColumn:
+            tableName: produto
+            columns:
+              - column:
+                  name: codigo_barras
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: produto
+            columnName: codigo_barras
+
+  - changeSet:
+      id: 005-02-backfill-codigo-barras-produto
+      author: allan
+      changes:
+        - sql:
+            sql: UPDATE produto SET codigo_barras = 'LEGACY-' || id WHERE codigo_barras IS NULL
+      rollback:
+        - sql:
+            sql: UPDATE produto SET codigo_barras = NULL WHERE codigo_barras LIKE 'LEGACY-%'
+
+  - changeSet:
+      id: 005-03-not-null-codigo-barras-produto
+      author: allan
+      changes:
+        - addNotNullConstraint:
+            tableName: produto
+            columnName: codigo_barras
+            columnDataType: VARCHAR(50)
+      rollback:
+        - dropNotNullConstraint:
+            tableName: produto
+            columnName: codigo_barras
+            columnDataType: VARCHAR(50)
+
+  - changeSet:
+      id: 005-04-unique-codigo-barras-produto
+      author: allan
+      changes:
+        - addUniqueConstraint:
+            tableName: produto
+            columnNames: codigo_barras
+            constraintName: uk_produto_codigo_barras
+      rollback:
+        - dropUniqueConstraint:
+            tableName: produto
+            constraintName: uk_produto_codigo_barras
+
+  - changeSet:
+      id: 005-05-check-codigo-barras-produto
+      author: allan
+      changes:
+        - sql:
+            sql: ALTER TABLE produto ADD CONSTRAINT ck_produto_codigo_barras CHECK (length(trim(codigo_barras)) > 0)
+      rollback:
+        - sql:
+            sql: ALTER TABLE produto DROP CONSTRAINT IF EXISTS ck_produto_codigo_barras

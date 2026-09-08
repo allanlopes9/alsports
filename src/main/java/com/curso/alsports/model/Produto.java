@@ -8,10 +8,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class Produto {
@@ -19,6 +19,9 @@ public class Produto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "codigo_barras", nullable = false, length = 50, unique = true)
+    private String codigoBarras;
 
     private String nome;
     private Integer quantidade;
@@ -50,6 +53,14 @@ public class Produto {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getCodigoBarras() {
+        return codigoBarras;
+    }
+
+    public void setCodigoBarras(String codigoBarras) {
+        this.codigoBarras = codigoBarras;
     }
 
     public String getNome() {

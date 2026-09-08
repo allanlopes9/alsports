@@ -1,8 +1,8 @@
 package com.curso.alsports.dto;
 
-import com.curso.alsports.model.CategoriaProduto;
-
 import org.springframework.stereotype.Component;
+
+import com.curso.alsports.model.CategoriaProduto;
 
 @Component
 public class CategoriaProdutoMapper {

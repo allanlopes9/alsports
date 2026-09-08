@@ -1,8 +1,8 @@
 package com.curso.alsports.dto;
 
-import com.curso.alsports.model.Fornecedor;
-
 import org.springframework.stereotype.Component;
+
+import com.curso.alsports.model.Fornecedor;
 
 @Component
 public class FornecedorMapper {

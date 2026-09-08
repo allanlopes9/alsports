@@ -1,0 +1,325 @@
+{
+    "info":  {
+                 "_postman_id":  "alsports-aula-07",
+                 "name":  "AL Sports - Aula 07",
+                 "description":  "Collection da Aula 07 - API REST, DTOs, mapeadores e testes.",
+                 "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+             },
+    "variable":  [
+                     {
+                         "key":  "baseUrl",
+                         "value":  "http://localhost:8080"
+                     },
+                     {
+                         "key":  "categoriaId",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "fornecedorId",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "produtoId",
+                         "value":  ""
+                     }
+                 ],
+    "item":  [
+                 {
+                     "name":  "00 - Health",
+                     "item":  [
+                                  {
+                                      "name":  "Verificar API",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/health",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "health"
+                                                                           ]
+                                                              }
+                                                  }
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "01 - Categorias",
+                     "item":  [
+                                  {
+                                      "name":  "Criar categoria",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "const body = pm.response.json();",
+                                                                                    "pm.collectionVariables.set(\"categoriaId\", body.id);"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n    \"nome\": \"Futebol Postman\",\n    \"ativo\": true\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/categorias",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "categorias"
+                                                                           ]
+                                                              }
+                                                  }
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "02 - Fornecedores",
+                     "item":  [
+                                  {
+                                      "name":  "Criar fornecedor",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "const body = pm.response.json();",
+                                                                                    "pm.collectionVariables.set(\"fornecedorId\", body.id);"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n    \"razaoSocial\": \"Fornecedor Postman LTDA\",\n    \"cnpj\": \"12345678000199\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/fornecedores",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "fornecedores"
+                                                                           ]
+                                                              }
+                                                  }
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "03 - Produtos",
+                     "item":  [
+                                  {
+                                      "name":  "03 - Criar produto",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "const body = pm.response.json();",
+                                                                                    "pm.collectionVariables.set(\"produtoId\", body.id);"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n    \"codigoBarras\": \"POSTMAN-BOLA-001\",\n    \"nome\": \"Bola Postman\",\n    \"quantidade\": 10,\n    \"estoqueMinimo\": 2.000,\n    \"preco\": 99.90,\n    \"dataCadastro\": \"2026-09-07\",\n    \"ativo\": true,\n    \"unidadeMedida\": \"UN\",\n    \"categoriaId\": {{categoriaId}},\n    \"fornecedorId\": {{fornecedorId}}\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "produtos"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "04 - Buscar produto",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/produtos/{{produtoId}}",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "produtos",
+                                                                               "{{produtoId}}"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "05 - Listar produtos",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "produtos"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Produto inválido - 400",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"codigoBarras\":\"\",\"nome\":\"\",\"quantidade\":-5,\"estoqueMinimo\":-1,\"preco\":-10,\"dataCadastro\":\"2026-09-07\",\"ativo\":true,\"unidadeMedida\":\"\",\"categoriaId\":null}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "produtos"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Produto inexistente - 404",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  null,
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/produtos/999999999",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "produtos",
+                                                                               "999999999"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Produto duplicado - 409",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"codigoBarras\":\"POSTMAN-BOLA-001\",\"nome\":\"Bola Postman Duplicada\",\"quantidade\":10,\"estoqueMinimo\":2.000,\"preco\":99.90,\"dataCadastro\":\"2026-09-07\",\"ativo\":true,\"unidadeMedida\":\"UN\",\"categoriaId\":{{categoriaId}},\"fornecedorId\":{{fornecedorId}}}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "produtos"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "JSON malformado - 400",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"codigoBarras\":\"POSTMAN-JSON-001\",\"nome\":\"Produto JSON inválido\",\"quantidade\":10,\"preco\":99.90,\"dataCadastro\":\"2026-09-07\",\"ativo\":true,\"unidadeMedida\":\"UN\",\"categoriaId\":1"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "produtos"
+                                                                           ]
+                                                              }
+                                                  }
+                                  }
+                              ]
+                 }
+             ]
+}

@@ -7,13 +7,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.curso.alsports.exception.RecursoDuplicadoException;
 import com.curso.alsports.exception.RecursoNaoEncontradoException;
-import com.curso.alsports.model.Produto;
 import com.curso.alsports.model.CategoriaProduto;
 import com.curso.alsports.model.Fornecedor;
-import com.curso.alsports.repository.ProdutoRepository;
-
+import com.curso.alsports.model.Produto;
 import com.curso.alsports.repository.CategoriaProdutoRepository;
 import com.curso.alsports.repository.FornecedorRepository;
+import com.curso.alsports.repository.ProdutoRepository;
 
 @Service
 public class ProdutoService {
@@ -32,18 +31,35 @@ public class ProdutoService {
         this.fornecedorRepository = fornecedorRepository;
     }
 
-    @Transactional(readOnly = true)
-    public CategoriaProduto buscarCategoriaPorId(Long id) {
-        return categoriaProdutoRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException(
-                        "Categoria não encontrada: " + id));
-    }
+    @Transactional
+    public Produto cadastrar(Produto produto, Long categoriaId, Long fornecedorId) {
+        if (repository.existsByCodigoBarras(produto.getCodigoBarras())) {
+            throw new RecursoDuplicadoException(
+                    "Já existe um produto com o código de barras: " + produto.getCodigoBarras());
+        }
 
-    @Transactional(readOnly = true)
-    public Fornecedor buscarFornecedorPorId(Long id) {
-        return fornecedorRepository.findById(id)
+        if (repository.existsByNomeIgnoreCase(produto.getNome())) {
+            throw new RecursoDuplicadoException(
+                    "Já existe um produto com o nome: " + produto.getNome());
+        }
+
+        CategoriaProduto categoria = categoriaProdutoRepository
+                .findById(categoriaId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
-                        "Fornecedor não encontrado: " + id));
+                        "Categoria não encontrada: " + categoriaId));
+
+        Fornecedor fornecedor = null;
+
+        if (fornecedorId != null) {
+            fornecedor = fornecedorRepository.findById(fornecedorId)
+                    .orElseThrow(() -> new RecursoNaoEncontradoException(
+                            "Fornecedor não encontrado: " + fornecedorId));
+        }
+
+        produto.setCategoria(categoria);
+        produto.setFornecedor(fornecedor);
+
+        return repository.save(produto);
     }
 
     @Transactional
@@ -58,7 +74,7 @@ public class ProdutoService {
 
     @Transactional
     public Produto salvarEFalhar(Produto produto) {
-        Produto produtoSalvo = repository.save(produto);
+        repository.save(produto);
 
         throw new RuntimeException("Erro proposital para testar rollback");
     }
@@ -88,11 +104,44 @@ public class ProdutoService {
     }
 
     @Transactional
-    public Produto atualizar(Long id, Produto produto) {
+    public Produto atualizar(
+            Long id,
+            Produto produto,
+            Long categoriaId,
+            Long fornecedorId) {
+
         Produto produtoExistente = repository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "Produto não encontrado: " + id));
 
+        if (!produtoExistente.getCodigoBarras().equalsIgnoreCase(produto.getCodigoBarras())
+                && repository.existsByCodigoBarras(produto.getCodigoBarras())) {
+
+            throw new RecursoDuplicadoException(
+                    "Já existe um produto com o código de barras: " + produto.getCodigoBarras());
+        }
+
+        if (!produtoExistente.getNome().equalsIgnoreCase(produto.getNome())
+                && repository.existsByNomeIgnoreCase(produto.getNome())) {
+
+            throw new RecursoDuplicadoException(
+                    "Já existe um produto com o nome: " + produto.getNome());
+        }
+
+        CategoriaProduto categoria = categoriaProdutoRepository
+                .findById(categoriaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Categoria não encontrada: " + categoriaId));
+
+        Fornecedor fornecedor = null;
+
+        if (fornecedorId != null) {
+            fornecedor = fornecedorRepository.findById(fornecedorId)
+                    .orElseThrow(() -> new RecursoNaoEncontradoException(
+                            "Fornecedor não encontrado: " + fornecedorId));
+        }
+
+        produtoExistente.setCodigoBarras(produto.getCodigoBarras());
         produtoExistente.setNome(produto.getNome());
         produtoExistente.setQuantidade(produto.getQuantidade());
         produtoExistente.setEstoqueMinimo(produto.getEstoqueMinimo());
@@ -100,8 +149,8 @@ public class ProdutoService {
         produtoExistente.setDataCadastro(produto.getDataCadastro());
         produtoExistente.setAtivo(produto.getAtivo());
         produtoExistente.setUnidadeMedida(produto.getUnidadeMedida());
-        produtoExistente.setCategoria(produto.getCategoria());
-        produtoExistente.setFornecedor(produto.getFornecedor());
+        produtoExistente.setCategoria(categoria);
+        produtoExistente.setFornecedor(fornecedor);
 
         return produtoExistente;
     }
