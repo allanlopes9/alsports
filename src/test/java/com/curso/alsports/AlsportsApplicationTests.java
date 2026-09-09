@@ -150,7 +150,7 @@ class AlsportsApplicationTests {
         String nomeProduto = "Produto Rollback";
 
         CategoriaProduto categoria = new CategoriaProduto();
-        categoria.setNome("Categoria Rollback");
+        categoria.setNome("Categoria Rollback " + System.currentTimeMillis());
         categoria.setAtivo(true);
 
         categoria = categoriaProdutoRepository.save(categoria);

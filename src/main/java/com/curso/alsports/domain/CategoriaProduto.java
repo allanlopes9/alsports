@@ -12,7 +12,7 @@ public class CategoriaProduto {
 
     public CategoriaProduto(String nome) {
         if (nome == null || nome.isBlank()) {
-            throw new IllegalArgumentException("Nome da categoria ÃƒÂ© obrigatÃƒÂ³rio");
+            throw new IllegalArgumentException("Nome da categoria é obrigatório");
         }
 
         this.nome = nome.trim();
@@ -33,15 +33,15 @@ public class CategoriaProduto {
 
     public void adicionarProduto(Produto produto) {
         if (produto == null) {
-            throw new IllegalArgumentException("Produto nÃƒÂ£o pode ser nulo");
+            throw new IllegalArgumentException("Produto não pode ser nulo");
         }
 
         if (produtos.stream().anyMatch(p -> p.getNome().equals(produto.getNome()))) {
-            throw new IllegalArgumentException("Ja existe um produto com este nome na categoria");
+            throw new IllegalArgumentException("Já existe um produto com este nome na categoria");
         }
 
         if (produto.getCategoria() != null && produto.getCategoria() != this) {
-            throw new IllegalArgumentException("Produto jÃƒÂ¡ pertence a outra categoria");
+            throw new IllegalArgumentException("Produto já pertence a outra categoria");
         }
 
         produtos.add(produto);

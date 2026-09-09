@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-01-consolidate-categorias
+      author: allan
+      changes:
+        - sql:
+            sql: |
+              WITH grupos AS (
+                  SELECT
+                      LOWER(TRIM(nome)) AS chave,
+                      MIN(id) AS id_principal
+                  FROM categoria_produto
+                  GROUP BY LOWER(TRIM(nome))
+              )
+              UPDATE produto p
+              SET categoria_id = g.id_principal
+              FROM categoria_produto c
+              JOIN grupos g
+                ON LOWER(TRIM(c.nome)) = g.chave
+              WHERE p.categoria_id = c.id
+                AND c.id <> g.id_principal;
+
+        - sql:
+            sql: |
+              WITH grupos AS (
+                  SELECT
+                      LOWER(TRIM(nome)) AS chave,
+                      MIN(id) AS id_principal
+                  FROM categoria_produto
+                  GROUP BY LOWER(TRIM(nome))
+              )
+              DELETE FROM categoria_produto c
+              USING grupos g
+              WHERE LOWER(TRIM(c.nome)) = g.chave
+                AND c.id <> g.id_principal;
+
+  - changeSet:
+      id: 006-02-unique-nome-categoria
+      author: allan
+      changes:
+        - sql:
+            sql: |
+              CREATE UNIQUE INDEX IF NOT EXISTS uk_categoria_produto_nome_ci
+              ON categoria_produto (LOWER(TRIM(nome)));
+      rollback:
+        - sql:
+            sql: |
+              DROP INDEX IF EXISTS uk_categoria_produto_nome_ci;

@@ -11,3 +11,5 @@ databaseChangeLog:
       file: db/changelog/changes/004-add-constraints-produto.yaml
   - include:
       file: db/changelog/changes/005-add-codigo-barras-produto.yaml
+  - include:
+      file: db/changelog/changes/006-consolidate-categorias.yaml

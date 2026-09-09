@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.curso.alsports.exception.RecursoDuplicadoException;
 import com.curso.alsports.exception.RecursoNaoEncontradoException;
 import com.curso.alsports.model.CategoriaProduto;
 import com.curso.alsports.repository.CategoriaProdutoRepository;
@@ -20,6 +21,16 @@ public class CategoriaProdutoService {
 
     @Transactional
     public CategoriaProduto salvar(CategoriaProduto categoria) {
+        String nome = categoria.getNome().trim();
+
+        repository.findByNomeIgnoreCase(nome)
+                .ifPresent(existente -> {
+                    throw new RecursoDuplicadoException(
+                            "Já existe uma categoria com o nome: " + nome);
+                });
+
+        categoria.setNome(nome);
+
         return repository.save(categoria);
     }
 
@@ -41,7 +52,17 @@ public class CategoriaProdutoService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "Categoria não encontrada: " + id));
 
-        categoriaExistente.setNome(categoria.getNome());
+        String nome = categoria.getNome().trim();
+
+        repository.findByNomeIgnoreCase(nome)
+                .ifPresent(outraCategoria -> {
+                    if (!outraCategoria.getId().equals(id)) {
+                        throw new RecursoDuplicadoException(
+                                "Já existe uma categoria com o nome: " + nome);
+                    }
+                });
+
+        categoriaExistente.setNome(nome);
         categoriaExistente.setAtivo(categoria.getAtivo());
 
         return categoriaExistente;

@@ -59,7 +59,7 @@ Exemplo testado no Postman:
 
 - criação de produto utilizando um código de barras já existente.
 
-O AL Sports utiliza o código de barras como identificador único do produto. Por isso, uma tentativa de cadastrar outro produto com o mesmo código de barras resulta em HTTP 409.
+O AL Sports utiliza o código de barras como identificador de negócio único do produto. Por isso, uma tentativa de cadastrar outro produto com o mesmo código de barras resulta em HTTP 409.
 
 Exemplo:
 

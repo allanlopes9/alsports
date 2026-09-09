@@ -62,6 +62,7 @@ class CategoriaProdutoTest {
                 IllegalArgumentException.class,
                 () -> categoria.adicionarProduto(produto2));
     }
+
     @Test
     void naoDevePermitirQueProdutoPertençaADuasCategorias() {
         // Arrange

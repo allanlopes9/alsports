@@ -9,7 +9,7 @@
 ## Entidade de classificação
 
 - Nome no singular: CategoriaProduto
-- Nome no plural: CategoriasProduto
+- Nome no plural: Categorias
 - Exemplo 1: Camisas
 - Exemplo 2: Calçados
 - Exemplo 3: Bolas

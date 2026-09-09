@@ -204,6 +204,7 @@ Atualmente existem:
 003-fornecedor-e-estoque-minimo.yaml
 004-add-constraints-produto.yaml
 005-add-codigo-barras-produto.yaml
+006-consolidate-categorias.yaml
 
 Entre as alterações realizadas estão:
 
@@ -217,7 +218,9 @@ Entre as alterações realizadas estão:
 - criação do código de barras;
 - preenchimento dos códigos de barras existentes;
 - código de barras obrigatório;
-- código de barras único.
+- código de barras único;
+- consolidação de categorias duplicadas;
+- nome de categoria único, ignorando maiúsculas, minúsculas e espaços nas extremidades.
 
 O arquivo principal das migrations é:
 
