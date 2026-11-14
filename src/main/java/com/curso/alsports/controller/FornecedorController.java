@@ -20,7 +20,7 @@ import com.curso.alsports.model.Fornecedor;
 import com.curso.alsports.service.FornecedorService;
 
 @RestController
-@RequestMapping("/fornecedores")
+@RequestMapping("/api/fornecedores")
 public class FornecedorController {
 
     private final FornecedorService service;
@@ -42,7 +42,7 @@ public class FornecedorController {
         Fornecedor fornecedorSalvo = service.salvar(fornecedor);
 
         return ResponseEntity
-                .created(URI.create("/fornecedores/" + fornecedorSalvo.getId()))
+                .created(URI.create("/api/fornecedores/" + fornecedorSalvo.getId()))
                 .body(fornecedorMapper.toResponse(fornecedorSalvo));
     }
 

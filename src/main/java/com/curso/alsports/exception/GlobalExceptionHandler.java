@@ -1,6 +1,6 @@
 package com.curso.alsports.exception;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -16,14 +16,14 @@ import jakarta.servlet.http.HttpServletRequest;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
-    public ResponseEntity<ErroResponse> tratarNaoEncontrado(
+    public ResponseEntity<ApiError> tratarNaoEncontrado(
             RecursoNaoEncontradoException ex,
             HttpServletRequest request) {
 
-        ErroResponse erro = new ErroResponse(
-                LocalDateTime.now(),
+        ApiError erro = new ApiError(
+                Instant.now(),
                 HttpStatus.NOT_FOUND.value(),
-                "Recurso não encontrado",
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
                 ex.getMessage(),
                 request.getRequestURI(),
                 null);
@@ -34,14 +34,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RecursoDuplicadoException.class)
-    public ResponseEntity<ErroResponse> tratarDuplicado(
+    public ResponseEntity<ApiError> tratarDuplicado(
             RecursoDuplicadoException ex,
             HttpServletRequest request) {
 
-        ErroResponse erro = new ErroResponse(
-                LocalDateTime.now(),
+        ApiError erro = new ApiError(
+                Instant.now(),
                 HttpStatus.CONFLICT.value(),
-                "Recurso duplicado",
+                HttpStatus.CONFLICT.getReasonPhrase(),
                 ex.getMessage(),
                 request.getRequestURI(),
                 null);
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErroResponse> tratarValidacao(
+    public ResponseEntity<ApiError> tratarValidacao(
             MethodArgumentNotValidException ex,
             HttpServletRequest request) {
 
@@ -64,10 +64,10 @@ public class GlobalExceptionHandler {
                         error -> error.getDefaultMessage(),
                         (mensagem1, mensagem2) -> mensagem1));
 
-        ErroResponse erro = new ErroResponse(
-                LocalDateTime.now(),
+        ApiError erro = new ApiError(
+                Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
-                "Erro de validação",
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "Um ou mais campos possuem dados inválidos.",
                 request.getRequestURI(),
                 fields);
@@ -78,14 +78,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErroResponse> tratarJsonInvalido(
+    public ResponseEntity<ApiError> tratarJsonInvalido(
             HttpMessageNotReadableException ex,
             HttpServletRequest request) {
 
-        ErroResponse erro = new ErroResponse(
-                LocalDateTime.now(),
+        ApiError erro = new ApiError(
+                Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
-                "JSON inválido",
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "O corpo da requisição está malformado ou contém dados inválidos.",
                 request.getRequestURI(),
                 null);

@@ -82,11 +82,12 @@
                                                                    "raw":  "{\n    \"nome\": \"Futebol Postman\",\n    \"ativo\": true\n}"
                                                                },
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/categorias",
+                                                                  "raw":  "{{baseUrl}}/api/categorias",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
+                                                                               "api",
                                                                                "categorias"
                                                                            ]
                                                               }
@@ -128,11 +129,12 @@
                                                                    "raw":  "{\n    \"razaoSocial\": \"Fornecedor Postman LTDA\",\n    \"cnpj\": \"12345678000199\"\n}"
                                                                },
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/fornecedores",
+                                                                  "raw":  "{{baseUrl}}/api/fornecedores",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
+                                                                               "api",
                                                                                "fornecedores"
                                                                            ]
                                                               }
@@ -174,11 +176,12 @@
                                                                    "raw":  "{\n    \"codigoBarras\": \"POSTMAN-BOLA-001\",\n    \"nome\": \"Bola Postman\",\n    \"quantidade\": 10,\n    \"estoqueMinimo\": 2.000,\n    \"preco\": 99.90,\n    \"dataCadastro\": \"2026-09-07\",\n    \"ativo\": true,\n    \"unidadeMedida\": \"UN\",\n    \"categoriaId\": {{categoriaId}},\n    \"fornecedorId\": {{fornecedorId}}\n}"
                                                                },
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "raw":  "{{baseUrl}}/api/produtos",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
+                                                                               "api",
                                                                                "produtos"
                                                                            ]
                                                               }
@@ -192,11 +195,12 @@
 
                                                                  ],
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/produtos/{{produtoId}}",
+                                                                  "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
+                                                                               "api",
                                                                                "produtos",
                                                                                "{{produtoId}}"
                                                                            ]
@@ -211,11 +215,12 @@
 
                                                                  ],
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "raw":  "{{baseUrl}}/api/produtos",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
+                                                                               "api",
                                                                                "produtos"
                                                                            ]
                                                               }
@@ -236,11 +241,12 @@
                                                                    "raw":  "{\"codigoBarras\":\"\",\"nome\":\"\",\"quantidade\":-5,\"estoqueMinimo\":-1,\"preco\":-10,\"dataCadastro\":\"2026-09-07\",\"ativo\":true,\"unidadeMedida\":\"\",\"categoriaId\":null}"
                                                                },
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "raw":  "{{baseUrl}}/api/produtos",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
+                                                                               "api",
                                                                                "produtos"
                                                                            ]
                                                               }
@@ -258,11 +264,12 @@
                                                                  ],
                                                       "body":  null,
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/produtos/999999999",
+                                                                  "raw":  "{{baseUrl}}/api/produtos/999999999",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
+                                                                               "api",
                                                                                "produtos",
                                                                                "999999999"
                                                                            ]
@@ -284,11 +291,12 @@
                                                                    "raw":  "{\"codigoBarras\":\"POSTMAN-BOLA-001\",\"nome\":\"Bola Postman Duplicada\",\"quantidade\":10,\"estoqueMinimo\":2.000,\"preco\":99.90,\"dataCadastro\":\"2026-09-07\",\"ativo\":true,\"unidadeMedida\":\"UN\",\"categoriaId\":{{categoriaId}},\"fornecedorId\":{{fornecedorId}}}"
                                                                },
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "raw":  "{{baseUrl}}/api/produtos",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
+                                                                               "api",
                                                                                "produtos"
                                                                            ]
                                                               }
@@ -309,11 +317,12 @@
                                                                    "raw":  "{\"codigoBarras\":\"POSTMAN-JSON-001\",\"nome\":\"Produto JSON inválido\",\"quantidade\":10,\"preco\":99.90,\"dataCadastro\":\"2026-09-07\",\"ativo\":true,\"unidadeMedida\":\"UN\",\"categoriaId\":1"
                                                                },
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/produtos",
+                                                                  "raw":  "{{baseUrl}}/api/produtos",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
+                                                                               "api",
                                                                                "produtos"
                                                                            ]
                                                               }

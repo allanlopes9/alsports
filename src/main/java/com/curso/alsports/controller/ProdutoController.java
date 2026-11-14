@@ -22,7 +22,7 @@ import com.curso.alsports.model.Produto;
 import com.curso.alsports.service.ProdutoService;
 
 @RestController
-@RequestMapping("/produtos")
+@RequestMapping("/api/produtos")
 public class ProdutoController {
 
     private final ProdutoService service;
@@ -47,7 +47,7 @@ public class ProdutoController {
                 request.getFornecedorId());
 
         return ResponseEntity
-                .created(URI.create("/produtos/" + produtoSalvo.getId()))
+                .created(URI.create("/api/produtos/" + produtoSalvo.getId()))
                 .body(produtoMapper.toResponse(produtoSalvo));
     }
 

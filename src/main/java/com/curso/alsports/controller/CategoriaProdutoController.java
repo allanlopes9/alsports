@@ -22,7 +22,7 @@ import com.curso.alsports.model.CategoriaProduto;
 import com.curso.alsports.service.CategoriaProdutoService;
 
 @RestController
-@RequestMapping("/categorias")
+@RequestMapping("/api/categorias")
 public class CategoriaProdutoController {
 
     private final CategoriaProdutoService service;
@@ -45,7 +45,7 @@ public class CategoriaProdutoController {
         CategoriaProduto categoriaSalva = service.salvar(categoria);
 
         return ResponseEntity
-                .created(URI.create("/categorias/" + categoriaSalva.getId()))
+                .created(URI.create("/api/categorias/" + categoriaSalva.getId()))
                 .body(categoriaProdutoMapper.toResponse(categoriaSalva));
     }
 

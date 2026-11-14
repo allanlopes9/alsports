@@ -234,13 +234,13 @@ class AlsportsApplicationTests {
                 System.currentTimeMillis(),
                 categoria.getId());
 
-        mockMvc.perform(post("/produtos")
+        mockMvc.perform(post("/api/produtos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isCreated())
                 .andExpect(header().string(
                         "Location",
-                        containsString("/produtos/")))
+                        containsString("/api/produtos/")))
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.codigoBarras").value(codigoBarras))
                 .andExpect(jsonPath("$.nome")
@@ -268,13 +268,13 @@ class AlsportsApplicationTests {
                 }
                 """;
 
-        mockMvc.perform(post("/produtos")
+        mockMvc.perform(post("/api/produtos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.erro")
-                        .value("Erro de validação"))
+                .andExpect(jsonPath("$.error")
+                        .value("Bad Request"))
                 .andExpect(jsonPath("$.fields.codigoBarras").exists())
                 .andExpect(jsonPath("$.fields.nome").exists())
                 .andExpect(jsonPath("$.fields.quantidade").exists())
@@ -287,13 +287,13 @@ class AlsportsApplicationTests {
     @Test
     void deveRetornar404QuandoProdutoNaoExistir() throws Exception {
 
-        mockMvc.perform(get("/produtos/999999999"))
+        mockMvc.perform(get("/api/produtos/999999999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.erro")
-                        .value("Recurso não encontrado"))
+                .andExpect(jsonPath("$.error")
+                        .value("Not Found"))
                 .andExpect(jsonPath("$.path")
-                        .value("/produtos/999999999"));
+                        .value("/api/produtos/999999999"));
     }
 
     @Test
@@ -348,7 +348,7 @@ class AlsportsApplicationTests {
 
         produto = produtoService.salvar(produto);
 
-        mockMvc.perform(get("/produtos/" + produto.getId()))
+        mockMvc.perform(get("/api/produtos/" + produto.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(produto.getId()))
                 .andExpect(jsonPath("$.codigoBarras")
@@ -361,7 +361,7 @@ class AlsportsApplicationTests {
     @Test
     void deveListarProdutosPelaApi() throws Exception {
 
-        mockMvc.perform(get("/produtos"))
+        mockMvc.perform(get("/api/produtos"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -393,18 +393,18 @@ class AlsportsApplicationTests {
                 System.currentTimeMillis(),
                 categoria.getId());
 
-        mockMvc.perform(post("/produtos")
+        mockMvc.perform(post("/api/produtos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/produtos")
+        mockMvc.perform(post("/api/produtos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.erro")
-                        .value("Recurso duplicado"));
+                .andExpect(jsonPath("$.error")
+                        .value("Conflict"));
     }
 
     @Test
@@ -422,12 +422,12 @@ class AlsportsApplicationTests {
                     "categoriaId": 1
                 """;
 
-        mockMvc.perform(post("/produtos")
+        mockMvc.perform(post("/api/produtos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonInvalido))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.erro")
-                        .value("JSON inválido"));
+                .andExpect(jsonPath("$.error")
+                        .value("Bad Request"));
     }
 }
