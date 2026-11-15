@@ -1,7 +1,9 @@
+
 package com.curso.alsports.exception;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,81 +19,117 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ResponseEntity<ApiError> tratarNaoEncontrado(
-            RecursoNaoEncontradoException ex,
-            HttpServletRequest request) {
+        RecursoNaoEncontradoException ex,
+        HttpServletRequest request) {
 
         ApiError erro = new ApiError(
-                Instant.now(),
-                HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
-                ex.getMessage(),
-                request.getRequestURI(),
-                null);
+            Instant.now(),
+            HttpStatus.NOT_FOUND.value(),
+            HttpStatus.NOT_FOUND.getReasonPhrase(),
+            ex.getMessage(),
+            request.getRequestURI(),
+            null);
 
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(erro);
+            .status(HttpStatus.NOT_FOUND)
+            .body(erro);
     }
 
     @ExceptionHandler(RecursoDuplicadoException.class)
     public ResponseEntity<ApiError> tratarDuplicado(
-            RecursoDuplicadoException ex,
-            HttpServletRequest request) {
+        RecursoDuplicadoException ex,
+        HttpServletRequest request) {
 
         ApiError erro = new ApiError(
-                Instant.now(),
-                HttpStatus.CONFLICT.value(),
-                HttpStatus.CONFLICT.getReasonPhrase(),
-                ex.getMessage(),
-                request.getRequestURI(),
-                null);
+            Instant.now(),
+            HttpStatus.CONFLICT.value(),
+            HttpStatus.CONFLICT.getReasonPhrase(),
+            ex.getMessage(),
+            request.getRequestURI(),
+            null);
 
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(erro);
+            .status(HttpStatus.CONFLICT)
+            .body(erro);
+    }
+
+    @ExceptionHandler(RecursoEmUsoException.class)
+    public ResponseEntity<ApiError> tratarRecursoEmUso(
+        RecursoEmUsoException ex,
+        HttpServletRequest request) {
+
+        ApiError erro = new ApiError(
+            Instant.now(),
+            HttpStatus.CONFLICT.value(),
+            HttpStatus.CONFLICT.getReasonPhrase(),
+            ex.getMessage(),
+            request.getRequestURI(),
+            null);
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(erro);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> tratarValidacao(
-            MethodArgumentNotValidException ex,
-            HttpServletRequest request) {
+        MethodArgumentNotValidException ex,
+        HttpServletRequest request) {
 
         Map<String, String> fields = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .collect(java.util.stream.Collectors.toMap(
-                        error -> error.getField(),
-                        error -> error.getDefaultMessage(),
-                        (mensagem1, mensagem2) -> mensagem1));
+            .getFieldErrors()
+            .stream()
+            .collect(Collectors.toMap(
+                error -> error.getField(),
+                error -> error.getDefaultMessage(),
+                (mensagem1, mensagem2) -> mensagem1));
 
         ApiError erro = new ApiError(
-                Instant.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Um ou mais campos possuem dados inválidos.",
-                request.getRequestURI(),
-                fields);
+            Instant.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            HttpStatus.BAD_REQUEST.getReasonPhrase(),
+            "Um ou mais campos possuem dados inválidos.",
+            request.getRequestURI(),
+            fields);
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(erro);
+            .status(HttpStatus.BAD_REQUEST)
+            .body(erro);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> tratarRegraDeNegocio(
+        IllegalArgumentException ex,
+        HttpServletRequest request) {
+
+        ApiError erro = new ApiError(
+            Instant.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            HttpStatus.BAD_REQUEST.getReasonPhrase(),
+            ex.getMessage(),
+            request.getRequestURI(),
+            null);
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(erro);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> tratarJsonInvalido(
-            HttpMessageNotReadableException ex,
-            HttpServletRequest request) {
+        HttpMessageNotReadableException ex,
+        HttpServletRequest request) {
 
         ApiError erro = new ApiError(
-                Instant.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "O corpo da requisição está malformado ou contém dados inválidos.",
-                request.getRequestURI(),
-                null);
+            Instant.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            HttpStatus.BAD_REQUEST.getReasonPhrase(),
+            "O corpo da requisição está malformado ou contém dados inválidos.",
+            request.getRequestURI(),
+            null);
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(erro);
+            .status(HttpStatus.BAD_REQUEST)
+            .body(erro);
     }
 }

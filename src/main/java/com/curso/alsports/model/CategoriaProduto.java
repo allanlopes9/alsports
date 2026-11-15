@@ -38,4 +38,21 @@ public class CategoriaProduto {
     public void setAtivo(Boolean ativo) {
         this.ativo = ativo;
     }
+
+    public void alterarNome(String novoNome) {
+        if (novoNome == null || novoNome.isBlank()) {
+            throw new IllegalArgumentException(
+                "Nome da categoria é obrigatório");
+        }
+
+        this.nome = novoNome.trim();
+    }
+
+    public void ativar() {
+        this.ativo = true;
+    }
+
+    public void inativar() {
+        this.ativo = false;
+    }
 }

@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -17,7 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Propagation;
@@ -52,6 +56,78 @@ class AlsportsApplicationTests {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Test
+    void deveAlterarStatusProdutoPelaApi() throws Exception {
+
+        CategoriaProduto categoria = new CategoriaProduto();
+        categoria.setNome("Categoria Status " + System.currentTimeMillis());
+        categoria.setAtivo(true);
+        categoria = categoriaProdutoRepository.save(categoria);
+
+        Produto produto = new Produto();
+        produto.setCodigoBarras("STATUS-TESTE-" + System.currentTimeMillis());
+        produto.setNome("Produto Teste Status");
+        produto.setQuantidade(10);
+        produto.setEstoqueMinimo(new BigDecimal("2.000"));
+        produto.setPreco(new BigDecimal("99.90"));
+        produto.setDataCadastro(LocalDate.now());
+        produto.setAtivo(true);
+        produto.setUnidadeMedida("UN");
+        produto.setCategoria(categoria);
+
+        Produto salvo = produtoService.salvar(produto);
+
+        mockMvc.perform(put("/api/produtos/" + salvo.getId() + "/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"INATIVO\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(salvo.getId()))
+                .andExpect(jsonPath("$.ativo").value(false));
+    }
+
+    @Test
+    void deveRejeitarStatusInvalidoPelaApi() throws Exception {
+
+        CategoriaProduto categoria = new CategoriaProduto();
+        categoria.setNome("Categoria Status Invalido " + System.currentTimeMillis());
+        categoria.setAtivo(true);
+        categoria = categoriaProdutoRepository.save(categoria);
+
+        Produto produto = new Produto();
+        produto.setCodigoBarras("STATUS-INVALIDO-" + System.currentTimeMillis());
+        produto.setNome("Produto Status Invalido");
+        produto.setQuantidade(10);
+        produto.setEstoqueMinimo(new BigDecimal("2.000"));
+        produto.setPreco(new BigDecimal("99.90"));
+        produto.setDataCadastro(LocalDate.now());
+        produto.setAtivo(true);
+        produto.setUnidadeMedida("UN");
+        produto.setCategoria(categoria);
+
+        Produto salvo = produtoService.salvar(produto);
+
+        mockMvc.perform(put("/api/produtos/" + salvo.getId() + "/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"INVALIDO\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"));
+    }
+
+    @Test
+    void deveRetornar404AoAlterarStatusDeProdutoInexistente() throws Exception {
+
+        mockMvc.perform(put("/api/produtos/999999999/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"INATIVO\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.path").value("/api/produtos/999999999/status"));
+    }
 
     @Test
     void deveSalvarProduto() {
@@ -363,7 +439,11 @@ class AlsportsApplicationTests {
 
         mockMvc.perform(get("/api/produtos"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.conteudo").isArray())
+                .andExpect(jsonPath("$.pagina").value(0))
+                .andExpect(jsonPath("$.tamanho").value(20))
+                .andExpect(jsonPath("$.totalElementos").isNumber())
+                .andExpect(jsonPath("$.totalPaginas").isNumber());
     }
 
     @Test
@@ -408,6 +488,50 @@ class AlsportsApplicationTests {
     }
 
     @Test
+    void deveExcluirCategoriaSemProdutosPelaApi() throws Exception {
+
+        CategoriaProduto categoria = new CategoriaProduto();
+        categoria.setNome("Categoria Exclusao " + System.currentTimeMillis());
+        categoria.setAtivo(true);
+        categoria = categoriaProdutoRepository.save(categoria);
+
+        mockMvc.perform(delete("/api/categorias/" + categoria.getId()))
+                .andExpect(status().isNoContent());
+
+        assertThat(categoriaProdutoRepository.existsById(categoria.getId()))
+                .isFalse();
+    }
+
+    @Test
+    void deveRetornar409AoExcluirCategoriaComProdutosPelaApi() throws Exception {
+
+        CategoriaProduto categoria = new CategoriaProduto();
+        categoria.setNome("Categoria Com Produto " + System.currentTimeMillis());
+        categoria.setAtivo(true);
+        categoria = categoriaProdutoRepository.save(categoria);
+
+        Produto produto = new Produto();
+        produto.setCodigoBarras("CAT-EXCLUSAO-" + System.currentTimeMillis());
+        produto.setNome("Produto Vinculado Categoria");
+        produto.setQuantidade(10);
+        produto.setEstoqueMinimo(new BigDecimal("2.000"));
+        produto.setPreco(new BigDecimal("99.90"));
+        produto.setDataCadastro(LocalDate.now());
+        produto.setAtivo(true);
+        produto.setUnidadeMedida("UN");
+        produto.setCategoria(categoria);
+        produtoRepository.save(produto);
+
+        mockMvc.perform(delete("/api/categorias/" + categoria.getId()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"));
+
+        assertThat(categoriaProdutoRepository.existsById(categoria.getId()))
+                .isTrue();
+    }
+
+    @Test
     void deveRetornar400QuandoJsonForMalformado() throws Exception {
 
         String jsonInvalido = """
@@ -429,5 +553,390 @@ class AlsportsApplicationTests {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error")
                         .value("Bad Request"));
+    }
+
+    private Produto criarProdutoParaMovimentacaoEstoque() {
+        CategoriaProduto categoria = new CategoriaProduto();
+        categoria.setNome("Categoria Estoque " + System.currentTimeMillis());
+        categoria.setAtivo(true);
+        categoria = categoriaProdutoRepository.save(categoria);
+
+        Produto produto = new Produto();
+        produto.setCodigoBarras("ESTOQUE-" + System.currentTimeMillis());
+        produto.setNome("Produto Estoque " + System.currentTimeMillis());
+        produto.setQuantidade(10);
+        produto.setEstoqueMinimo(new BigDecimal("2.000"));
+        produto.setPreco(new BigDecimal("99.90"));
+        produto.setDataCadastro(LocalDate.now());
+        produto.setAtivo(true);
+        produto.setUnidadeMedida("UN");
+        produto.setCategoria(categoria);
+
+        return produtoService.salvar(produto);
+    }
+
+    @Test
+    void deveReceberEstoquePelaApi() throws Exception {
+        Produto produto = criarProdutoParaMovimentacaoEstoque();
+
+        mockMvc.perform(post("/api/produtos/" + produto.getId() + "/estoque/entradas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quantidade\":5}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(produto.getId()))
+                .andExpect(jsonPath("$.quantidade").value(15));
+    }
+
+    @Test
+    void deveRetirarEstoquePelaApi() throws Exception {
+        Produto produto = criarProdutoParaMovimentacaoEstoque();
+
+        mockMvc.perform(post("/api/produtos/" + produto.getId() + "/estoque/saidas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quantidade\":4}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(produto.getId()))
+                .andExpect(jsonPath("$.quantidade").value(6));
+    }
+
+    @Test
+    void deveRejeitarQuantidadeInvalidaNaMovimentacao() throws Exception {
+        Produto produto = criarProdutoParaMovimentacaoEstoque();
+
+        mockMvc.perform(post("/api/produtos/" + produto.getId() + "/estoque/entradas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quantidade\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+
+        mockMvc.perform(post("/api/produtos/" + produto.getId() + "/estoque/saidas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quantidade\":-2}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void deveRejeitarSaidaMaiorQueEstoqueDisponivel() throws Exception {
+        Produto produto = criarProdutoParaMovimentacaoEstoque();
+
+        mockMvc.perform(post("/api/produtos/" + produto.getId() + "/estoque/saidas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quantidade\":11}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+
+        entityManager.clear();
+
+        assertThat(produtoRepository.findById(produto.getId()))
+                .isPresent()
+                .get()
+                .extracting(Produto::getQuantidade)
+                .isEqualTo(10);
+    }
+
+    @Test
+    void deveRetornar404AoMovimentarEstoqueDeProdutoInexistente() throws Exception {
+        mockMvc.perform(post("/api/produtos/999999999/estoque/entradas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quantidade\":5}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+    @Test
+    void deveNormalizarPaginaNegativaParaPrimeiraPagina() throws Exception {
+
+        mockMvc.perform(get("/api/produtos").param("page", "-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pagina").value(0));
+    }
+
+    @Test
+    void deveLimitarTamanhoExcessivoAoMaximoPermitido() throws Exception {
+
+        mockMvc.perform(get("/api/produtos").param("size", "101"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tamanho").value(100));
+    }
+
+    @Test
+    void deveRejeitarCampoDeOrdenacaoNaoPermitido() throws Exception {
+
+        mockMvc.perform(get("/api/produtos").param("sort", "campoInexistente"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void deveRespeitarTamanhoPersonalizadoNaPaginacao() throws Exception {
+
+        mockMvc.perform(get("/api/produtos")
+                .param("page", "0")
+                .param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo").isArray())
+                .andExpect(jsonPath("$.conteudo.length()").value(
+                        org.hamcrest.Matchers.lessThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.pagina").value(0))
+                .andExpect(jsonPath("$.tamanho").value(1));
+    }
+
+    @Test
+    void deveCombinarFiltrosNaListagemDeProdutos() throws Exception {
+        String identificador = String.valueOf(System.currentTimeMillis());
+
+        CategoriaProduto categoria = new CategoriaProduto();
+        categoria.setNome("Categoria Filtros " + identificador);
+        categoria.setAtivo(true);
+        categoria = categoriaProdutoRepository.save(categoria);
+
+        Produto produtoEncontrado = new Produto();
+        produtoEncontrado.setCodigoBarras("FILTRO-OK-" + identificador);
+        produtoEncontrado.setNome("Filtro Bola " + identificador);
+        produtoEncontrado.setQuantidade(5);
+        produtoEncontrado.setEstoqueMinimo(new BigDecimal("1.000"));
+        produtoEncontrado.setPreco(new BigDecimal("49.90"));
+        produtoEncontrado.setDataCadastro(LocalDate.now());
+        produtoEncontrado.setAtivo(true);
+        produtoEncontrado.setUnidadeMedida("UN");
+        produtoEncontrado.setCategoria(categoria);
+        produtoEncontrado = produtoService.salvar(produtoEncontrado);
+
+        Produto produtoForaDaFaixa = new Produto();
+        produtoForaDaFaixa.setCodigoBarras("FILTRO-FORA-" + identificador);
+        produtoForaDaFaixa.setNome("Filtro Chuteira " + identificador);
+        produtoForaDaFaixa.setQuantidade(20);
+        produtoForaDaFaixa.setEstoqueMinimo(new BigDecimal("1.000"));
+        produtoForaDaFaixa.setPreco(new BigDecimal("99.90"));
+        produtoForaDaFaixa.setDataCadastro(LocalDate.now());
+        produtoForaDaFaixa.setAtivo(true);
+        produtoForaDaFaixa.setUnidadeMedida("UN");
+        produtoForaDaFaixa.setCategoria(categoria);
+        produtoService.salvar(produtoForaDaFaixa);
+
+        mockMvc.perform(get("/api/produtos")
+                .param("nome", "filtro bola " + identificador)
+                .param("ativo", "true")
+                .param("quantidadeMinima", "1")
+                .param("quantidadeMaxima", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo").isArray())
+                .andExpect(jsonPath("$.conteudo.length()").value(1))
+                .andExpect(jsonPath("$.conteudo[0].id").value(
+                        produtoEncontrado.getId()))
+                .andExpect(jsonPath("$.conteudo[0].ativo").value(true))
+                .andExpect(jsonPath("$.conteudo[0].quantidade").value(5));
+    }
+
+    @Test
+    void deveAlterarProdutoPelaApi() throws Exception {
+
+        Produto produto = criarProdutoParaMovimentacaoEstoque();
+
+        String json = """
+                {
+                    "nome": "Produto Alterado %d",
+                    "estoqueMinimo": 4.000,
+                    "preco": 59.90,
+                    "categoriaId": %d,
+                    "fornecedorId": null
+                }
+                """.formatted(
+                System.currentTimeMillis(),
+                produto.getCategoria().getId());
+
+        mockMvc.perform(put("/api/produtos/" + produto.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(produto.getId()))
+                .andExpect(jsonPath("$.nome")
+                        .value(containsString("Produto Alterado")))
+                .andExpect(jsonPath("$.preco").value(59.90))
+                .andExpect(jsonPath("$.quantidade").value(10));
+    }
+
+    @Test
+    void deveRetornar404AoAlterarProdutoInexistente() throws Exception {
+
+        String json = """
+                {
+                    "nome": "Produto Inexistente",
+                    "estoqueMinimo": 4.000,
+                    "preco": 59.90,
+                    "categoriaId": 1,
+                    "fornecedorId": null
+                }
+                """;
+
+        mockMvc.perform(put("/api/produtos/999999999")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void deveRetornar409AoAlterarProdutoComNomeDuplicado() throws Exception {
+
+        Produto primeiro = criarProdutoParaMovimentacaoEstoque();
+        Produto segundo = criarProdutoParaMovimentacaoEstoque();
+
+        String json = """
+                {
+                    "nome": "%s",
+                    "estoqueMinimo": 2.000,
+                    "preco": 99.90,
+                    "categoriaId": %d,
+                    "fornecedorId": null
+                }
+                """.formatted(
+                segundo.getNome(),
+                primeiro.getCategoria().getId());
+
+        mockMvc.perform(put("/api/produtos/" + primeiro.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    void deveExcluirProdutoPelaApi() throws Exception {
+
+        Produto produto = criarProdutoParaMovimentacaoEstoque();
+
+        mockMvc.perform(delete("/api/produtos/" + produto.getId()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/produtos/" + produto.getId()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveAlterarCategoriaPelaApi() throws Exception {
+
+        CategoriaProduto categoria = new CategoriaProduto();
+        categoria.setNome("Categoria Alterar " + System.currentTimeMillis());
+        categoria.setAtivo(true);
+        categoria = categoriaProdutoRepository.save(categoria);
+
+        String json = """
+                {
+                    "nome": "Categoria Alterada %d"
+                }
+                """.formatted(System.currentTimeMillis());
+
+        mockMvc.perform(put("/api/categorias/" + categoria.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(categoria.getId()))
+                .andExpect(jsonPath("$.nome")
+                        .value(containsString("Categoria Alterada")));
+    }
+
+    @Test
+    void deveAlterarStatusCategoriaPelaApi() throws Exception {
+
+        CategoriaProduto categoria = new CategoriaProduto();
+        categoria.setNome("Categoria Status " + System.currentTimeMillis());
+        categoria.setAtivo(true);
+        categoria = categoriaProdutoRepository.save(categoria);
+
+        mockMvc.perform(put("/api/categorias/" + categoria.getId() + "/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"INATIVO\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(categoria.getId()))
+                .andExpect(jsonPath("$.ativo").value(false));
+    }
+
+    @Test
+    void deveRetornar409AoAlterarCategoriaComNomeDuplicado() throws Exception {
+
+        String identificador = String.valueOf(System.currentTimeMillis());
+
+        CategoriaProduto primeira = new CategoriaProduto();
+        primeira.setNome("Categoria Primeira " + identificador);
+        primeira.setAtivo(true);
+        primeira = categoriaProdutoRepository.save(primeira);
+
+        CategoriaProduto segunda = new CategoriaProduto();
+        segunda.setNome("Categoria Segunda " + identificador);
+        segunda.setAtivo(true);
+        categoriaProdutoRepository.save(segunda);
+
+        String json = """
+                {
+                    "nome": "%s"
+                }
+                """.formatted(segunda.getNome());
+
+        mockMvc.perform(put("/api/categorias/" + primeira.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    void devePesquisarCategoriasComPaginacaoEFiltros() throws Exception {
+
+        String identificador = String.valueOf(System.currentTimeMillis());
+
+        CategoriaProduto encontrada = new CategoriaProduto();
+        encontrada.setNome("PesquisaFiltro" + identificador);
+        encontrada.setAtivo(true);
+        encontrada = categoriaProdutoRepository.save(encontrada);
+
+        CategoriaProduto foraDoFiltro = new CategoriaProduto();
+        foraDoFiltro.setNome("OutroFiltro" + identificador);
+        foraDoFiltro.setAtivo(true);
+        categoriaProdutoRepository.save(foraDoFiltro);
+
+        mockMvc.perform(get("/api/categorias")
+                .param("nome", "pesquisafiltro" + identificador)
+                .param("ativo", "true")
+                .param("page", "0")
+                .param("size", "10")
+                .param("sort", "id,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo").isArray())
+                .andExpect(jsonPath("$.conteudo.length()").value(1))
+                .andExpect(jsonPath("$.conteudo[0].id")
+                        .value(encontrada.getId()))
+                .andExpect(jsonPath("$.pagina").value(0))
+                .andExpect(jsonPath("$.tamanho").value(10))
+                .andExpect(jsonPath("$.totalElementos").value(1))
+                .andExpect(jsonPath("$.totalPaginas").value(1))
+                .andExpect(jsonPath("$.primeira").value(true))
+                .andExpect(jsonPath("$.ultima").value(true));
+    }
+
+    @Test
+    void deveRejeitarOrdenacaoInvalidaNaListagemDeCategorias() throws Exception {
+
+        mockMvc.perform(get("/api/categorias")
+                .param("sort", "campoInexistente"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void bancoDeveImpedirNomeDeCategoriaDuplicadoIgnorandoMaiusculas() {
+
+        String identificador = String.valueOf(System.currentTimeMillis());
+
+        jdbcTemplate.update(
+                "INSERT INTO categoria_produto (nome, ativo) VALUES (?, ?)",
+                "Papelaria " + identificador,
+                true);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                "INSERT INTO categoria_produto (nome, ativo) VALUES (?, ?)",
+                "PAPELARIA " + identificador,
+                true))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

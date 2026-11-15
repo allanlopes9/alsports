@@ -36,15 +36,15 @@ public class Produto {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
-            name = "categoria_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_produto_categoria"))
+        name = "categoria_id",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "fk_produto_categoria"))
     private CategoriaProduto categoria;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
-            name = "fornecedor_id",
-            foreignKey = @ForeignKey(name = "fk_produto_fornecedor"))
+        name = "fornecedor_id",
+        foreignKey = @ForeignKey(name = "fk_produto_fornecedor"))
     private Fornecedor fornecedor;
 
     public Long getId() {
@@ -77,6 +77,86 @@ public class Produto {
 
     public void setQuantidade(Integer quantidade) {
         this.quantidade = quantidade;
+    }
+
+    public void receberEstoque(Integer quantidade) {
+        validarQuantidadeMovimentacao(quantidade);
+
+        if (this.quantidade == null
+            || this.quantidade > Integer.MAX_VALUE - quantidade) {
+            throw new IllegalArgumentException(
+                "A quantidade excede o limite permitido para o estoque");
+        }
+
+        this.quantidade += quantidade;
+    }
+
+    public void retirarEstoque(Integer quantidade) {
+        validarQuantidadeMovimentacao(quantidade);
+
+        if (this.quantidade == null || quantidade > this.quantidade) {
+            throw new IllegalArgumentException(
+                "Quantidade para retirada maior que o estoque disponível");
+        }
+
+        this.quantidade -= quantidade;
+    }
+
+    private void validarQuantidadeMovimentacao(Integer quantidade) {
+        if (quantidade == null || quantidade <= 0) {
+            throw new IllegalArgumentException(
+                "A quantidade da movimentação deve ser positiva");
+        }
+    }
+
+    public void alterarNome(String novoNome) {
+        if (novoNome == null || novoNome.isBlank()) {
+            throw new IllegalArgumentException(
+                "Nome do produto é obrigatório");
+        }
+
+        this.nome = novoNome.trim();
+    }
+
+    public void alterarPreco(BigDecimal novoPreco) {
+        if (novoPreco == null
+            || novoPreco.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException(
+                "Preço não pode ser negativo");
+        }
+
+        this.preco = novoPreco;
+    }
+
+    public void alterarEstoqueMinimo(BigDecimal novoEstoqueMinimo) {
+        if (novoEstoqueMinimo == null
+            || novoEstoqueMinimo.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException(
+                "Estoque mínimo não pode ser negativo");
+        }
+
+        this.estoqueMinimo = novoEstoqueMinimo;
+    }
+
+    public void alterarCategoria(CategoriaProduto novaCategoria) {
+        if (novaCategoria == null) {
+            throw new IllegalArgumentException(
+                "Categoria de produto é obrigatória");
+        }
+
+        this.categoria = novaCategoria;
+    }
+
+    public void alterarFornecedor(Fornecedor novoFornecedor) {
+        this.fornecedor = novoFornecedor;
+    }
+
+    public void ativar() {
+        this.ativo = true;
+    }
+
+    public void inativar() {
+        this.ativo = false;
     }
 
     public BigDecimal getEstoqueMinimo() {
