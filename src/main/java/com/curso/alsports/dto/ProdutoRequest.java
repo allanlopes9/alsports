@@ -10,42 +10,86 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Dados para cadastrar um produto")
 public class ProdutoRequest {
 
+    @Schema(
+        description = "Código de barras único do produto, com no máximo 50 caracteres",
+        example = "7891234567890"
+    )
     @NotBlank
     @Size(max = 50)
     private String codigoBarras;
 
+    @Schema(
+        description = "Nome comercial do produto, com no máximo 150 caracteres",
+        example = "Bola de futebol"
+    )
     @NotBlank
     @Size(max = 150)
     private String nome;
 
+    @Schema(
+        description = "Saldo inicial em estoque, que não pode ser negativo",
+        example = "10"
+    )
     @NotNull
     @PositiveOrZero
     private Integer quantidade;
 
+    @Schema(
+        description = "Quantidade mínima desejada para reposição, que não pode ser negativa",
+        example = "5.000"
+    )
     @NotNull
     @DecimalMin(value = "0.000")
     private BigDecimal estoqueMinimo;
 
+    @Schema(
+        description = "Preço unitário do produto, que não pode ser negativo",
+        example = "89.90"
+    )
     @NotNull
     @DecimalMin(value = "0.00")
     private BigDecimal preco;
 
+    @Schema(
+        description = "Data de cadastro do produto",
+        example = "2026-11-04"
+    )
     @NotNull
     private LocalDate dataCadastro;
 
+    @Schema(
+        description = "Indica se o produto está ativo",
+        example = "true"
+    )
     @NotNull
     private Boolean ativo;
 
+    @Schema(
+        description = "Unidade de medida do produto, com no máximo 30 caracteres",
+        example = "UN"
+    )
     @NotBlank
     @Size(max = 30)
     private String unidadeMedida;
 
+    @Schema(
+        description = "Identificador de uma categoria existente",
+        example = "1"
+    )
     @NotNull
     @Positive
     private Long categoriaId;
 
+    @Schema(
+        description = "Identificador opcional de um fornecedor existente",
+        example = "1",
+        nullable = true
+    )
     @Positive
     private Long fornecedorId;
 

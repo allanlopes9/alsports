@@ -1,20 +1,45 @@
+
 package com.curso.alsports.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Representação completa de um produto")
 public class ProdutoResponse {
 
+    @Schema(description = "Identificador único do produto", example = "1")
     private Long id;
+
+    @Schema(description = "Código de barras do produto", example = "7891234567890")
     private String codigoBarras;
+
+    @Schema(description = "Nome comercial do produto", example = "Bola de futebol")
     private String nome;
+
+    @Schema(description = "Quantidade atual disponível em estoque", example = "25")
     private Integer quantidade;
+
+    @Schema(description = "Quantidade mínima desejada para reposição", example = "5.000")
     private BigDecimal estoqueMinimo;
+
+    @Schema(description = "Preço unitário do produto", example = "89.90")
     private BigDecimal preco;
+
+    @Schema(description = "Data de cadastro do produto", example = "2026-11-04")
     private LocalDate dataCadastro;
+
+    @Schema(description = "Indica se o produto está ativo", example = "true")
     private Boolean ativo;
+
+    @Schema(description = "Unidade de medida do produto", example = "UN")
     private String unidadeMedida;
+
+    @Schema(description = "Categoria à qual o produto pertence")
     private CategoriaProdutoResponse categoria;
+
+    @Schema(description = "Fornecedor do produto, quando informado", nullable = true)
     private FornecedorResponse fornecedor;
 
     public String getCodigoBarras() {

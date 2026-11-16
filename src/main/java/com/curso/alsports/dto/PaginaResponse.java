@@ -6,20 +6,52 @@ import java.util.function.Function;
 
 import org.springframework.data.domain.Page;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(
+    description = "Página de resultados da API, independente da representação interna do Spring Data"
+)
 public class PaginaResponse<T> {
 
+    @Schema(
+        description = "Elementos contidos na página atual"
+    )
     private List<T> conteudo;
 
+    @Schema(
+        description = "Número da página, iniciado em zero",
+        example = "0"
+    )
     private int pagina;
 
+    @Schema(
+        description = "Quantidade de elementos solicitados por página",
+        example = "20"
+    )
     private int tamanho;
 
+    @Schema(
+        description = "Quantidade total de elementos encontrados",
+        example = "37"
+    )
     private long totalElementos;
 
+    @Schema(
+        description = "Quantidade total de páginas disponíveis",
+        example = "2"
+    )
     private int totalPaginas;
 
+    @Schema(
+        description = "Indica se esta é a primeira página",
+        example = "true"
+    )
     private boolean primeira;
 
+    @Schema(
+        description = "Indica se esta é a última página",
+        example = "false"
+    )
     private boolean ultima;
 
     public PaginaResponse() {

@@ -18,6 +18,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.curso.alsports.dto.MovimentacaoEstoqueRequest;
 import com.curso.alsports.dto.PaginaResponse;
 import com.curso.alsports.dto.ProdutoMapper;
@@ -25,11 +33,13 @@ import com.curso.alsports.dto.ProdutoRequest;
 import com.curso.alsports.dto.ProdutoResponse;
 import com.curso.alsports.dto.ProdutoUpdateRequest;
 import com.curso.alsports.dto.StatusRequest;
+import com.curso.alsports.exception.ApiError;
 import com.curso.alsports.model.Produto;
 import com.curso.alsports.service.ProdutoService;
 
 @RestController
 @RequestMapping("/api/produtos")
+@Tag(name = "Produtos", description = "Operações de gerenciamento de produtos e estoque")
 public class ProdutoController {
 
     private final ProdutoService service;
@@ -43,6 +53,44 @@ public class ProdutoController {
         this.produtoMapper = produtoMapper;
     }
 
+    @Operation(
+        summary = "Cadastrar produto",
+        description = "Realiza o cadastro de um novo produto, vinculando-o a uma categoria e, opcionalmente, a um fornecedor."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Produto cadastrado com sucesso",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ProdutoResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Dados inválidos ou corpo da requisição em formato JSON inválido",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Categoria ou fornecedor não encontrado",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "409",
+            description = "Código de barras ou nome já utilizado por outro produto",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
     @PostMapping
     public ResponseEntity<ProdutoResponse> salvar(
         @Valid @RequestBody ProdutoRequest request) {
@@ -59,21 +107,67 @@ public class ProdutoController {
             .body(produtoMapper.toResponse(produtoSalvo));
     }
 
+    @Operation(
+        summary = "Listar produtos",
+        description = "Consulta os produtos cadastrados com paginação, ordenação e filtros opcionais por nome, situação, categoria, fornecedor e quantidade em estoque. Os parâmetros de paginação são page (iniciado em zero), size e sort (campo,direção)."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Lista de produtos consultada com sucesso"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Parâmetros inválidos para paginação, ordenação ou filtros",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
     @GetMapping
     public ResponseEntity<PaginaResponse<ProdutoResponse>> listar(
 
+        @Parameter(
+            description = "Filtra produtos pelo nome, permitindo buscar por parte do texto.",
+            example = "Bola"
+        )
         @RequestParam(required = false) String nome,
 
+        @Parameter(
+            description = "Filtra produtos pela situação: true para ativos e false para inativos.",
+            example = "true"
+        )
         @RequestParam(required = false) Boolean ativo,
 
+        @Parameter(
+            description = "Identificador da categoria utilizada no filtro.",
+            example = "1"
+        )
         @RequestParam(required = false) Long categoriaId,
 
+        @Parameter(
+            description = "Identificador do fornecedor utilizado no filtro.",
+            example = "1"
+        )
         @RequestParam(required = false) Long fornecedorId,
 
+        @Parameter(
+            description = "Quantidade mínima em estoque para filtrar os produtos.",
+            example = "5"
+        )
         @RequestParam(required = false) Integer quantidadeMinima,
 
+        @Parameter(
+            description = "Quantidade máxima em estoque para filtrar os produtos.",
+            example = "50"
+        )
         @RequestParam(required = false) Integer quantidadeMaxima,
 
+        @Parameter(
+            description = "Filtra produtos abaixo do estoque mínimo: true para abaixo do mínimo e false para os demais.",
+            example = "true"
+        )
         @RequestParam(required = false) Boolean abaixoEstoqueMinimo,
 
         @PageableDefault(
@@ -114,8 +208,35 @@ public class ProdutoController {
                 produtoMapper::toResponse));
     }
 
+    @Operation(
+        summary = "Buscar produto por ID",
+        description = "Consulta os dados de um produto utilizando seu identificador único."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Produto encontrado com sucesso",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ProdutoResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Produto não encontrado",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
     @GetMapping("/{id}")
     public ResponseEntity<ProdutoResponse> buscarPorId(
+        @Parameter(
+            description = "Identificador único do produto",
+            example = "1",
+            required = true
+        )
         @PathVariable Long id) {
 
         Produto produto = service.buscarPorId(id);
@@ -124,8 +245,51 @@ public class ProdutoController {
             produtoMapper.toResponse(produto));
     }
 
+    @Operation(
+        summary = "Alterar produto",
+        description = "Substitui nome, estoque mínimo, preço, categoria e fornecedor. Código de barras, saldo em estoque, data de cadastro e situação possuem fluxos próprios."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Produto alterado com sucesso",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ProdutoResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Dados inválidos",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Produto, categoria ou fornecedor não encontrado",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "409",
+            description = "Nome já utilizado por outro produto",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
     @PutMapping("/{id}")
     public ResponseEntity<ProdutoResponse> atualizar(
+        @Parameter(
+            description = "Identificador único do produto",
+            example = "1",
+            required = true
+        )
         @PathVariable Long id,
         @Valid @RequestBody ProdutoUpdateRequest request) {
 
@@ -141,8 +305,43 @@ public class ProdutoController {
             produtoMapper.toResponse(produtoAtualizado));
     }
 
+    @Operation(
+        summary = "Receber estoque",
+        description = "Soma uma quantidade positiva ao saldo atual do produto. A operação não é idempotente: repetir a chamada repete o efeito."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Entrada de estoque registrada com sucesso",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ProdutoResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Quantidade inválida ou que excede o limite permitido para o estoque",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Produto não encontrado",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
     @PostMapping("/{id}/estoque/entradas")
     public ResponseEntity<ProdutoResponse> receberEstoque(
+        @Parameter(
+            description = "Identificador único do produto",
+            example = "1",
+            required = true
+        )
         @PathVariable Long id,
         @Valid @RequestBody MovimentacaoEstoqueRequest request) {
 
@@ -153,8 +352,43 @@ public class ProdutoController {
             produtoMapper.toResponse(produtoAtualizado));
     }
 
+    @Operation(
+        summary = "Retirar estoque",
+        description = "Subtrai uma quantidade positiva do saldo atual. A retirada não pode exceder o estoque disponível e a operação não é idempotente."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Saída de estoque registrada com sucesso",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ProdutoResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Quantidade inválida ou maior que o estoque disponível",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Produto não encontrado",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
     @PostMapping("/{id}/estoque/saidas")
     public ResponseEntity<ProdutoResponse> retirarEstoque(
+        @Parameter(
+            description = "Identificador único do produto",
+            example = "1",
+            required = true
+        )
         @PathVariable Long id,
         @Valid @RequestBody MovimentacaoEstoqueRequest request) {
 
@@ -165,8 +399,43 @@ public class ProdutoController {
             produtoMapper.toResponse(produtoAtualizado));
     }
 
+    @Operation(
+        summary = "Alterar status do produto",
+        description = "Ativa ou inativa um produto existente."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Status do produto alterado com sucesso",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ProdutoResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Status inválido ou ausente",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Produto não encontrado",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
     @PutMapping("/{id}/status")
     public ResponseEntity<ProdutoResponse> alterarStatus(
+        @Parameter(
+            description = "Identificador único do produto",
+            example = "1",
+            required = true
+        )
         @PathVariable Long id,
         @Valid @RequestBody StatusRequest request) {
 
@@ -177,6 +446,24 @@ public class ProdutoController {
             produtoMapper.toResponse(produtoAtualizado));
     }
 
+    @Operation(
+        summary = "Excluir produto",
+        description = "Exclui fisicamente um produto existente pelo identificador."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "204",
+            description = "Produto excluído com sucesso"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Produto não encontrado",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
 
