@@ -1,8 +1,8 @@
 {
     "info":  {
                  "_postman_id":  "alsports-aula-07",
-                 "name":  "AL Sports - Aula 07",
-                 "description":  "Collection da Aula 07 - API REST, DTOs, mapeadores e testes.",
+                 "name":  "AL Sports - Aula 10",
+                 "description":  "Collection acumulada do AL Sports, com a pasta 05 - Aula 10 (pessoas, clientes, colaboradores, vendas, CPF/CNPJ e integridade referencial).",
                  "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
              },
     "variable":  [
@@ -20,6 +20,42 @@
                      },
                      {
                          "key":  "produtoId",
+                         "value":  ""
+                     },
+                     {
+                           "key":  "pessoaClienteId",
+                         "value":  ""
+                     },
+                     {
+                           "key":  "pessoaVendedorId",
+                         "value":  ""
+                     },
+                     {
+                           "key":  "clienteId",
+                         "value":  ""
+                     },
+                     {
+                           "key":  "colaboradorId",
+                         "value":  ""
+                     },
+                     {
+                           "key":  "vendaId",
+                         "value":  ""
+                     },
+                     {
+                           "key":  "itemId",
+                         "value":  ""
+                     },
+                     {
+                           "key":  "segundaVendaId",
+                         "value":  ""
+                     },
+                     {
+                           "key":  "cpfGerado",
+                         "value":  ""
+                     },
+                     {
+                           "key":  "emailGerado",
                          "value":  ""
                      }
                  ],
@@ -755,6 +791,856 @@
                               }
                           }
                       ]
-                  }
+                  },
+{
+    "name": "05 - Aula 10",
+    "item": [
+        {
+            "name": "13 - Criar pessoa (cliente)",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "function digitoCpf(base, pesoInicial) {",
+                            "    var soma = 0;",
+                            "    for (var i = 0; i < base.length; i++) {",
+                            "        soma += parseInt(base.charAt(i), 10) * (pesoInicial - i);",
+                            "    }",
+                            "    var resto = soma % 11;",
+                            "    return resto < 2 ? 0 : 11 - resto;",
+                            "}",
+                            "var base = String(Math.floor(Math.random() * 900000000) + 100000000);",
+                            "var primeiro = digitoCpf(base, 10);",
+                            "var segundo = digitoCpf(base + primeiro, 11);",
+                            "pm.collectionVariables.set(\"cpfGerado\", base + primeiro + segundo);",
+                            "pm.collectionVariables.set(\"emailGerado\", \"ana.\" + Date.now() + \"@example.com\");"
+                        ]
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Pessoa criada com 201\", function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "pm.test(\"Pessoa inicia ATIVO\", function () {",
+                            "    pm.expect(pm.response.json().status).to.eql(\"ATIVO\");",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set(\"pessoaClienteId\", pm.response.json().id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"nome\":\"Ana Souza\",\"email\":\"{{emailGerado}}\",\"cpf\":\"{{cpfGerado}}\"}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/pessoas",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "pessoas"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "14 - Criar cliente",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Cliente criado com 201\", function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set(\"clienteId\", pm.response.json().id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"pessoaId\":{{pessoaClienteId}},\"telefone\":\"(11) 99999-0000\"}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/clientes",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "clientes"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "15 - Criar pessoa (vendedor)",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "function digitoCpf(base, pesoInicial) {",
+                            "    var soma = 0;",
+                            "    for (var i = 0; i < base.length; i++) {",
+                            "        soma += parseInt(base.charAt(i), 10) * (pesoInicial - i);",
+                            "    }",
+                            "    var resto = soma % 11;",
+                            "    return resto < 2 ? 0 : 11 - resto;",
+                            "}",
+                            "var base = String(Math.floor(Math.random() * 900000000) + 100000000);",
+                            "var primeiro = digitoCpf(base, 10);",
+                            "var segundo = digitoCpf(base + primeiro, 11);",
+                            "pm.collectionVariables.set(\"cpfGerado\", base + primeiro + segundo);",
+                            "pm.collectionVariables.set(\"emailGerado\", \"bruno.\" + Date.now() + \"@example.com\");"
+                        ]
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Pessoa criada com 201\", function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set(\"pessoaVendedorId\", pm.response.json().id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"nome\":\"Bruno Lima\",\"email\":\"{{emailGerado}}\",\"cpf\":\"{{cpfGerado}}\"}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/pessoas",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "pessoas"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "16 - Criar colaborador",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Colaborador criado com 201\", function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "pm.test(\"Função informada é preservada\", function () {",
+                            "    pm.expect(pm.response.json().funcao).to.eql(\"VENDEDOR\");",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set(\"colaboradorId\", pm.response.json().id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"pessoaId\":{{pessoaVendedorId}},\"matricula\":\"VEN-{{$timestamp}}\",\"funcao\":\"VENDEDOR\",\"dataAdmissao\":\"2026-09-29\"}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/colaboradores",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "colaboradores"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "17 - Abrir venda",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Venda aberta com 201\", function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "pm.test(\"Venda inicia ABERTA e sem itens\", function () {",
+                            "    const body = pm.response.json();",
+                            "    pm.expect(body.status).to.eql(\"ABERTA\");",
+                            "    pm.expect(body.itens).to.be.an(\"array\").that.is.empty;",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set(\"vendaId\", pm.response.json().id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"clienteId\":{{clienteId}},\"vendedorId\":{{colaboradorId}}}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/vendas",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "vendas"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "18 - Incluir item",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Item incluído com 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Total calculado a partir do item\", function () {",
+                            "    pm.expect(pm.response.json().total).to.be.a(\"number\");",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set(\"itemId\", pm.response.json().itens[0].id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"produtoId\":{{produtoId}},\"quantidade\":2}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/vendas/{{vendaId}}/itens",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "vendas",
+                        "{{vendaId}}",
+                        "itens"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "19 - Remover item",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Item removido com 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Venda fica sem itens\", function () {",
+                            "    pm.expect(pm.response.json().itens).to.be.an(\"array\").that.is.empty;",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/vendas/{{vendaId}}/itens/{{itemId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "vendas",
+                        "{{vendaId}}",
+                        "itens",
+                        "{{itemId}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "20 - Reincluir item",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Item reincluído com 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set(\"itemId\", pm.response.json().itens[0].id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"produtoId\":{{produtoId}},\"quantidade\":1}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/vendas/{{vendaId}}/itens",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "vendas",
+                        "{{vendaId}}",
+                        "itens"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "21 - Finalizar venda",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Venda finalizada com 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Status passa a FINALIZADA\", function () {",
+                            "    pm.expect(pm.response.json().status).to.eql(\"FINALIZADA\");",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/vendas/{{vendaId}}/finalizacao",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "vendas",
+                        "{{vendaId}}",
+                        "finalizacao"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "22 - Abrir segunda venda",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Segunda venda aberta com 201\", function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "pm.collectionVariables.set(\"segundaVendaId\", pm.response.json().id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"clienteId\":{{clienteId}},\"vendedorId\":{{colaboradorId}}}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/vendas",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "vendas"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "23 - Cancelar venda",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Venda cancelada com 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Status passa a CANCELADA\", function () {",
+                            "    pm.expect(pm.response.json().status).to.eql(\"CANCELADA\");",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/vendas/{{segundaVendaId}}/cancelamento",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "vendas",
+                        "{{segundaVendaId}}",
+                        "cancelamento"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "24 - Excluir produto vendido - 409",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Produto vendido não pode ser excluído\", function () {",
+                            "    pm.response.to.have.status(409);",
+                            "});",
+                            "",
+                            "pm.test(\"Erro indica vínculo com outros dados\", function () {",
+                            "    pm.expect(pm.response.json().message).to.include(\"vinculado a outros dados\");",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/produtos/{{produtoId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "produtos",
+                        "{{produtoId}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "25 - Pessoa com CPF inválido - 400",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"CPF inválido retorna 400\", function () {",
+                            "    pm.response.to.have.status(400);",
+                            "});",
+                            "",
+                            "pm.test(\"Erro é associado ao campo cpf\", function () {",
+                            "    pm.expect(pm.response.json().fields).to.have.property(\"cpf\");",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"nome\":\"Pessoa Inválida\",\"email\":\"invalida.{{$timestamp}}@example.com\",\"cpf\":\"11111111111\"}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/pessoas",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "pessoas"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "26 - Fornecedor com CNPJ inválido - 400",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"CNPJ com DV incorreto retorna 400\", function () {",
+                            "    pm.response.to.have.status(400);",
+                            "});",
+                            "",
+                            "pm.test(\"Erro é associado ao campo cnpj\", function () {",
+                            "    pm.expect(pm.response.json().fields).to.have.property(\"cnpj\");",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"razaoSocial\":\"Fornecedor Inválido Ltda\",\"cnpj\":\"11222333000182\"}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/fornecedores",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "fornecedores"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "27 - Venda fracionada",
+            "item": [
+                {
+                    "name": "27.1 - Abrir venda fracionada",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Venda fracionada aberta com 201\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.collectionVariables.set(\"vendaFracionadaId\", pm.response.json().id);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"clienteId\":{{clienteId}},\"vendedorId\":{{colaboradorId}}}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vendas",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vendas"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "27.2 - Incluir item fracionado (1.500)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Item fracionado incluído com 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "const body = pm.response.json();",
+                                    "",
+                                    "pm.test(\"Quantidade decimal preservada\", function () {",
+                                    "    pm.expect(body.itens[0].quantidade).to.be.closeTo(1.5, 0.0001);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Subtotal e total fracionados\", function () {",
+                                    "    pm.expect(body.itens[0].subtotal).to.be.closeTo(194.85, 0.01);",
+                                    "    pm.expect(body.total).to.be.closeTo(194.85, 0.01);",
+                                    "});",
+                                    "",
+                                    "pm.collectionVariables.set(\"itemFracionadoId\", body.itens[0].id);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"produtoId\":{{produtoId}},\"quantidade\":1.500}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vendas/{{vendaFracionadaId}}/itens",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vendas",
+                                "{{vendaFracionadaId}}",
+                                "itens"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "27.3 - Finalizar venda fracionada",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Venda fracionada finalizada com 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "const body = pm.response.json();",
+                                    "",
+                                    "pm.test(\"Status passa a FINALIZADA\", function () {",
+                                    "    pm.expect(body.status).to.eql(\"FINALIZADA\");",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Total fracionado preservado\", function () {",
+                                    "    pm.expect(body.total).to.be.closeTo(194.85, 0.01);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vendas/{{vendaFracionadaId}}/finalizacao",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vendas",
+                                "{{vendaFracionadaId}}",
+                                "finalizacao"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "27.4 - Consultar saldo fracionado",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Saldo consultado com 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Baixa fracionada aplicada ao estoque\", function () {",
+                                    "    pm.expect(pm.response.json().quantidade).to.be.closeTo(10.5, 0.0001);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/produtos/{{produtoId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "produtos",
+                                "{{produtoId}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "28 - Quantidade com mais de 3 casas - 400",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Quantidade com 4 casas retorna 400\", function () {",
+                            "    pm.response.to.have.status(400);",
+                            "});",
+                            "",
+                            "pm.test(\"Erro é associado ao campo quantidade\", function () {",
+                            "    pm.expect(pm.response.json().fields).to.have.property(\"quantidade\");",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"produtoId\":{{produtoId}},\"quantidade\":1.0001}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/vendas/{{vendaFracionadaId}}/itens",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "vendas",
+                        "{{vendaFracionadaId}}",
+                        "itens"
+                    ]
+                }
+            }
+        }
+    ]
+}
+
               ]
 }

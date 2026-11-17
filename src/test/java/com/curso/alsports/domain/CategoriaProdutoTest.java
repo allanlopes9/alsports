@@ -16,7 +16,7 @@ class CategoriaProdutoTest {
         CategoriaProduto categoria = new CategoriaProduto("Bolas");
         Produto produto = new Produto(
                 "Bola de Futebol",
-                10,
+                new BigDecimal("10.000"),
                 new BigDecimal("49.90"),
                 LocalDate.of(2026, 9, 7));
 
@@ -46,12 +46,12 @@ class CategoriaProdutoTest {
         CategoriaProduto categoria = new CategoriaProduto("Bolas");
         Produto produto1 = new Produto(
                 "Bola de Futebol",
-                10,
+                new BigDecimal("10.000"),
                 new BigDecimal("99.90"),
                 LocalDate.of(2026, 9, 7));
         Produto produto2 = new Produto(
                 "Bola de Futebol",
-                5,
+                new BigDecimal("5.000"),
                 new BigDecimal("89.90"),
                 LocalDate.of(2026, 9, 7));
 
@@ -71,7 +71,7 @@ class CategoriaProdutoTest {
 
         Produto produto = new Produto(
                 "Bola de Vôlei",
-                8,
+                new BigDecimal("8.000"),
                 new BigDecimal("79.90"),
                 LocalDate.of(2026, 9, 7));
 
@@ -89,7 +89,7 @@ class CategoriaProdutoTest {
         CategoriaProduto categoria = new CategoriaProduto("Meias");
         Produto produto = new Produto(
                 "Meia Esportiva",
-                20,
+                new BigDecimal("20.000"),
                 new BigDecimal("19.90"),
                 LocalDate.of(2026, 9, 7));
 

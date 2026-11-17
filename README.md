@@ -60,7 +60,7 @@ O produto é a principal entidade do sistema e possui:
 
 O código de barras é obrigatório e único.
 
-A quantidade em estoque não pode ser negativa e o estoque mínimo também possui validação para valores não negativos.
+A quantidade em estoque é armazenada como `NUMERIC(18,3)`, aceita até três casas decimais e não pode ser negativa. O estoque mínimo também possui validação para valores não negativos.
 
 ### Categoria
 
@@ -204,7 +204,9 @@ Atualmente existem:
 003-fornecedor-e-estoque-minimo.yaml
 004-add-constraints-produto.yaml
 005-add-codigo-barras-produto.yaml
+005-pessoas-clientes-vendas.yaml
 006-consolidate-categorias.yaml
+007-quantidade-decimal.yaml
 
 Entre as alterações realizadas estão:
 
@@ -220,7 +222,13 @@ Entre as alterações realizadas estão:
 - código de barras obrigatório;
 - código de barras único;
 - consolidação de categorias duplicadas;
-- nome de categoria único, ignorando maiúsculas, minúsculas e espaços nas extremidades.
+- nome de categoria único, ignorando maiúsculas, minúsculas e espaços nas extremidades;
+- criação das tabelas de pessoas, clientes, colaboradores, vendas e itens de venda;
+- conversão de `produto.quantidade` e `item_venda.quantidade` para `NUMERIC(18,3)`.
+
+O changeset `007-quantidade-decimal.yaml` converte as colunas `INTEGER` para `NUMERIC(18,3)` com `USING quantidade::NUMERIC(18,3)`, sem perda dos valores inteiros existentes. As constraints `ck_produto_quantidade` (`quantidade >= 0`) e `ck_item_venda_quantidade` (`quantidade > 0`) são recriadas após a conversão.
+
+O rollback desses changesets converte as colunas de volta para `INTEGER` e recria as constraints. Como a conversão para inteiro arredondaria frações, o rollback é bloqueado por uma verificação que falha caso existam quantidades fracionadas gravadas em `produto.quantidade` ou `item_venda.quantidade`.
 
 O arquivo principal das migrations é:
 
@@ -317,7 +325,7 @@ Exemplo:
 {
     "codigoBarras": "POSTMAN-BOLA-001",
     "nome": "Bola Postman",
-    "quantidade": 10,
+    "quantidade": 10.000,
     "estoqueMinimo": 2.000,
     "preco": 99.90,
     "dataCadastro": "2026-09-07",
@@ -329,6 +337,24 @@ Exemplo:
 
 O DTO possui validações para garantir que os dados recebidos sejam válidos antes da execução da regra de negócio.
 
+## Quantidades fracionadas
+
+A partir da Aula 10, as quantidades de produto e de item de venda são decimais, com até três casas decimais:
+
+- `produto.quantidade`: `NUMERIC(18,3)`, aceita `0.000` e valores positivos;
+- `item_venda.quantidade`: `NUMERIC(18,3)`, aceita valores positivos a partir de `0.001`.
+
+O valor máximo aceito é `999999999999999.999` (15 dígitos inteiros e 3 decimais). Valores com mais de três casas decimais são rejeitados, sem arredondamento silencioso.
+
+Exemplo de item de venda fracionado:
+
+{
+    "produtoId": 1,
+    "quantidade": 1.500
+}
+
+O subtotal do item é calculado multiplicando a quantidade fracionada pelo preço unitário registrado no momento da venda. O total da venda soma os subtotais e é arredondado para duas casas decimais com `HALF_UP`.
+
 ## Validações
 
 Entre as validações implementadas estão:
@@ -339,6 +365,9 @@ Entre as validações implementadas estão:
 - nome com no máximo 150 caracteres;
 - quantidade obrigatória;
 - quantidade não negativa;
+- quantidade com no máximo 3 casas decimais;
+- quantidade dentro da precisão `NUMERIC(18,3)`;
+- quantidade de item de venda positiva, com mínimo `0.001`;
 - estoque mínimo obrigatório;
 - estoque mínimo não negativo;
 - preço obrigatório;
@@ -364,6 +393,8 @@ Exemplos:
 - campos obrigatórios ausentes;
 - valores inválidos;
 - quantidade negativa;
+- quantidade com mais de três casas decimais;
+- quantidade acima da precisão permitida;
 - JSON inválido.
 
 ### HTTP 404 — Not Found
@@ -452,6 +483,11 @@ A collection contém cenários de:
 9. produto duplicado;
 10. JSON malformado.
 
+A pasta `05 - Aula 10` contém o fluxo de vendas. Além dos cenários de abertura, inclusão, remoção, finalização e cancelamento, a pasta possui:
+
+- `27 - Venda fracionada`: abre uma venda, inclui o item com `quantidade: 1.500`, valida subtotal e total, finaliza a venda e confere a baixa fracionada no estoque;
+- `28 - Quantidade com mais de 3 casas - 400`: envia `quantidade: 1.0001` e valida o retorno HTTP 400 com erro no campo `quantidade`.
+
 Os testes negativos verificam principalmente os códigos:
 
 400 Bad Request
@@ -510,7 +546,7 @@ Implementação da API REST, DTOs, mapeadores, validações, tratamento de erros
 
 ## Status do projeto
 
-**Projeto concluído até a Aula 07.**
+**Projeto concluído até a Aula 10.**
 
 Principais pontos implementados:
 
@@ -524,6 +560,7 @@ Principais pontos implementados:
 - [x] Produtos
 - [x] Fornecedores
 - [x] Estoque mínimo
+- [x] Quantidades fracionadas com até 3 casas decimais
 - [x] Código de barras
 - [x] Repositories
 - [x] Services

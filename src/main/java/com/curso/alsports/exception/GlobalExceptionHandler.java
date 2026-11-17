@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -97,9 +98,9 @@ public class GlobalExceptionHandler {
             .body(erro);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<ApiError> tratarRegraDeNegocio(
-        IllegalArgumentException ex,
+        RuntimeException ex,
         HttpServletRequest request) {
 
         ApiError erro = new ApiError(
@@ -112,6 +113,25 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
+            .body(erro);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> tratarIntegridade(
+        DataIntegrityViolationException ex,
+        HttpServletRequest request) {
+
+        ApiError erro = new ApiError(
+            Instant.now(),
+            HttpStatus.CONFLICT.value(),
+            HttpStatus.CONFLICT.getReasonPhrase(),
+            "O registro não pode ser removido porque está vinculado a outros dados. "
+                + "Considere inativá-lo em vez de excluí-lo.",
+            request.getRequestURI(),
+            null);
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
             .body(erro);
     }
 

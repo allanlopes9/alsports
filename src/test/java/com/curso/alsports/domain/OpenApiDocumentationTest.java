@@ -42,8 +42,61 @@ class OpenApiDocumentationTest {
             .andExpect(jsonPath("$.paths['/api/produtos/{id}/estoque/entradas'].post").exists())
             .andExpect(jsonPath("$.paths['/api/produtos/{id}/estoque/saidas'].post").exists())
 
+            // Pessoas
+            .andExpect(jsonPath("$.paths['/api/pessoas'].post").exists())
+            .andExpect(jsonPath("$.paths['/api/pessoas'].get").exists())
+            .andExpect(jsonPath("$.paths['/api/pessoas/{id}'].get").exists())
+            .andExpect(jsonPath("$.paths['/api/pessoas/{id}'].put").exists())
+            .andExpect(jsonPath("$.paths['/api/pessoas/{id}/status'].put").exists())
+
+            // Clientes e colaboradores
+            .andExpect(jsonPath("$.paths['/api/clientes'].post").exists())
+            .andExpect(jsonPath("$.paths['/api/clientes/{id}'].put").exists())
+            .andExpect(jsonPath("$.paths['/api/colaboradores'].post").exists())
+            .andExpect(jsonPath("$.paths['/api/colaboradores/{id}'].put").exists())
+
+            // Vendas
+            .andExpect(jsonPath("$.paths['/api/vendas'].post").exists())
+            .andExpect(jsonPath("$.paths['/api/vendas'].get").exists())
+            .andExpect(jsonPath("$.paths['/api/vendas/{id}'].get").exists())
+            .andExpect(jsonPath("$.paths['/api/vendas/{id}/itens'].post").exists())
+            .andExpect(jsonPath("$.paths['/api/vendas/{vendaId}/itens/{itemId}'].delete").exists())
+            .andExpect(jsonPath("$.paths['/api/vendas/{id}/finalizacao'].post").exists())
+            .andExpect(jsonPath("$.paths['/api/vendas/{id}/cancelamento'].post").exists())
+
             // Schemas
             .andExpect(jsonPath("$.components.schemas.ProdutoResponse").exists())
-            .andExpect(jsonPath("$.components.schemas.ApiError").exists());
+            .andExpect(jsonPath("$.components.schemas.ApiError").exists())
+            .andExpect(jsonPath("$.components.schemas.PessoaRequest").exists())
+            .andExpect(jsonPath("$.components.schemas.PessoaResponse").exists())
+            .andExpect(jsonPath("$.components.schemas.ClienteRequest").exists())
+            .andExpect(jsonPath("$.components.schemas.ClienteResponse").exists())
+            .andExpect(jsonPath("$.components.schemas.ColaboradorRequest").exists())
+            .andExpect(jsonPath("$.components.schemas.ColaboradorResponse").exists())
+            .andExpect(jsonPath("$.components.schemas.VendaRequest").exists())
+            .andExpect(jsonPath("$.components.schemas.VendaResponse").exists())
+            .andExpect(jsonPath("$.components.schemas.VendaResumoResponse").exists())
+            .andExpect(jsonPath("$.components.schemas.ItemVendaRequest").exists())
+            .andExpect(jsonPath("$.components.schemas.ItemVendaResponse").exists())
+
+            // Quantidades decimais com até três casas
+            .andExpect(jsonPath(
+                "$.components.schemas.ItemVendaRequest.properties.quantidade.type")
+                .value("number"))
+            .andExpect(jsonPath(
+                "$.components.schemas.ItemVendaRequest.properties.quantidade.example")
+                .value("1.5"))
+            .andExpect(jsonPath(
+                "$.components.schemas.ItemVendaResponse.properties.quantidade.type")
+                .value("number"))
+            .andExpect(jsonPath(
+                "$.components.schemas.ProdutoResponse.properties.quantidade.type")
+                .value("number"))
+
+            // Tags
+            .andExpect(jsonPath("$.tags[?(@.name == 'Pessoas')]").exists())
+            .andExpect(jsonPath("$.tags[?(@.name == 'Clientes')]").exists())
+            .andExpect(jsonPath("$.tags[?(@.name == 'Colaboradores')]").exists())
+            .andExpect(jsonPath("$.tags[?(@.name == 'Vendas')]").exists());
     }
 }

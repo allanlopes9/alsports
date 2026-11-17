@@ -18,8 +18,8 @@ public class ProdutoResponse {
     @Schema(description = "Nome comercial do produto", example = "Bola de futebol")
     private String nome;
 
-    @Schema(description = "Quantidade atual disponível em estoque", example = "25")
-    private Integer quantidade;
+    @Schema(description = "Quantidade atual disponível em estoque, com até 3 casas decimais", example = "25.000")
+    private BigDecimal quantidade;
 
     @Schema(description = "Quantidade mínima desejada para reposição", example = "5.000")
     private BigDecimal estoqueMinimo;
@@ -66,11 +66,11 @@ public class ProdutoResponse {
         this.nome = nome;
     }
 
-    public Integer getQuantidade() {
+    public BigDecimal getQuantidade() {
         return quantidade;
     }
 
-    public void setQuantidade(Integer quantidade) {
+    public void setQuantidade(BigDecimal quantidade) {
         this.quantidade = quantidade;
     }
 

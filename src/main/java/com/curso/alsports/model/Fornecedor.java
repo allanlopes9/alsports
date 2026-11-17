@@ -1,5 +1,7 @@
 package com.curso.alsports.model;
 
+import com.curso.alsports.domain.DocumentoFiscal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,8 +39,23 @@ public class Fornecedor {
 
     public Fornecedor(String razaoSocial, String cnpj) {
         this.razaoSocial = razaoSocial;
-        this.cnpj = cnpj;
+        this.cnpj = validarCnpj(cnpj);
         this.status = Status.ATIVO;
+    }
+
+    public void alterarDados(String razaoSocial, String cnpj) {
+        String cnpjValidado = validarCnpj(cnpj);
+
+        this.razaoSocial = razaoSocial;
+        this.cnpj = cnpjValidado;
+    }
+
+    private static String validarCnpj(String cnpj) {
+        if (cnpj == null || !DocumentoFiscal.cnpjValido(cnpj)) {
+            throw new IllegalArgumentException("CNPJ inválido");
+        }
+
+        return cnpj;
     }
 
     public Long getId() {
@@ -62,7 +79,7 @@ public class Fornecedor {
     }
 
     public void setCnpj(String cnpj) {
-        this.cnpj = cnpj;
+        this.cnpj = validarCnpj(cnpj);
     }
 
     public Status getStatus() {

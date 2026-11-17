@@ -14,7 +14,7 @@ class ProdutoTest {
         Produto produto = new Produto();
         produto.setCodigoBarras("PRODUTO-001");
         produto.setNome("Produto original");
-        produto.setQuantidade(10);
+        produto.setQuantidade(new BigDecimal("10.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("99.90"));
         produto.setDataCadastro(LocalDate.now());
@@ -98,24 +98,50 @@ class ProdutoTest {
     void deveReceberERetirarEstoque() {
         Produto produto = novoProduto();
 
-        produto.receberEstoque(5);
+        produto.receberEstoque(new BigDecimal("5.000"));
 
-        assertThat(produto.getQuantidade()).isEqualTo(15);
+        assertThat(produto.getQuantidade()).isEqualByComparingTo("15.000");
 
-        produto.retirarEstoque(3);
+        produto.retirarEstoque(new BigDecimal("3.000"));
 
-        assertThat(produto.getQuantidade()).isEqualTo(12);
+        assertThat(produto.getQuantidade()).isEqualByComparingTo("12.000");
+    }
+
+    @Test
+    void deveReceberERetirarEstoqueFracionado() {
+        Produto produto = novoProduto();
+
+        produto.receberEstoque(new BigDecimal("0.500"));
+
+        assertThat(produto.getQuantidade()).isEqualByComparingTo("10.500");
+
+        produto.retirarEstoque(new BigDecimal("1.250"));
+
+        assertThat(produto.getQuantidade()).isEqualByComparingTo("9.250");
+    }
+
+    @Test
+    void deveRejeitarQuantidadeComMaisDeTresCasasDecimais() {
+        Produto produto = novoProduto();
+
+        assertThatThrownBy(
+                () -> produto.receberEstoque(new BigDecimal("0.0001")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A quantidade deve ter no máximo 3 casas decimais");
+
+        assertThat(produto.getQuantidade()).isEqualByComparingTo("10.000");
     }
 
     @Test
     void naoDeveRetirarQuantidadeMaiorQueOSaldo() {
         Produto produto = novoProduto();
 
-        assertThatThrownBy(() -> produto.retirarEstoque(11))
+        assertThatThrownBy(
+                () -> produto.retirarEstoque(new BigDecimal("11.000")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(
                         "Quantidade para retirada maior que o estoque disponível");
 
-        assertThat(produto.getQuantidade()).isEqualTo(10);
+        assertThat(produto.getQuantidade()).isEqualByComparingTo("10.000");
     }
 }

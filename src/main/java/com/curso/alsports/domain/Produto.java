@@ -4,10 +4,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 
+import com.curso.alsports.validation.QuantidadeValidator;
+
 public class Produto {
 
     private final String nome;
-    private Integer quantidade;
+    private BigDecimal quantidade;
     private BigDecimal preco;
     private final LocalDate dataCadastro;
     private Status status;
@@ -15,16 +17,12 @@ public class Produto {
 
     public Produto(
             String nome,
-            Integer quantidade,
+            BigDecimal quantidade,
             BigDecimal preco,
             LocalDate dataCadastro) {
 
         if (nome == null || nome.isBlank()) {
             throw new IllegalArgumentException("Nome do produto é obrigatório");
-        }
-
-        if (quantidade == null || quantidade < 0) {
-            throw new IllegalArgumentException("Quantidade não pode ser negativa");
         }
 
         if (preco == null || preco.compareTo(BigDecimal.ZERO) < 0) {
@@ -36,7 +34,8 @@ public class Produto {
         }
 
         this.nome = nome.trim();
-        this.quantidade = quantidade;
+        this.quantidade = QuantidadeValidator.exigirNaoNegativa(
+                quantidade, "Quantidade não pode ser negativa");
         this.preco = preco;
         this.dataCadastro = dataCadastro;
         this.status = Status.ATIVO;
@@ -46,7 +45,7 @@ public class Produto {
         return nome;
     }
 
-    public Integer getQuantidade() {
+    public BigDecimal getQuantidade() {
         return quantidade;
     }
 
@@ -66,19 +65,24 @@ public class Produto {
         return categoria;
     }
 
-    public void receberEstoque(Integer quantidade) {
-        validarQuantidadeMovimentacao(quantidade);
-        this.quantidade += quantidade;
+    public void receberEstoque(BigDecimal quantidade) {
+        BigDecimal valor = QuantidadeValidator.exigirPositiva(
+                quantidade, "Quantidade da movimentação deve ser positiva");
+        this.quantidade = this.quantidade.add(valor).setScale(
+                QuantidadeValidator.ESCALA, RoundingMode.UNNECESSARY);
     }
 
-    public void retirarEstoque(Integer quantidade) {
-        validarQuantidadeMovimentacao(quantidade);
+    public void retirarEstoque(BigDecimal quantidade) {
+        BigDecimal valor = QuantidadeValidator.exigirPositiva(
+                quantidade, "Quantidade da movimentação deve ser positiva");
 
-        if (quantidade > this.quantidade) {
-            throw new IllegalArgumentException("Quantidade para retirada maior que o estoque disponível");
+        if (valor.compareTo(this.quantidade) > 0) {
+            throw new IllegalArgumentException(
+                    "Quantidade para retirada maior que o estoque disponível");
         }
 
-        this.quantidade -= quantidade;
+        this.quantidade = this.quantidade.subtract(valor).setScale(
+                QuantidadeValidator.ESCALA, RoundingMode.UNNECESSARY);
     }
 
     public void alterarPreco(BigDecimal preco) {
@@ -99,7 +103,7 @@ public class Produto {
 
     public BigDecimal calcularValorEstoque() {
         return preco
-                .multiply(BigDecimal.valueOf(quantidade))
+                .multiply(quantidade)
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -113,11 +117,5 @@ public class Produto {
         }
 
         this.categoria = categoria;
-    }
-
-    private void validarQuantidadeMovimentacao(Integer quantidade) {
-        if (quantidade == null || quantidade <= 0) {
-            throw new IllegalArgumentException("Quantidade da movimentação deve ser positiva");
-        }
     }
 }

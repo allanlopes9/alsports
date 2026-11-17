@@ -1,0 +1,391 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-01-create-pessoa
+      author: allan
+      comment: Cria a identidade central de pessoas.
+      changes:
+        - createTable:
+            tableName: pessoa
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_pessoa
+                    nullable: false
+              - column:
+                  name: nome
+                  type: VARCHAR(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(180)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cpf
+                  type: VARCHAR(11)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_cadastro
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: pessoa
+
+  - changeSet:
+      id: 005-02-unique-cpf-pessoa
+      author: allan
+      comment: Impede CPF repetido.
+      changes:
+        - addUniqueConstraint:
+            tableName: pessoa
+            columnNames: cpf
+            constraintName: uk_pessoa_cpf
+      rollback:
+        - dropUniqueConstraint:
+            tableName: pessoa
+            constraintName: uk_pessoa_cpf
+
+  - changeSet:
+      id: 005-03-unique-email-pessoa
+      author: allan
+      comment: Garante e-mail normalizado unico, sem diferenciar maiusculas.
+      changes:
+        - sql:
+            sql: >
+              CREATE UNIQUE INDEX uk_pessoa_email_ci
+              ON pessoa (LOWER(TRIM(email)))
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS uk_pessoa_email_ci
+
+  - changeSet:
+      id: 005-04-check-pessoa
+      author: allan
+      comment: Valida formato do CPF e dominio do status.
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE pessoa
+              ADD CONSTRAINT ck_pessoa_cpf_formato
+              CHECK (cpf ~ '^[0-9]{11}$')
+        - sql:
+            sql: >
+              ALTER TABLE pessoa
+              ADD CONSTRAINT ck_pessoa_status
+              CHECK (status IN ('ATIVO', 'INATIVO'))
+      rollback:
+        - sql:
+            sql: ALTER TABLE pessoa DROP CONSTRAINT IF EXISTS ck_pessoa_cpf_formato
+        - sql:
+            sql: ALTER TABLE pessoa DROP CONSTRAINT IF EXISTS ck_pessoa_status
+
+  - changeSet:
+      id: 005-05-create-cliente
+      author: allan
+      comment: Cria o papel de cliente associado a uma pessoa.
+      changes:
+        - createTable:
+            tableName: cliente
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_cliente
+                    nullable: false
+              - column:
+                  name: pessoa_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: telefone
+                  type: VARCHAR(30)
+      rollback:
+        - dropTable:
+            tableName: cliente
+
+  - changeSet:
+      id: 005-06-constraints-cliente
+      author: allan
+      comment: Garante pessoa unica e preserva o historico ao impedir exclusao.
+      changes:
+        - addUniqueConstraint:
+            tableName: cliente
+            columnNames: pessoa_id
+            constraintName: uk_cliente_pessoa
+        - addForeignKeyConstraint:
+            baseTableName: cliente
+            baseColumnNames: pessoa_id
+            referencedTableName: pessoa
+            referencedColumnNames: id
+            constraintName: fk_cliente_pessoa
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+      rollback:
+        - dropForeignKeyConstraint:
+            baseTableName: cliente
+            constraintName: fk_cliente_pessoa
+        - dropUniqueConstraint:
+            tableName: cliente
+            constraintName: uk_cliente_pessoa
+
+  - changeSet:
+      id: 005-07-create-colaborador
+      author: allan
+      comment: Cria o vinculo profissional associado a uma pessoa.
+      changes:
+        - createTable:
+            tableName: colaborador
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_colaborador
+                    nullable: false
+              - column:
+                  name: pessoa_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: matricula
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: funcao
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_admissao
+                  type: DATE
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: colaborador
+
+  - changeSet:
+      id: 005-08-constraints-colaborador
+      author: allan
+      comment: Garante pessoa e matricula unicas, funcao valida e historico preservado.
+      changes:
+        - addUniqueConstraint:
+            tableName: colaborador
+            columnNames: pessoa_id
+            constraintName: uk_colaborador_pessoa
+        - addUniqueConstraint:
+            tableName: colaborador
+            columnNames: matricula
+            constraintName: uk_colaborador_matricula
+        - addForeignKeyConstraint:
+            baseTableName: colaborador
+            baseColumnNames: pessoa_id
+            referencedTableName: pessoa
+            referencedColumnNames: id
+            constraintName: fk_colaborador_pessoa
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - sql:
+            sql: >
+              ALTER TABLE colaborador
+              ADD CONSTRAINT ck_colaborador_funcao
+              CHECK (funcao IN ('VENDEDOR', 'ESTOQUISTA', 'GERENTE', 'ADMINISTRATIVO'))
+      rollback:
+        - sql:
+            sql: ALTER TABLE colaborador DROP CONSTRAINT IF EXISTS ck_colaborador_funcao
+        - dropForeignKeyConstraint:
+            baseTableName: colaborador
+            constraintName: fk_colaborador_pessoa
+        - dropUniqueConstraint:
+            tableName: colaborador
+            constraintName: uk_colaborador_matricula
+        - dropUniqueConstraint:
+            tableName: colaborador
+            constraintName: uk_colaborador_pessoa
+
+  - changeSet:
+      id: 005-09-create-venda
+      author: allan
+      comment: Cria a venda com cliente, vendedor e status.
+      changes:
+        - createTable:
+            tableName: venda
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_venda
+                    nullable: false
+              - column:
+                  name: cliente_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: vendedor_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_venda
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: venda
+
+  - changeSet:
+      id: 005-10-constraints-venda
+      author: allan
+      comment: Cria FKs dos participantes e restringe o dominio do status.
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: venda
+            baseColumnNames: cliente_id
+            referencedTableName: cliente
+            referencedColumnNames: id
+            constraintName: fk_venda_cliente
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: venda
+            baseColumnNames: vendedor_id
+            referencedTableName: colaborador
+            referencedColumnNames: id
+            constraintName: fk_venda_vendedor
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - sql:
+            sql: >
+              ALTER TABLE venda
+              ADD CONSTRAINT ck_venda_status
+              CHECK (status IN ('ABERTA', 'FINALIZADA', 'CANCELADA'))
+      rollback:
+        - sql:
+            sql: ALTER TABLE venda DROP CONSTRAINT IF EXISTS ck_venda_status
+        - dropForeignKeyConstraint:
+            baseTableName: venda
+            constraintName: fk_venda_vendedor
+        - dropForeignKeyConstraint:
+            baseTableName: venda
+            constraintName: fk_venda_cliente
+
+  - changeSet:
+      id: 005-11-create-item-venda
+      author: allan
+      comment: Cria o item associativo entre venda e produto.
+      changes:
+        - createTable:
+            tableName: item_venda
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_item_venda
+                    nullable: false
+              - column:
+                  name: venda_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: produto_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantidade
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valor_unitario
+                  type: NUMERIC(18,2)
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: item_venda
+
+  - changeSet:
+      id: 005-12-constraints-item-venda
+      author: allan
+      comment: Garante produto unico por venda, quantidade positiva e preco nao negativo.
+      changes:
+        - addUniqueConstraint:
+            tableName: item_venda
+            columnNames: venda_id, produto_id
+            constraintName: uk_item_venda_produto
+        - addForeignKeyConstraint:
+            baseTableName: item_venda
+            baseColumnNames: venda_id
+            referencedTableName: venda
+            referencedColumnNames: id
+            constraintName: fk_item_venda_venda
+            onDelete: CASCADE
+            onUpdate: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: item_venda
+            baseColumnNames: produto_id
+            referencedTableName: produto
+            referencedColumnNames: id
+            constraintName: fk_item_venda_produto
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - sql:
+            sql: >
+              ALTER TABLE item_venda
+              ADD CONSTRAINT ck_item_venda_quantidade
+              CHECK (quantidade > 0)
+        - sql:
+            sql: >
+              ALTER TABLE item_venda
+              ADD CONSTRAINT ck_item_venda_valor
+              CHECK (valor_unitario >= 0)
+      rollback:
+        - sql:
+            sql: ALTER TABLE item_venda DROP CONSTRAINT IF EXISTS ck_item_venda_valor
+        - sql:
+            sql: ALTER TABLE item_venda DROP CONSTRAINT IF EXISTS ck_item_venda_quantidade
+        - dropForeignKeyConstraint:
+            baseTableName: item_venda
+            constraintName: fk_item_venda_produto
+        - dropForeignKeyConstraint:
+            baseTableName: item_venda
+            constraintName: fk_item_venda_venda
+        - dropUniqueConstraint:
+            tableName: item_venda
+            constraintName: uk_item_venda_produto

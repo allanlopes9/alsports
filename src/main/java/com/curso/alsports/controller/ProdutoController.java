@@ -1,5 +1,6 @@
 package com.curso.alsports.controller;
 
+import java.math.BigDecimal;
 import java.net.URI;
 
 import jakarta.validation.Valid;
@@ -153,16 +154,16 @@ public class ProdutoController {
         @RequestParam(required = false) Long fornecedorId,
 
         @Parameter(
-            description = "Quantidade mínima em estoque para filtrar os produtos.",
-            example = "5"
+            description = "Quantidade mínima em estoque para filtrar os produtos, com até 3 casas decimais.",
+            example = "5.000"
         )
-        @RequestParam(required = false) Integer quantidadeMinima,
+        @RequestParam(required = false) BigDecimal quantidadeMinima,
 
         @Parameter(
-            description = "Quantidade máxima em estoque para filtrar os produtos.",
-            example = "50"
+            description = "Quantidade máxima em estoque para filtrar os produtos, com até 3 casas decimais.",
+            example = "50.000"
         )
-        @RequestParam(required = false) Integer quantidadeMaxima,
+        @RequestParam(required = false) BigDecimal quantidadeMaxima,
 
         @Parameter(
             description = "Filtra produtos abaixo do estoque mínimo: true para abaixo do mínimo e false para os demais.",
@@ -176,19 +177,21 @@ public class ProdutoController {
             direction = Sort.Direction.ASC)
         Pageable pageable) {
 
-        if (quantidadeMinima != null && quantidadeMinima < 0) {
+        if (quantidadeMinima != null
+            && quantidadeMinima.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException(
                 "A quantidade mínima não pode ser negativa");
         }
 
-        if (quantidadeMaxima != null && quantidadeMaxima < 0) {
+        if (quantidadeMaxima != null
+            && quantidadeMaxima.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException(
                 "A quantidade máxima não pode ser negativa");
         }
 
         if (quantidadeMinima != null
             && quantidadeMaxima != null
-            && quantidadeMinima > quantidadeMaxima) {
+            && quantidadeMinima.compareTo(quantidadeMaxima) > 0) {
 
             throw new IllegalArgumentException(
                 "A quantidade mínima não pode ser maior que a máxima");

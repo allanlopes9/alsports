@@ -2,6 +2,7 @@ package com.curso.alsports;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -71,7 +72,7 @@ class AlsportsApplicationTests {
         Produto produto = new Produto();
         produto.setCodigoBarras("STATUS-TESTE-" + System.currentTimeMillis());
         produto.setNome("Produto Teste Status");
-        produto.setQuantidade(10);
+        produto.setQuantidade(new BigDecimal("10.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("99.90"));
         produto.setDataCadastro(LocalDate.now());
@@ -100,7 +101,7 @@ class AlsportsApplicationTests {
         Produto produto = new Produto();
         produto.setCodigoBarras("STATUS-INVALIDO-" + System.currentTimeMillis());
         produto.setNome("Produto Status Invalido");
-        produto.setQuantidade(10);
+        produto.setQuantidade(new BigDecimal("10.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("99.90"));
         produto.setDataCadastro(LocalDate.now());
@@ -142,7 +143,7 @@ class AlsportsApplicationTests {
 
         produto.setCodigoBarras("TESTE-SALVAR-" + System.currentTimeMillis());
         produto.setNome("Produto Teste");
-        produto.setQuantidade(10);
+        produto.setQuantidade(new BigDecimal("10.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("99.90"));
         produto.setDataCadastro(LocalDate.now());
@@ -154,7 +155,7 @@ class AlsportsApplicationTests {
 
         assertThat(salvo.getId()).isNotNull();
         assertThat(salvo.getNome()).isEqualTo("Produto Teste");
-        assertThat(salvo.getQuantidade()).isEqualTo(10);
+        assertThat(salvo.getQuantidade()).isEqualByComparingTo("10.000");
         assertThat(salvo.getCodigoBarras()).isEqualTo(produto.getCodigoBarras());
     }
 
@@ -171,7 +172,7 @@ class AlsportsApplicationTests {
 
         produto.setCodigoBarras("TESTE-BUSCA-" + System.currentTimeMillis());
         produto.setNome("Produto Busca");
-        produto.setQuantidade(5);
+        produto.setQuantidade(new BigDecimal("5.000"));
         produto.setEstoqueMinimo(new BigDecimal("1.000"));
         produto.setPreco(new BigDecimal("49.90"));
         produto.setDataCadastro(LocalDate.now());
@@ -200,7 +201,7 @@ class AlsportsApplicationTests {
 
         produto.setCodigoBarras("TESTE-UPDATE-" + System.currentTimeMillis());
         produto.setNome("Produto Original");
-        produto.setQuantidade(10);
+        produto.setQuantidade(new BigDecimal("10.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("100.00"));
         produto.setDataCadastro(LocalDate.now());
@@ -211,12 +212,12 @@ class AlsportsApplicationTests {
         Produto salvo = produtoService.salvar(produto);
 
         salvo.setNome("Produto Atualizado");
-        salvo.setQuantidade(20);
+        salvo.setQuantidade(new BigDecimal("20.000"));
 
         Produto encontrado = produtoService.buscarPorId(salvo.getId());
 
         assertThat(encontrado.getNome()).isEqualTo("Produto Atualizado");
-        assertThat(encontrado.getQuantidade()).isEqualTo(20);
+        assertThat(encontrado.getQuantidade()).isEqualByComparingTo("20.000");
     }
 
     @Test
@@ -235,7 +236,7 @@ class AlsportsApplicationTests {
 
         produto.setCodigoBarras("TESTE-ROLLBACK-" + System.currentTimeMillis());
         produto.setNome(nomeProduto);
-        produto.setQuantidade(10);
+        produto.setQuantidade(new BigDecimal("10.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("100.00"));
         produto.setDataCadastro(LocalDate.now());
@@ -264,7 +265,7 @@ class AlsportsApplicationTests {
 
         produto.setCodigoBarras("TESTE-CATEGORIA-" + System.currentTimeMillis());
         produto.setNome(nomeProduto);
-        produto.setQuantidade(10);
+        produto.setQuantidade(new BigDecimal("10.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("100.00"));
         produto.setDataCadastro(LocalDate.now());
@@ -321,7 +322,7 @@ class AlsportsApplicationTests {
                 .andExpect(jsonPath("$.codigoBarras").value(codigoBarras))
                 .andExpect(jsonPath("$.nome")
                         .value(containsString("Bola API Teste")))
-                .andExpect(jsonPath("$.quantidade").value(10))
+                .andExpect(jsonPath("$.quantidade").value(closeTo(10.0, 0.0001)))
                 .andExpect(jsonPath("$.preco").value(99.90))
                 .andExpect(jsonPath("$.unidadeMedida").value("UN"))
                 .andExpect(jsonPath("$.categoria.id")
@@ -385,7 +386,7 @@ class AlsportsApplicationTests {
 
         produto.setCodigoBarras("TESTE-CATEGORIA-BUSCA-" + System.currentTimeMillis());
         produto.setNome("Produto Relacionamento");
-        produto.setQuantidade(8);
+        produto.setQuantidade(new BigDecimal("8.000"));
         produto.setEstoqueMinimo(new BigDecimal("1.000"));
         produto.setPreco(new BigDecimal("79.90"));
         produto.setDataCadastro(LocalDate.now());
@@ -414,7 +415,7 @@ class AlsportsApplicationTests {
         Produto produto = new Produto();
         produto.setCodigoBarras("API-GET-" + System.currentTimeMillis());
         produto.setNome("Produto GET API " + System.currentTimeMillis());
-        produto.setQuantidade(15);
+        produto.setQuantidade(new BigDecimal("15.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("129.90"));
         produto.setDataCadastro(LocalDate.now());
@@ -430,7 +431,7 @@ class AlsportsApplicationTests {
                 .andExpect(jsonPath("$.codigoBarras")
                         .value(produto.getCodigoBarras()))
                 .andExpect(jsonPath("$.nome").value(produto.getNome()))
-                .andExpect(jsonPath("$.quantidade").value(15))
+                .andExpect(jsonPath("$.quantidade").value(closeTo(15.0, 0.0001)))
                 .andExpect(jsonPath("$.unidadeMedida").value("UN"));
     }
 
@@ -513,7 +514,7 @@ class AlsportsApplicationTests {
         Produto produto = new Produto();
         produto.setCodigoBarras("CAT-EXCLUSAO-" + System.currentTimeMillis());
         produto.setNome("Produto Vinculado Categoria");
-        produto.setQuantidade(10);
+        produto.setQuantidade(new BigDecimal("10.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("99.90"));
         produto.setDataCadastro(LocalDate.now());
@@ -564,7 +565,7 @@ class AlsportsApplicationTests {
         Produto produto = new Produto();
         produto.setCodigoBarras("ESTOQUE-" + System.currentTimeMillis());
         produto.setNome("Produto Estoque " + System.currentTimeMillis());
-        produto.setQuantidade(10);
+        produto.setQuantidade(new BigDecimal("10.000"));
         produto.setEstoqueMinimo(new BigDecimal("2.000"));
         produto.setPreco(new BigDecimal("99.90"));
         produto.setDataCadastro(LocalDate.now());
@@ -584,7 +585,75 @@ class AlsportsApplicationTests {
                 .content("{\"quantidade\":5}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(produto.getId()))
-                .andExpect(jsonPath("$.quantidade").value(15));
+                .andExpect(jsonPath("$.quantidade").value(closeTo(15.0, 0.0001)));
+    }
+
+    @Test
+    void deveReceberEstoqueFracionadoPelaApi() throws Exception {
+        Produto produto = criarProdutoParaMovimentacaoEstoque();
+
+        mockMvc.perform(post("/api/produtos/" + produto.getId() + "/estoque/entradas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quantidade\":0.500}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(produto.getId()))
+                .andExpect(jsonPath("$.quantidade").value(closeTo(10.5, 0.0001)));
+    }
+
+    @Test
+    void deveRetirarEstoqueFracionadoPelaApi() throws Exception {
+        Produto produto = criarProdutoParaMovimentacaoEstoque();
+
+        mockMvc.perform(post("/api/produtos/" + produto.getId() + "/estoque/saidas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quantidade\":1.250}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(produto.getId()))
+                .andExpect(jsonPath("$.quantidade").value(closeTo(8.75, 0.0001)));
+    }
+
+    @Test
+    void deveRejeitarMovimentacaoComMaisDeTresCasasDecimais() throws Exception {
+        Produto produto = criarProdutoParaMovimentacaoEstoque();
+
+        mockMvc.perform(post("/api/produtos/" + produto.getId() + "/estoque/entradas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quantidade\":0.0001}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.fields.quantidade").exists());
+    }
+
+    @Test
+    void deveRejeitarProdutoComQuantidadeAcimaDaPrecisao() throws Exception {
+        CategoriaProduto categoria = new CategoriaProduto();
+        categoria.setNome("Categoria Precisao " + System.currentTimeMillis());
+        categoria.setAtivo(true);
+        categoria = categoriaProdutoRepository.save(categoria);
+
+        String json = """
+                {
+                    "codigoBarras": "PRECISAO-%d",
+                    "nome": "Produto Precisao %d",
+                    "quantidade": 1000000000000000.000,
+                    "estoqueMinimo": 0.000,
+                    "preco": 99.90,
+                    "dataCadastro": "2026-09-04",
+                    "ativo": true,
+                    "unidadeMedida": "UN",
+                    "categoriaId": %d
+                }
+                """.formatted(
+                System.currentTimeMillis(),
+                System.currentTimeMillis(),
+                categoria.getId());
+
+        mockMvc.perform(post("/api/produtos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.fields.quantidade").exists());
     }
 
     @Test
@@ -596,7 +665,7 @@ class AlsportsApplicationTests {
                 .content("{\"quantidade\":4}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(produto.getId()))
-                .andExpect(jsonPath("$.quantidade").value(6));
+                .andExpect(jsonPath("$.quantidade").value(closeTo(6.0, 0.0001)));
     }
 
     @Test
@@ -632,7 +701,7 @@ class AlsportsApplicationTests {
                 .isPresent()
                 .get()
                 .extracting(Produto::getQuantidade)
-                .isEqualTo(10);
+                .isEqualTo(new BigDecimal("10.000"));
     }
 
     @Test
@@ -693,7 +762,7 @@ class AlsportsApplicationTests {
         Produto produtoEncontrado = new Produto();
         produtoEncontrado.setCodigoBarras("FILTRO-OK-" + identificador);
         produtoEncontrado.setNome("Filtro Bola " + identificador);
-        produtoEncontrado.setQuantidade(5);
+        produtoEncontrado.setQuantidade(new BigDecimal("5.000"));
         produtoEncontrado.setEstoqueMinimo(new BigDecimal("1.000"));
         produtoEncontrado.setPreco(new BigDecimal("49.90"));
         produtoEncontrado.setDataCadastro(LocalDate.now());
@@ -705,7 +774,7 @@ class AlsportsApplicationTests {
         Produto produtoForaDaFaixa = new Produto();
         produtoForaDaFaixa.setCodigoBarras("FILTRO-FORA-" + identificador);
         produtoForaDaFaixa.setNome("Filtro Chuteira " + identificador);
-        produtoForaDaFaixa.setQuantidade(20);
+        produtoForaDaFaixa.setQuantidade(new BigDecimal("20.000"));
         produtoForaDaFaixa.setEstoqueMinimo(new BigDecimal("1.000"));
         produtoForaDaFaixa.setPreco(new BigDecimal("99.90"));
         produtoForaDaFaixa.setDataCadastro(LocalDate.now());
@@ -725,7 +794,7 @@ class AlsportsApplicationTests {
                 .andExpect(jsonPath("$.conteudo[0].id").value(
                         produtoEncontrado.getId()))
                 .andExpect(jsonPath("$.conteudo[0].ativo").value(true))
-                .andExpect(jsonPath("$.conteudo[0].quantidade").value(5));
+                .andExpect(jsonPath("$.conteudo[0].quantidade").value(closeTo(5.0, 0.0001)));
     }
 
     @Test
@@ -753,7 +822,7 @@ class AlsportsApplicationTests {
                 .andExpect(jsonPath("$.nome")
                         .value(containsString("Produto Alterado")))
                 .andExpect(jsonPath("$.preco").value(59.90))
-                .andExpect(jsonPath("$.quantidade").value(10));
+                .andExpect(jsonPath("$.quantidade").value(closeTo(10.0, 0.0001)));
     }
 
     @Test

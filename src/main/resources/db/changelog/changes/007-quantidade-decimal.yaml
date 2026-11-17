@@ -1,0 +1,96 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-01-quantidade-decimal-produto
+      author: allan
+      comment: >-
+        Migra produto.quantidade de INTEGER para NUMERIC(18,3), permitindo até
+        três casas decimais sem perda dos valores inteiros existentes. A
+        constraint de quantidade não negativa é recriada após a conversão.
+      changes:
+        - sql:
+            sql: ALTER TABLE produto DROP CONSTRAINT IF EXISTS ck_produto_quantidade
+        - sql:
+            sql: >-
+              ALTER TABLE produto
+              ALTER COLUMN quantidade TYPE NUMERIC(18,3)
+              USING quantidade::NUMERIC(18,3)
+        - sql:
+            sql: >-
+              ALTER TABLE produto
+              ADD CONSTRAINT ck_produto_quantidade
+              CHECK (quantidade >= 0)
+      rollback:
+        - sql:
+            splitStatements: false
+            sql: |
+              DO $$
+              BEGIN
+                  IF EXISTS (
+                      SELECT 1 FROM produto
+                      WHERE quantidade <> TRUNC(quantidade)
+                  ) THEN
+                      RAISE EXCEPTION
+                          'Rollback 007-01 bloqueado: existem quantidades fracionadas em produto.quantidade';
+                  END IF;
+              END
+              $$;
+        - sql:
+            sql: ALTER TABLE produto DROP CONSTRAINT IF EXISTS ck_produto_quantidade
+        - sql:
+            sql: >-
+              ALTER TABLE produto
+              ALTER COLUMN quantidade TYPE INTEGER
+              USING quantidade::INTEGER
+        - sql:
+            sql: >-
+              ALTER TABLE produto
+              ADD CONSTRAINT ck_produto_quantidade
+              CHECK (quantidade >= 0)
+
+  - changeSet:
+      id: 007-02-quantidade-decimal-item-venda
+      author: allan
+      comment: >-
+        Migra item_venda.quantidade de INTEGER para NUMERIC(18,3), permitindo
+        vendas fracionadas sem perda dos valores inteiros existentes. A
+        constraint de quantidade positiva é recriada após a conversão.
+      changes:
+        - sql:
+            sql: ALTER TABLE item_venda DROP CONSTRAINT IF EXISTS ck_item_venda_quantidade
+        - sql:
+            sql: >-
+              ALTER TABLE item_venda
+              ALTER COLUMN quantidade TYPE NUMERIC(18,3)
+              USING quantidade::NUMERIC(18,3)
+        - sql:
+            sql: >-
+              ALTER TABLE item_venda
+              ADD CONSTRAINT ck_item_venda_quantidade
+              CHECK (quantidade > 0)
+      rollback:
+        - sql:
+            splitStatements: false
+            sql: |
+              DO $$
+              BEGIN
+                  IF EXISTS (
+                      SELECT 1 FROM item_venda
+                      WHERE quantidade <> TRUNC(quantidade)
+                  ) THEN
+                      RAISE EXCEPTION
+                          'Rollback 007-02 bloqueado: existem quantidades fracionadas em item_venda.quantidade';
+                  END IF;
+              END
+              $$;
+        - sql:
+            sql: ALTER TABLE item_venda DROP CONSTRAINT IF EXISTS ck_item_venda_quantidade
+        - sql:
+            sql: >-
+              ALTER TABLE item_venda
+              ALTER COLUMN quantidade TYPE INTEGER
+              USING quantidade::INTEGER
+        - sql:
+            sql: >-
+              ALTER TABLE item_venda
+              ADD CONSTRAINT ck_item_venda_quantidade
+              CHECK (quantidade > 0)

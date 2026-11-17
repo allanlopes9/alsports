@@ -4,10 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,12 +32,15 @@ public class ProdutoRequest {
     private String nome;
 
     @Schema(
-        description = "Saldo inicial em estoque, que não pode ser negativo",
-        example = "10"
+        description = "Saldo inicial em estoque, que não pode ser negativo e aceita até 3 casas decimais",
+        example = "10.000",
+        minimum = "0.000",
+        maximum = "999999999999999.999"
     )
     @NotNull
-    @PositiveOrZero
-    private Integer quantidade;
+    @DecimalMin(value = "0.000")
+    @Digits(integer = 15, fraction = 3)
+    private BigDecimal quantidade;
 
     @Schema(
         description = "Quantidade mínima desejada para reposição, que não pode ser negativa",
@@ -109,11 +112,11 @@ public class ProdutoRequest {
         this.nome = nome;
     }
 
-    public Integer getQuantidade() {
+    public BigDecimal getQuantidade() {
         return quantidade;
     }
 
-    public void setQuantidade(Integer quantidade) {
+    public void setQuantidade(BigDecimal quantidade) {
         this.quantidade = quantidade;
     }
 

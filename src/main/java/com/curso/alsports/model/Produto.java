@@ -1,7 +1,10 @@
 package com.curso.alsports.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+
+import com.curso.alsports.validation.QuantidadeValidator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,7 +27,9 @@ public class Produto {
     private String codigoBarras;
 
     private String nome;
-    private Integer quantidade;
+
+    @Column(nullable = false, precision = 18, scale = 3)
+    private BigDecimal quantidade;
 
     @Column(name = "estoque_minimo", nullable = false, precision = 18, scale = 3)
     private BigDecimal estoqueMinimo;
@@ -71,42 +76,46 @@ public class Produto {
         this.nome = nome;
     }
 
-    public Integer getQuantidade() {
+    public BigDecimal getQuantidade() {
         return quantidade;
     }
 
-    public void setQuantidade(Integer quantidade) {
-        this.quantidade = quantidade;
+    public void setQuantidade(BigDecimal quantidade) {
+        this.quantidade = QuantidadeValidator.exigirNaoNegativa(
+            quantidade, "Quantidade não pode ser negativa");
     }
 
-    public void receberEstoque(Integer quantidade) {
-        validarQuantidadeMovimentacao(quantidade);
+    public void receberEstoque(BigDecimal quantidade) {
+        BigDecimal valor = QuantidadeValidator.exigirPositiva(
+            quantidade, "A quantidade da movimentação deve ser positiva");
 
-        if (this.quantidade == null
-            || this.quantidade > Integer.MAX_VALUE - quantidade) {
+        BigDecimal saldoAtual = this.quantidade == null
+            ? BigDecimal.ZERO.setScale(QuantidadeValidator.ESCALA)
+            : this.quantidade;
+
+        BigDecimal novoSaldo = saldoAtual.add(valor);
+
+        if (novoSaldo.compareTo(QuantidadeValidator.MAXIMO) > 0) {
             throw new IllegalArgumentException(
-                "A quantidade excede o limite permitido para o estoque");
+                QuantidadeValidator.MENSAGEM_LIMITE);
         }
 
-        this.quantidade += quantidade;
+        this.quantidade = novoSaldo.setScale(
+            QuantidadeValidator.ESCALA, RoundingMode.UNNECESSARY);
     }
 
-    public void retirarEstoque(Integer quantidade) {
-        validarQuantidadeMovimentacao(quantidade);
+    public void retirarEstoque(BigDecimal quantidade) {
+        BigDecimal valor = QuantidadeValidator.exigirPositiva(
+            quantidade, "A quantidade da movimentação deve ser positiva");
 
-        if (this.quantidade == null || quantidade > this.quantidade) {
+        if (this.quantidade == null
+            || valor.compareTo(this.quantidade) > 0) {
             throw new IllegalArgumentException(
                 "Quantidade para retirada maior que o estoque disponível");
         }
 
-        this.quantidade -= quantidade;
-    }
-
-    private void validarQuantidadeMovimentacao(Integer quantidade) {
-        if (quantidade == null || quantidade <= 0) {
-            throw new IllegalArgumentException(
-                "A quantidade da movimentação deve ser positiva");
-        }
+        this.quantidade = this.quantidade.subtract(valor).setScale(
+            QuantidadeValidator.ESCALA, RoundingMode.UNNECESSARY);
     }
 
     public void alterarNome(String novoNome) {

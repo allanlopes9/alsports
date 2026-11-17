@@ -18,7 +18,7 @@ class ProdutoTest {
         // Act
         Produto produto = new Produto(
                 "Bola de Futebol",
-                10,
+                new BigDecimal("10.000"),
                 new BigDecimal("49.90"),
                 LocalDate.of(2026, 9, 7));
 
@@ -26,7 +26,7 @@ class ProdutoTest {
 
         // Assert
         assertEquals("Bola de Futebol", produto.getNome());
-        assertEquals(10, produto.getQuantidade());
+        assertEquals(new BigDecimal("10.000"), produto.getQuantidade());
         assertEquals(new BigDecimal("49.90"), produto.getPreco());
         assertEquals(LocalDate.of(2026, 9, 7), produto.getDataCadastro());
         assertEquals(Status.ATIVO, produto.getStatus());
@@ -38,7 +38,7 @@ class ProdutoTest {
         // Arrange
         Produto produto = new Produto(
                 "Tênis Esportivo",
-                3,
+                new BigDecimal("3.000"),
                 new BigDecimal("199.90"),
                 LocalDate.of(2026, 9, 7));
 
@@ -50,20 +50,53 @@ class ProdutoTest {
     }
 
     @Test
+    void deveCalcularValorDoEstoqueComQuantidadeFracionada() {
+        // Arrange
+        Produto produto = new Produto(
+                "Tênis Esportivo",
+                new BigDecimal("1.500"),
+                new BigDecimal("199.90"),
+                LocalDate.of(2026, 9, 7));
+
+        // Act
+        BigDecimal valor = produto.calcularValorEstoque();
+
+        // Assert
+        assertEquals(new BigDecimal("299.85"), valor);
+    }
+
+    @Test
     void deveReceberERetirarEstoque() {
         // Arrange
         Produto produto = new Produto(
                 "Camisa Esportiva",
-                10,
+                new BigDecimal("10.000"),
                 new BigDecimal("89.90"),
                 LocalDate.of(2026, 9, 7));
 
         // Act
-        produto.receberEstoque(5);
-        produto.retirarEstoque(3);
+        produto.receberEstoque(new BigDecimal("5.000"));
+        produto.retirarEstoque(new BigDecimal("3.000"));
 
         // Assert
-        assertEquals(12, produto.getQuantidade());
+        assertEquals(new BigDecimal("12.000"), produto.getQuantidade());
+    }
+
+    @Test
+    void deveReceberERetirarEstoqueFracionado() {
+        // Arrange
+        Produto produto = new Produto(
+                "Camisa Esportiva",
+                new BigDecimal("10.000"),
+                new BigDecimal("89.90"),
+                LocalDate.of(2026, 9, 7));
+
+        // Act
+        produto.receberEstoque(new BigDecimal("0.500"));
+        produto.retirarEstoque(new BigDecimal("1.250"));
+
+        // Assert
+        assertEquals(new BigDecimal("9.250"), produto.getQuantidade());
     }
 
     @Test
@@ -71,14 +104,14 @@ class ProdutoTest {
         // Arrange
         Produto produto = new Produto(
                 "Short Esportivo",
-                5,
+                new BigDecimal("5.000"),
                 new BigDecimal("59.90"),
                 LocalDate.of(2026, 9, 7));
 
         // Act & Assert
         assertThrows(
                 IllegalArgumentException.class,
-                () -> produto.retirarEstoque(6));
+                () -> produto.retirarEstoque(new BigDecimal("6.000")));
     }
 
     @Test
@@ -88,7 +121,7 @@ class ProdutoTest {
                 IllegalArgumentException.class,
                 () -> new Produto(
                         "   ",
-                        10,
+                        new BigDecimal("10.000"),
                         new BigDecimal("49.90"),
                         LocalDate.of(2026, 9, 7)));
     }
@@ -100,7 +133,19 @@ class ProdutoTest {
                 IllegalArgumentException.class,
                 () -> new Produto(
                         "Bola de Vôlei",
-                        -1,
+                        new BigDecimal("-1.000"),
+                        new BigDecimal("79.90"),
+                        LocalDate.of(2026, 9, 7)));
+    }
+
+    @Test
+    void naoDeveCriarProdutoComQuantidadeDeMaisDeTresCasas() {
+        // Arrange & Act & Assert
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Produto(
+                        "Bola de Vôlei",
+                        new BigDecimal("1.0001"),
                         new BigDecimal("79.90"),
                         LocalDate.of(2026, 9, 7)));
     }
@@ -110,7 +155,7 @@ class ProdutoTest {
         // Arrange
         Produto produto = new Produto(
                 "Meia Esportiva",
-                20,
+                new BigDecimal("20.000"),
                 new BigDecimal("19.90"),
                 LocalDate.of(2026, 9, 7));
 

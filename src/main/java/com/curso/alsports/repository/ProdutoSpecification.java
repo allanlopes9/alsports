@@ -1,6 +1,7 @@
 
 package com.curso.alsports.repository;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -21,8 +22,8 @@ public final class ProdutoSpecification {
         Boolean ativo,
         Long categoriaId,
         Long fornecedorId,
-        Integer quantidadeMinima,
-        Integer quantidadeMaxima,
+        BigDecimal quantidadeMinima,
+        BigDecimal quantidadeMaxima,
         Boolean abaixoEstoqueMinimo) {
 
         return (root, query, criteriaBuilder) -> {
@@ -67,9 +68,8 @@ public final class ProdutoSpecification {
             if (Boolean.TRUE.equals(abaixoEstoqueMinimo)) {
                 predicados.add(
                     criteriaBuilder.lessThan(
-                        criteriaBuilder.toBigDecimal(
-                            root.<Integer>get("quantidade")),
-                        root.<java.math.BigDecimal>get("estoqueMinimo")));
+                        root.<BigDecimal>get("quantidade"),
+                        root.<BigDecimal>get("estoqueMinimo")));
             }
 
             return criteriaBuilder.and(predicados.toArray(new Predicate[0]));

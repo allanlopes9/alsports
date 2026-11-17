@@ -103,8 +103,8 @@ public class ProdutoService {
         Boolean ativo,
         Long categoriaId,
         Long fornecedorId,
-        Integer quantidadeMinima,
-        Integer quantidadeMaxima,
+        BigDecimal quantidadeMinima,
+        BigDecimal quantidadeMaxima,
         Boolean abaixoEstoqueMinimo,
         Pageable pageable) {
 
@@ -205,14 +205,14 @@ public class ProdutoService {
     }
 
     @Transactional
-    public Produto receberEstoque(Long id, Integer quantidade) {
+    public Produto receberEstoque(Long id, BigDecimal quantidade) {
         Produto produto = buscarPorId(id);
         produto.receberEstoque(quantidade);
         return produto;
     }
 
     @Transactional
-    public Produto retirarEstoque(Long id, Integer quantidade) {
+    public Produto retirarEstoque(Long id, BigDecimal quantidade) {
         Produto produto = buscarPorId(id);
         produto.retirarEstoque(quantidade);
         return produto;

@@ -1,7 +1,8 @@
 package com.curso.alsports.dto;
 
+import com.curso.alsports.validation.CnpjValido;
+
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,11 +19,11 @@ public class FornecedorRequest {
     private String razaoSocial;
 
     @Schema(
-        description = "CNPJ do fornecedor, contendo exatamente 14 dígitos numéricos",
-        example = "00000000000000"
+        description = "CNPJ do fornecedor, contendo exatamente 14 dígitos numéricos e dígitos verificadores válidos",
+        example = "11222333000181"
     )
     @NotBlank
-    @Pattern(regexp = "\\d{14}")
+    @CnpjValido
     private String cnpj;
 
     public String getRazaoSocial() {
