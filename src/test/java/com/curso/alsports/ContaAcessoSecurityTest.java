@@ -3,7 +3,6 @@ package com.curso.alsports;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -21,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,6 +32,7 @@ import com.curso.alsports.model.ContaAcesso;
 import com.curso.alsports.model.Pessoa;
 import com.curso.alsports.repository.ContaAcessoRepository;
 import com.curso.alsports.repository.PessoaRepository;
+import com.jayway.jsonpath.JsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -86,7 +87,7 @@ class ContaAcessoSecurityTest {
         mockMvc.perform(get("/api/produtos"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string(
-                        "WWW-Authenticate", containsString("Basic")))
+                        "WWW-Authenticate", containsString("Bearer")))
                 .andExpect(content().string(not(containsString("senha"))))
                 .andExpect(content().string(not(containsString("senhaHash"))))
                 .andExpect(content().string(not(containsString("Exception"))));
@@ -180,9 +181,10 @@ class ContaAcessoSecurityTest {
     }
 
     @Test
-    void basicCorretoDevePermitirConsultarMinhaConta() throws Exception {
+    void bearerValidoDevePermitirConsultarMinhaConta() throws Exception {
         mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic(login, SENHA)))
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + autenticar(login, SENHA)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.login").value(login))
                 .andExpect(jsonPath("$.pessoaId").value(pessoa.getId()))
@@ -197,27 +199,46 @@ class ContaAcessoSecurityTest {
 
     @Test
     void loginDeveSerAvaliadoSemDiferenciarCaixa() throws Exception {
+        String token = autenticar(
+                login.toUpperCase(Locale.ROOT), SENHA);
+
         mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic(
-                                login.toUpperCase(Locale.ROOT), SENHA)))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.login").value(login));
     }
 
     @Test
-    void senhaIncorretaDeveRetornar401() throws Exception {
-        mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic(login, "senha-incorreta-2026")))
+    void senhaIncorretaNoLoginDeveRetornar401() throws Exception {
+        mockMvc.perform(post("/api/autenticacao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "%s",
+                                  "senha": "senha-incorreta-2026"
+                                }
+                                """.formatted(login)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string(not(containsString("senha"))))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message")
+                        .value("Login ou senha inválidos"))
+                .andExpect(content().string(not(containsString("senha-incorreta-2026"))))
                 .andExpect(content().string(not(containsString("$2a$"))));
     }
 
     @Test
     void loginInexistenteDeveRetornar401() throws Exception {
-        mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic("nao.existe." + sufixo(), SENHA)))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/autenticacao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "nao.existe.%s",
+                                  "senha": "%s"
+                                }
+                                """.formatted(sufixo(), SENHA)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message")
+                        .value("Login ou senha inválidos"));
     }
 
     @Test
@@ -225,9 +246,17 @@ class ContaAcessoSecurityTest {
         conta.bloquear();
         contaAcessoRepository.saveAndFlush(conta);
 
-        mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic(login, SENHA)))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/autenticacao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "%s",
+                                  "senha": "%s"
+                                }
+                                """.formatted(login, SENHA)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message")
+                        .value("Login ou senha inválidos"));
     }
 
     @Test
@@ -235,15 +264,24 @@ class ContaAcessoSecurityTest {
         pessoa.inativar();
         pessoaRepository.saveAndFlush(pessoa);
 
-        mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic(login, SENHA)))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/autenticacao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "%s",
+                                  "senha": "%s"
+                                }
+                                """.formatted(login, SENHA)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message")
+                        .value("Login ou senha inválidos"));
     }
 
     @Test
-    void rotaProtegidaComBasicValidoDeveRetornar200() throws Exception {
+    void rotaProtegidaComBearerValidoDeveRetornar200() throws Exception {
         mockMvc.perform(get("/api/produtos")
-                        .with(httpBasic(login, SENHA)))
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + autenticar(login, SENHA)))
                 .andExpect(status().isOk());
     }
 
@@ -258,7 +296,8 @@ class ContaAcessoSecurityTest {
             throws Exception {
 
         mockMvc.perform(put("/api/contas-acesso/me/senha")
-                        .with(httpBasic(login, SENHA))
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + autenticar(login, SENHA))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -268,19 +307,30 @@ class ContaAcessoSecurityTest {
                                 """.formatted(SENHA, NOVA_SENHA)))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic(login, SENHA)))
+        mockMvc.perform(post("/api/autenticacao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "%s",
+                                  "senha": "%s"
+                                }
+                                """.formatted(login, SENHA)))
                 .andExpect(status().isUnauthorized());
 
+        String tokenNovo = autenticar(login, NOVA_SENHA);
+
         mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic(login, NOVA_SENHA)))
-                .andExpect(status().isOk());
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenNovo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.login").value(login));
     }
 
     @Test
     void alteracaoComSenhaAtualIncorretaDeveRetornar400() throws Exception {
         mockMvc.perform(put("/api/contas-acesso/me/senha")
-                        .with(httpBasic(login, SENHA))
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + autenticar(login, SENHA))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -293,14 +343,16 @@ class ContaAcessoSecurityTest {
                         .value("Senha atual inválida"));
 
         mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic(login, SENHA)))
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + autenticar(login, SENHA)))
                 .andExpect(status().isOk());
     }
 
     @Test
     void alteracaoComNovaSenhaIgualDeveRetornar400() throws Exception {
         mockMvc.perform(put("/api/contas-acesso/me/senha")
-                        .with(httpBasic(login, SENHA))
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + autenticar(login, SENHA))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -313,14 +365,16 @@ class ContaAcessoSecurityTest {
                         .value("Nova senha deve ser diferente da senha atual"));
 
         mockMvc.perform(get("/api/contas-acesso/me")
-                        .with(httpBasic(login, SENHA)))
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + autenticar(login, SENHA)))
                 .andExpect(status().isOk());
     }
 
     @Test
     void novaSenhaComMaisDe72BytesUtf8DeveRetornar400() throws Exception {
         mockMvc.perform(put("/api/contas-acesso/me/senha")
-                        .with(httpBasic(login, SENHA))
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + autenticar(login, SENHA))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -431,6 +485,23 @@ class ContaAcessoSecurityTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "Pessoa inativa não pode possuir conta de acesso"));
+    }
+
+    private String autenticar(String login, String senha) throws Exception {
+        String resposta = mockMvc.perform(post("/api/autenticacao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "%s",
+                                  "senha": "%s"
+                                }
+                                """.formatted(login, senha)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return JsonPath.read(resposta, "$.accessToken");
     }
 
     private Pessoa criarPessoa(String nome) {

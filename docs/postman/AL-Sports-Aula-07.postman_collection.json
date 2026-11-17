@@ -1,8 +1,8 @@
 {
     "info":  {
                  "_postman_id":  "alsports-aula-07",
-                 "name":  "AL Sports - Aula 12",
-                 "description":  "Collection acumulada do AL Sports. A partir da Aula 12, as rotas protegidas usam HTTP Basic na raiz com {{authLogin}} e {{authPassword}}. As rotas públicas (health, OpenAPI e cadastros iniciais de pessoa e conta) não enviam credencial. Preencha as variáveis authLogin, authPassword e novaSenha antes de executar os fluxos protegidos. Nunca exporte credenciais reais.",
+                 "name":  "AL Sports - Aula 13",
+                 "description":  "Collection acumulada do AL Sports. A partir da Aula 13, as rotas protegidas usam Bearer Token JWT. Execute primeiro o login em 07 - Aula 13; o script salva o accessToken em {{accessToken}} e as demais requisições herdam o cabeçalho Authorization: Bearer. O token tem validade absoluta de 30 minutos: se receber 401, execute novamente apenas o login. As rotas públicas (health, OpenAPI, cadastro inicial de pessoa e conta e login) não enviam credencial. Preencha authLogin e authPassword antes dos fluxos. Nunca exporte credenciais ou tokens reais.",
                  "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
              },
     "variable":  [
@@ -76,6 +76,10 @@
                      },
                      {
                          "key":  "contaAcessoId",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "accessToken",
                          "value":  ""
                      }
                  ],
@@ -1738,10 +1742,12 @@
                                                                                     "pm.test(\"OpenAPI responde 200 sem credencial\", function () {",
                                                                                     "    pm.response.to.have.status(200);",
                                                                                     "});",
-                                                                                    "pm.test(\"Esquema basicAuth documentado\", function () {",
+                                                                                    "pm.test(\"Esquema bearerAuth documentado\", function () {",
                                                                                     "    var doc = pm.response.json();",
-                                                                                    "    pm.expect(doc.components.securitySchemes.basicAuth.type).to.eql(\"http\");",
-                                                                                    "    pm.expect(doc.components.securitySchemes.basicAuth.scheme).to.eql(\"basic\");",
+                                                                                    "    pm.expect(doc.components.securitySchemes.bearerAuth.type).to.eql(\"http\");",
+                                                                                    "    pm.expect(doc.components.securitySchemes.bearerAuth.scheme).to.eql(\"bearer\");",
+                                                                                    "    pm.expect(doc.components.securitySchemes.bearerAuth.bearerFormat).to.eql(\"JWT\");",
+                                                                                    "    pm.expect(doc.components.securitySchemes.basicAuth).to.be.undefined;",
                                                                                     "});"
                                                                                 ]
                                                                    }
@@ -2002,15 +2008,18 @@
                                                   }
                                   },
                                   {
-                                      "name":  "08 - Senha incorreta - 401",
+                                      "name":  "08 - HTTP Basic não autentica mais - 401",
                                       "event":  [
                                                     {
                                                         "listen":  "test",
                                                         "script":  {
                                                                        "type":  "text/javascript",
                                                                        "exec":  [
-                                                                                    "pm.test(\"Senha incorreta retorna 401\", function () {",
+                                                                                    "pm.test(\"HTTP Basic não autentica mais\", function () {",
                                                                                     "    pm.response.to.have.status(401);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Desafio Bearer é anunciado\", function () {",
+                                                                                    "    pm.expect(pm.response.headers.get(\"WWW-Authenticate\")).to.include(\"Bearer\");",
                                                                                     "});"
                                                                                 ]
                                                                    }
@@ -2031,7 +2040,7 @@
                                                                                  },
                                                                                  {
                                                                                      "key":  "password",
-                                                                                     "value":  "senha-incorreta-2026",
+                                                                                     "value":  "{{authPassword}}",
                                                                                      "type":  "string"
                                                                                  }
                                                                              ]
@@ -2050,21 +2059,283 @@
                                                   }
                                   }
                               ]
+                 },
+                 {
+                     "name":  "07 - Aula 13",
+                     "item":  [
+                                  {
+                                      "name":  "01 - Login e salvar token",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Login responde 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Contrato do token está completo\", function () {",
+                                                                                    "    var body = pm.response.json();",
+                                                                                    "    pm.expect(body.tokenType).to.eql(\"Bearer\");",
+                                                                                    "    pm.expect(body.expiresIn).to.eql(1800);",
+                                                                                    "    pm.expect(body.expiresAt).to.be.a(\"string\").and.not.empty;",
+                                                                                    "    pm.expect(body.accessToken).to.be.a(\"string\").and.not.empty;",
+                                                                                    "    pm.expect(body.senha).to.be.undefined;",
+                                                                                    "    pm.expect(body.senhaHash).to.be.undefined;",
+                                                                                    "});",
+                                                                                    "if (pm.response.code === 200) {",
+                                                                                    "    pm.collectionVariables.set(\"accessToken\", pm.response.json().accessToken);",
+                                                                                    "}"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/login",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "autenticacao",
+                                                                               "login"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"login\":\"{{authLogin}}\",\"senha\":\"{{authPassword}}\"}"
+                                                               },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "02 - Minha conta com Bearer",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Minha conta responde 200 com Bearer\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Resposta não expõe senha nem hash\", function () {",
+                                                                                    "    var body = pm.response.json();",
+                                                                                    "    pm.expect(body.senha).to.be.undefined;",
+                                                                                    "    pm.expect(body.senhaHash).to.be.undefined;",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/me",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "me"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "03 - Rota protegida com Bearer",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Rota protegida responde 200 com Bearer\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "04 - Login com senha incorreta - 401",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Credencial inválida retorna 401\", function () {",
+                                                                                    "    pm.response.to.have.status(401);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Mensagem é genérica e não expõe detalhes\", function () {",
+                                                                                    "    var body = pm.response.json();",
+                                                                                    "    pm.expect(body.message).to.eql(\"Login ou senha inválidos\");",
+                                                                                    "    pm.expect(body.accessToken).to.be.undefined;",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/login",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "autenticacao",
+                                                                               "login"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"login\":\"{{authLogin}}\",\"senha\":\"senha-incorreta-2026\"}"
+                                                               },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "05 - Token inválido - 401",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Token inválido retorna 401\", function () {",
+                                                                                    "    pm.response.to.have.status(401);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "token-invalido",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "06 - HTTP Basic não autentica mais - 401",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"HTTP Basic não autentica mais\", function () {",
+                                                                                    "    pm.response.to.have.status(401);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "basic",
+                                                                   "basic":  [
+                                                                                 {
+                                                                                     "key":  "username",
+                                                                                     "value":  "{{authLogin}}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "key":  "password",
+                                                                                     "value":  "{{authPassword}}",
+                                                                                     "type":  "string"
+                                                                                 }
+                                                                             ]
+                                                               }
+                                                  }
+                                  }
+                              ]
                  }
              ],
     "auth":  {
-                 "type":  "basic",
-                 "basic":  [
-                               {
-                                   "key":  "username",
-                                   "value":  "{{authLogin}}",
-                                   "type":  "string"
-                               },
-                               {
-                                   "key":  "password",
-                                   "value":  "{{authPassword}}",
-                                   "type":  "string"
-                               }
-                           ]
+                 "type":  "bearer",
+                 "bearer":  [
+                                {
+                                    "key":  "token",
+                                    "value":  "{{accessToken}}",
+                                    "type":  "string"
+                                }
+                            ]
              }
 }

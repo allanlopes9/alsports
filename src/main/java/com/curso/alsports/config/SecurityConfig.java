@@ -3,7 +3,9 @@ package com.curso.alsports.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -34,6 +36,18 @@ public class SecurityConfig {
         return provider;
     }
 
+    /**
+     * Manager explícito reutilizado pelo endpoint de login. Não há um segundo
+     * fluxo de autenticação: o mesmo provider, UserDetailsService e BCrypt da
+     * Aula 12 continuam responsáveis pela validação.
+     */
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationProvider authenticationProvider) {
+
+        return new ProviderManager(authenticationProvider);
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
@@ -55,10 +69,15 @@ public class SecurityConfig {
                 .requestMatchers(
                     HttpMethod.POST,
                     "/api/pessoas",
-                    "/api/contas-acesso")
+                    "/api/contas-acesso",
+                    "/api/autenticacao/login")
                 .permitAll()
                 .anyRequest().authenticated())
-            .httpBasic(Customizer.withDefaults())
+            // HTTP Basic foi removido. Apenas Bearer Token válido autentica
+            // as rotas protegidas; falhas mantêm o comportamento padrão do
+            // Resource Server (401).
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(Customizer.withDefaults()))
             .authenticationProvider(authenticationProvider);
 
         return http.build();

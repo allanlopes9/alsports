@@ -135,6 +135,24 @@ public class GlobalExceptionHandler {
             .body(erro);
     }
 
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<ApiError> tratarCredenciaisInvalidas(
+        CredenciaisInvalidasException ex,
+        HttpServletRequest request) {
+
+        ApiError erro = new ApiError(
+            Instant.now(),
+            HttpStatus.UNAUTHORIZED.value(),
+            HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+            ex.getMessage(),
+            request.getRequestURI(),
+            null);
+
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(erro);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> tratarJsonInvalido(
         HttpMessageNotReadableException ex,

@@ -16,11 +16,15 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI alsportsOpenAPI() {
 
-        SecurityScheme basicAuth = new SecurityScheme()
+        SecurityScheme bearerAuth = new SecurityScheme()
                 .type(SecurityScheme.Type.HTTP)
-                .scheme("basic")
+                .scheme("bearer")
+                .bearerFormat("JWT")
                 .description(
-                    "Autenticação HTTP Basic. Em produção, use somente sobre HTTPS/TLS.");
+                    "Autenticação Bearer com JWT emitido por "
+                        + "POST /api/autenticacao/login. O token tem validade "
+                        + "absoluta de 30 minutos. Em produção, use somente "
+                        + "sobre HTTPS/TLS.");
 
         return new OpenAPI()
             .info(new Info()
@@ -28,13 +32,13 @@ public class OpenApiConfig {
                 .description(
                     "API REST para gerenciamento de produtos, "
                         + "categorias, fornecedores, estoque, vendas e acessos da AL Sports. "
-                        + "As operações são autenticadas por HTTP Basic, exceto as rotas "
-                        + "públicas de saúde, documentação e cadastro inicial.")
+                        + "As operações são autenticadas por Bearer Token (JWT), exceto as "
+                        + "rotas públicas de saúde, documentação, cadastro inicial e login.")
                 .version("1.0.0")
                 .contact(new Contact()
                     .name("AL Sports")))
             .components(new Components()
-                .addSecuritySchemes("basicAuth", basicAuth))
-            .addSecurityItem(new SecurityRequirement().addList("basicAuth"));
+                .addSecuritySchemes("bearerAuth", bearerAuth))
+            .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
     }
 }

@@ -28,7 +28,7 @@ O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apres
 - filtros, paginação e contrato OpenAPI;
 - vendas, pessoas e estoque fracionado;
 - concorrência, isolamento transacional e bloqueio pessimista;
-- identidade de acesso, hash BCrypt e autenticação HTTP Basic com Spring Security.
+- identidade de acesso, hash BCrypt e autenticação Bearer Token com JWT no Spring Security (OAuth2 Resource Server).
 
 ## Tecnologias
 
@@ -37,6 +37,8 @@ O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apres
 - Spring Web MVC
 - Spring Data JPA
 - Spring Security
+- Spring Security OAuth2 Resource Server
+- JWT (HS256)
 - Bean Validation
 - PostgreSQL
 - Liquibase
@@ -312,6 +314,7 @@ Nunca devem ser versionados:
 - senhas;
 - tokens;
 - chaves privadas;
+- chave JWT (`JWT_SECRET`);
 - credenciais;
 - arquivos `.env`;
 - outros segredos reais.
@@ -322,20 +325,38 @@ O `.gitignore` possui a regra:
 
 ### Autenticação e proteção de senhas
 
-A partir da Aula 12, a API usa Spring Security com HTTP Basic:
+A partir da Aula 13, a API usa Spring Security como OAuth2 Resource Server e autentica as rotas protegidas com Bearer Token JWT:
 
+- `POST /api/autenticacao/login` é público e emite o token;
 - `GET /api/health` é público;
 - `GET /v3/api-docs/**`, `/swagger-ui.html` e `/swagger-ui/**` são públicos;
 - `POST /api/pessoas` e `POST /api/contas-acesso` são públicos para o cadastro inicial;
-- todas as demais rotas exigem credencial válida;
+- todas as demais rotas exigem `Authorization: Bearer <token>`;
 - a autenticação é stateless, sem sessão e sem cookie;
-- o CSRF está desabilitado somente porque a API não mantém sessão nem cookie de autenticação.
+- o CSRF está desabilitado somente porque a API não mantém sessão nem cookie de autenticação;
+- HTTP Basic foi removido e não autentica mais nenhuma rota.
 
-As senhas são persistidas com `PasswordEncoderFactories.createDelegatingPasswordEncoder()`, que produz hashes BCrypt prefixados com `{bcrypt}`. O hash inclui salt aleatório e fator de trabalho. A senha em texto aberto nunca é armazenada, devolvida, registrada em log ou incluída em mensagens de erro.
+A chave HMAC é lida de `JWT_SECRET`, nunca do código-fonte ou de arquivos versionados. O valor deve estar em Base64 e possuir pelo menos 32 bytes após a decodificação. A aplicação falha na inicialização se a chave estiver ausente, não for Base64 ou for curta demais. O `.env.example` contém apenas um placeholder fictício.
+
+A configuração tipada fica em `app.security.jwt`:
+
+- `issuer` — emissor didático `https://alsports.local`;
+- `expiration` — `PT30M`;
+- `secret` — `${JWT_SECRET}`.
+
+O algoritmo é fixado em HS256 no encoder e no decoder. O Resource Server valida assinatura, emissor e expiração; o cabeçalho do token não escolhe livremente o algoritmo.
+
+O token tem validade absoluta de 30 minutos: `exp = iat + PT30M`. O uso não renova o prazo. Não há refresh token, logout no servidor, blacklist, revogação por `jti` nem idle timeout. Bloquear a conta ou trocar a senha impede novos logins, mas não invalida um JWT já emitido até a expiração.
 
 O login é comparado sem diferenciar maiúsculas, minúsculas ou espaços externos. Tentativas com login inexistente, senha incorreta, conta bloqueada ou pessoa inativa recebem a mesma resposta genérica `401 Unauthorized`, sem revelar qual condição falhou.
 
-HTTP Basic transmite login e senha em cada requisição. Em produção, a API deve ser publicada exclusivamente sobre HTTPS/TLS; sem TLS, o cabeçalho `Authorization` pode ser interceptado.
+As senhas continuam persistidas com `PasswordEncoderFactories.createDelegatingPasswordEncoder()`, que produz hashes BCrypt prefixados com `{bcrypt}`. O hash inclui salt aleatório e fator de trabalho. A senha em texto aberto nunca é armazenada, devolvida, registrada em log ou incluída no token.
+
+Um JWT assinado não é criptografado. O payload é apenas codificado em Base64URL e pode ser lido por qualquer pessoa que possua o token; a assinatura garante integridade e autenticidade, não sigilo. Por isso o token contém somente `iss`, `sub`, `iat`, `exp`, `jti` e `perfis`, sem senha, hash, CPF ou outros dados desnecessários.
+
+Esta aplicação é um Resource Server e também um emissor didático de tokens para o próprio login. Ela não é um Authorization Server completo: não implementa OAuth2, não expõe JWK Set, não usa RSA/RS256 e não atende outros clientes.
+
+Em produção, a API deve ser publicada exclusivamente sobre HTTPS/TLS. Sem TLS, o Bearer Token pode ser interceptado e reutilizado até expirar.
 
 ## API REST
 
@@ -424,15 +445,39 @@ Exemplo de request:
 
 A resposta é `204 No Content`. A senha atual é conferida, a nova senha precisa ser diferente e o servidor persiste somente o novo hash.
 
-As rotas `/me` usam o login do usuário autenticado no HTTP Basic; o cliente não informa o identificador da conta.
+As rotas `/me` usam o login do usuário autenticado no Bearer Token (claim `sub`); o cliente não informa o identificador da conta.
 
-### Autenticação das demais rotas
+### Login e autenticação das demais rotas
 
-As rotas de categorias, fornecedores, produtos, pessoas, clientes, colaboradores, vendas, estoque e contas de acesso (exceto o cadastro público) exigem HTTP Basic:
+O login é público e troca credenciais válidas por um access token JWT:
 
-Authorization: Basic <credencial>
+POST /api/autenticacao/login
 
-Sem credencial válida, a resposta é `401 Unauthorized` com o cabeçalho `WWW-Authenticate: Basic`. A resposta não informa se o login existe, se a senha está errada ou se a conta está bloqueada.
+Exemplo de request:
+
+{
+    "login": "ana.souza",
+    "senha": "uma-frase-senha-2026"
+}
+
+Exemplo de resposta `200 OK`:
+
+{
+    "accessToken": "<jwt-assinado>",
+    "tokenType": "Bearer",
+    "expiresIn": 1800,
+    "expiresAt": "2026-11-17T21:30:00Z"
+}
+
+Credenciais inválidas, conta bloqueada ou pessoa inativa retornam `401 Unauthorized` com um `ApiError` genérico. Login ou senha em branco e valores acima dos limites retornam `400 Bad Request`.
+
+As rotas de categorias, fornecedores, produtos, pessoas, clientes, colaboradores, vendas, estoque e contas de acesso (exceto o cadastro público) exigem Bearer Token:
+
+Authorization: Bearer <token>
+
+Sem token, com token malformado, adulterado, expirado, assinado com outra chave ou com emissor incorreto, a resposta é `401 Unauthorized` com o cabeçalho `WWW-Authenticate: Bearer`. O Resource Server não informa se o token existiu, se foi revogado ou qual validação falhou. HTTP Basic também retorna `401`.
+
+Para renovar a validade, é necessário autenticar novamente. Não existe refresh token nem renovação automática.
 
 ## DTO de produto
 
@@ -553,17 +598,26 @@ Exemplos:
 
 ### HTTP 401 — Unauthorized
 
-Utilizado quando a credencial está ausente ou inválida em uma rota protegida.
+Utilizado quando a credencial está ausente ou inválida.
 
-Exemplos:
+Exemplos em rotas protegidas:
 
 - requisição sem cabeçalho `Authorization`;
+- token malformado, adulterado ou expirado;
+- token assinado com outra chave ou com emissor incorreto;
+- tentativa de autenticação com HTTP Basic;
+- token ausente após a expiração absoluta de 30 minutos.
+
+Exemplos no endpoint de login:
+
 - login inexistente;
 - senha incorreta;
 - conta bloqueada;
 - pessoa vinculada à conta está inativa.
 
-A resposta é genérica e não revela senha, hash, existência do login ou motivo específico da falha.
+No login, a resposta é um `ApiError` genérico e não revela senha, hash, existência do login ou motivo específico da falha. Nas rotas protegidas, o Resource Server mantém o comportamento padrão do Spring Security, com `WWW-Authenticate: Bearer` e sem detalhes internos.
+
+Um JWT já emitido continua válido até `exp`, mesmo que a conta seja bloqueada ou a senha seja alterada. Essa limitação é intencional nesta aula e será tratada em etapas posteriores do curso.
 
 ### HTTP 500 — Internal Server Error
 
@@ -633,30 +687,38 @@ A classe não abre transação de teste. Cada chamada aos serviços parte de uma
 
 Os dados criados por cada teste são removidos ao final.
 
-### Testes de segurança
+### Testes de segurança e JWT
 
 Localizados em:
 
-src/test/java/com/curso/alsports/ContaAcessoSecurityTest.java
+- `src/test/java/com/curso/alsports/AutenticacaoSecurityTest.java`;
+- `src/test/java/com/curso/alsports/ContaAcessoSecurityTest.java`;
+- `src/test/java/com/curso/alsports/config/JwtConfigTest.java`;
+- `src/test/java/com/curso/alsports/service/TokenServiceTest.java`;
+- `src/test/java/com/curso/alsports/service/AutenticacaoServiceTest.java`.
 
-A classe mantém a cadeia de filtros do Spring Security ativa e usa MockMvc com HTTP Basic real. Os cenários cobrem:
+As classes de integração mantêm a cadeia de filtros do Spring Security ativa e usam MockMvc com Bearer Token real, emitido pelo endpoint de login. Os cenários cobrem:
 
-- health e OpenAPI públicos;
-- rotas protegidas sem credencial retornando 401;
-- cadastro público de pessoa e de conta;
-- persistência somente de hash BCrypt;
-- login sem diferenciar caixa;
-- `/me` com credencial válida;
-- senha incorreta, login inexistente, conta bloqueada e pessoa inativa retornando 401;
-- troca de senha com 204 e invalidação da senha anterior;
-- senha atual incorreta, nova senha igual e excesso de bytes UTF-8 retornando 400;
-- login duplicado e pessoa já vinculada retornando 409;
-- pessoa inexistente retornando 404;
+- health, OpenAPI, cadastro inicial e login públicos;
+- emissão de token com contrato `accessToken`, `tokenType`, `expiresIn` e `expiresAt`;
+- claims `iss`, `sub`, `iat`, `exp`, `jti` e `perfis`;
+- validade absoluta de 1800 segundos sem renovação pelo uso;
+- ausência de senha, hash, CPF e segredo no payload;
+- rotas protegidas sem token retornando 401 com `WWW-Authenticate: Bearer`;
+- HTTP Basic retornando 401;
+- token malformado, adulterado, expirado, com emissor incorreto, assinado com outra chave ou com `alg: none` retornando 401;
+- `/me` e rotas de produtos com token válido;
+- senha incorreta, login inexistente, conta bloqueada e pessoa inativa retornando 401 genérico;
+- validação estrutural do login retornando 400;
+- token ainda válido após bloqueio da conta e após troca de senha, documentando a ausência de revogação;
+- troca de senha com 204 e invalidação da senha anterior para novos logins;
 - ausência de senha, hash e stack trace nas respostas.
 
-Os testes unitários de `ContaAcessoTest`, `ContaAcessoServiceTest` e `ContaAcessoUserDetailsServiceTest` validam as regras de domínio, a geração de hash, a comparação de senhas e o mapeamento de perfis para autoridades.
+`JwtConfigTest` valida a chave Base64, o mínimo de 32 bytes, a recusa de configuração inválida e a rejeição de tokens com emissor errado, expirados, adulterados, malformados, com `alg: none` ou assinados com outra chave. `TokenServiceTest` valida a emissão HS256, as claims, o `jti` único e a expiração absoluta. `AutenticacaoServiceTest` garante que o `AuthenticationManager` da Aula 12 é reutilizado e que nenhum token é emitido quando a autenticação falha.
 
-Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `ContaAcessoSecurityTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
+Os testes unitários de `ContaAcessoTest`, `ContaAcessoServiceTest` e `ContaAcessoUserDetailsServiceTest` continuam validando as regras de domínio, a geração de hash, a comparação de senhas e o mapeamento de perfis para autoridades.
+
+A suíte possui 283 testes em 24 classes, todos aprovados. Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `AutenticacaoSecurityTest`, `ContaAcessoSecurityTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
 
 Para executar todos os testes:
 
@@ -668,27 +730,26 @@ A collection acumulada para testes manuais da API está em:
 
 docs/postman/AL-Sports-Aula-07.postman_collection.json
 
-O nome da collection foi atualizado para `AL Sports - Aula 12`.
+O nome da collection foi atualizado para `AL Sports - Aula 13`.
 
-A partir da Aula 12, a collection usa HTTP Basic na raiz com as variáveis:
+A partir da Aula 13, a collection usa Bearer Token na raiz:
 
-- `authLogin`;
-- `authPassword`.
+- `Authorization: Bearer {{accessToken}}`.
 
-As rotas protegidas herdam essa credencial. As rotas públicas (`GET /api/health`, `GET /v3/api-docs`, `POST /api/pessoas` e `POST /api/contas-acesso`) usam `noauth`.
+A variável `accessToken` é preenchida automaticamente pela requisição de login. As rotas protegidas herdam esse cabeçalho. As rotas públicas (`GET /api/health`, `GET /v3/api-docs`, `POST /api/pessoas`, `POST /api/contas-acesso` e `POST /api/autenticacao/login`) usam `noauth`.
 
-A pasta `06 - Aula 12` contém:
+A pasta `07 - Aula 13` contém:
 
-1. health público;
-2. OpenAPI público;
-3. criação de pessoa bootstrap;
-4. criação de conta de acesso;
-5. consulta da própria conta;
-6. alteração de senha;
-7. rota protegida sem credencial retornando 401;
-8. senha incorreta retornando 401.
+1. login e salvamento do token em `{{accessToken}}`;
+2. consulta da própria conta com Bearer;
+3. rota protegida de produtos com Bearer;
+4. login com senha incorreta retornando 401;
+5. token inválido retornando 401;
+6. HTTP Basic não autenticando mais e retornando 401.
 
-As variáveis `authLogin`, `authPassword` e `novaSenha` devem ser preenchidas localmente antes da execução. A collection não contém credenciais reais e não deve ser exportada com valores preenchidos.
+A pasta `06 - Aula 12` mantém os fluxos de health, OpenAPI, criação de pessoa e conta, consulta da própria conta, alteração de senha e rota protegida sem credencial. O antigo cenário de senha incorreta via Basic foi atualizado para demonstrar que HTTP Basic não autentica mais.
+
+As variáveis `authLogin`, `authPassword` e `novaSenha` devem ser preenchidas localmente antes da execução. A collection não contém credenciais reais, chave JWT ou token fixo e não deve ser exportada com valores preenchidos. Como o token expira em 30 minutos, execute novamente o login quando receber 401.
 
 A collection também mantém os cenários anteriores:
 
@@ -784,9 +845,13 @@ Bloqueio pessimista de escrita nas operações que alteram saldo, ordenação de
 
 Identidade de acesso vinculada a `Pessoa`, senhas persistidas com hash BCrypt, autenticação HTTP Basic stateless, endpoints de conta, regras de autorização explícitas, testes de segurança com filtros ativos e documentação OpenAPI do esquema `basicAuth`.
 
+### Aula 13 — JWT e Bearer Token
+
+Migração do HTTP Basic para Bearer Token JWT com OAuth2 Resource Server, assinatura HS256, chave lida de `JWT_SECRET`, validade absoluta de 30 minutos, endpoint público de login, claims mínimas com `sub` e `perfis`, tratamento genérico de credenciais inválidas, testes de emissão e validação, OpenAPI com `bearerAuth` e collection Postman atualizada.
+
 ## Status do projeto
 
-**Projeto concluído até a Aula 12.**
+**Projeto concluído até a Aula 13.**
 
 Principais pontos implementados:
 
@@ -803,14 +868,18 @@ Principais pontos implementados:
 - [x] Quantidades fracionadas com até 3 casas decimais
 - [x] Concorrência de estoque com bloqueio pessimista
 - [x] Testes de concorrência com PostgreSQL real
-- [x] Spring Security com HTTP Basic
+- [x] Spring Security como OAuth2 Resource Server
+- [x] Bearer Token JWT com assinatura HS256
+- [x] Login público com emissão de access token
+- [x] Validade absoluta de 30 minutos
 - [x] Senhas com hash BCrypt e salt
 - [x] Conta de acesso vinculada a Pessoa
 - [x] Perfis OPERADOR e ADMINISTRADOR
 - [x] Endpoints de conta e troca de senha
 - [x] Regras explícitas de rotas públicas e protegidas
 - [x] Testes de segurança com filtros ativos
-- [x] OpenAPI com esquema basicAuth
+- [x] Testes de emissão e validação de JWT
+- [x] OpenAPI com esquema bearerAuth
 - [x] Código de barras
 - [x] Repositories
 - [x] Services
@@ -842,6 +911,8 @@ Principais pontos implementados:
 - `aula-09-openapi`
 - `aula-10-vendas`
 - `aula-11-concorrencia`
+- `aula-12-autenticacao-http-basic`
+- `aula-13-jwt-bearer-token`
 
 ## Documentação
 
@@ -861,8 +932,12 @@ A documentação da Aula 12 está disponível em:
 
 docs/12aula/12aula.md
 
+A documentação da Aula 13 está disponível em:
+
+docs/13aula/13aula.md
+
 ## Projeto acadêmico
 
-Projeto desenvolvido para acompanhamento das Aulas 00 a 12 do curso de Java Spring Boot.
+Projeto desenvolvido para acompanhamento das Aulas 00 a 13 do curso de Java Spring Boot.
 
 **AL Sports — Sistema de controle de loja de artigos esportivos.**

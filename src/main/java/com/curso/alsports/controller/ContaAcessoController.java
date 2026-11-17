@@ -102,8 +102,8 @@ public class ContaAcessoController {
 
     @Operation(
         summary = "Consultar a própria conta",
-        description = "Retorna a conta identificada pelo usuário autenticado no HTTP Basic. "
-            + "A resposta não inclui senha nem hash."
+        description = "Retorna a conta identificada pelo usuário autenticado no token "
+            + "Bearer (claim sub). A resposta não inclui senha nem hash."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -116,7 +116,7 @@ public class ContaAcessoController {
         ),
         @ApiResponse(
             responseCode = "401",
-            description = "Credencial ausente ou inválida"
+            description = "Token ausente ou inválido"
         )
     })
     @GetMapping("/me")
@@ -148,7 +148,7 @@ public class ContaAcessoController {
         ),
         @ApiResponse(
             responseCode = "401",
-            description = "Credencial ausente ou inválida"
+            description = "Token ausente ou inválido"
         )
     })
     @PutMapping("/me/senha")

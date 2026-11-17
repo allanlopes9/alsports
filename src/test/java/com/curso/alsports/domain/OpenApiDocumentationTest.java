@@ -107,20 +107,53 @@ class OpenApiDocumentationTest {
             .andExpect(jsonPath("$.tags[?(@.name == 'Vendas')]").exists())
             .andExpect(jsonPath("$.tags[?(@.name == 'Contas de acesso')]").exists())
 
-            // Segurança HTTP Basic documentada globalmente
+            // Segurança Bearer/JWT documentada globalmente
             .andExpect(jsonPath(
-                "$.components.securitySchemes.basicAuth.type")
+                "$.components.securitySchemes.bearerAuth.type")
                 .value("http"))
             .andExpect(jsonPath(
-                "$.components.securitySchemes.basicAuth.scheme")
-                .value("basic"))
-            .andExpect(jsonPath("$.security[0].basicAuth").isArray())
+                "$.components.securitySchemes.bearerAuth.scheme")
+                .value("bearer"))
+            .andExpect(jsonPath(
+                "$.components.securitySchemes.bearerAuth.bearerFormat")
+                .value("JWT"))
+            .andExpect(jsonPath(
+                "$.components.securitySchemes.basicAuth")
+                .doesNotExist())
+            .andExpect(jsonPath("$.security[0].bearerAuth").isArray())
 
             // Operações públicas sem exigência de credencial
             .andExpect(jsonPath("$.paths['/api/health'].get.security").isEmpty())
             .andExpect(jsonPath("$.paths['/api/pessoas'].post.security").isEmpty())
             .andExpect(jsonPath(
                 "$.paths['/api/contas-acesso'].post.security").isEmpty())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/login'].post.security").isEmpty())
+
+            // Login público
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/login'].post").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/login'].post.responses['200']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/login'].post.responses['400']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/login'].post.responses['401']").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.LoginRequest").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.TokenResponse").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.TokenResponse.properties.accessToken").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.TokenResponse.properties.tokenType").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.TokenResponse.properties.expiresIn").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.TokenResponse.properties.expiresAt").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.TokenResponse.properties.senha")
+                .doesNotExist())
 
             // Contas de acesso
             .andExpect(jsonPath("$.paths['/api/contas-acesso'].post").exists())
