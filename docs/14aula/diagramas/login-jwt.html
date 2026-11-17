@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 14 · Login e emissão do JWT</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --card: #151f33;
+    --card2: #1b2942;
+    --line: #2b3b57;
+    --text: #e6eefc;
+    --muted: #9db0cc;
+    --accent: #38bdf8;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --violet: #a78bfa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, #172554 0%, var(--bg) 55%);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 42px 24px 18px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid #1d4ed8;
+    background: #0c1a33;
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+  h1 { margin: 14px 0 8px; font-size: clamp(24px, 4vw, 38px); line-height: 1.15; }
+  header p { color: var(--muted); max-width: 760px; line-height: 1.6; margin: 0; }
+  main { max-width: 1120px; margin: 0 auto; padding: 10px 24px 56px; }
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .steps { display: flex; flex-direction: column; gap: 8px; }
+  .step {
+    text-align: left;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color .18s, transform .18s, background .18s;
+    font: inherit;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .step:hover { border-color: var(--accent); transform: translateX(2px); }
+  .step[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: linear-gradient(90deg, #0c2b4a, var(--card2));
+    box-shadow: 0 0 0 1px #0ea5e9 inset;
+  }
+  .num {
+    flex: 0 0 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: #0c1a33; color: var(--accent);
+    font-size: 12px; font-weight: 700; border: 1px solid #1d4ed8;
+  }
+  .panel {
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--card), #111a2b);
+    border-radius: 16px;
+    padding: 22px;
+    min-height: 330px;
+  }
+  .panel h2 { margin: 0 0 6px; font-size: 20px; }
+  .panel .who { color: var(--accent); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  .panel p { color: var(--muted); line-height: 1.65; }
+  .panel code, .panel pre { font-family: "Cascadia Code", Consolas, monospace; }
+  .panel code { color: #bae6fd; background: #0b1a2d; padding: 2px 5px; border-radius: 5px; }
+  pre {
+    background: #0a1424; border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; overflow: auto; color: #d7e6ff; font-size: 13px; line-height: 1.55;
+  }
+  .kv { display: grid; grid-template-columns: 120px 1fr; gap: 8px 14px; margin-top: 12px; }
+  .kv div:nth-child(odd) { color: var(--muted); font-size: 13px; }
+  .kv div:nth-child(even) { color: var(--text); font-size: 14px; }
+  .lane {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    margin-bottom: 18px;
+  }
+  .lane span {
+    text-align: center; font-size: 12px; color: var(--muted);
+    border: 1px dashed var(--line); border-radius: 8px; padding: 8px;
+    background: #0d1728;
+  }
+  .hint { margin-top: 14px; color: var(--muted); font-size: 13px; }
+  .pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; margin-right: 6px; }
+  .pill.ok { background: #052e22; color: var(--green); border: 1px solid #065f46; }
+  .pill.warn { background: #33240a; color: var(--amber); border: 1px solid #92400e; }
+  .pill.bad { background: #3b0d12; color: var(--red); border: 1px solid #991b1b; }
+  footer { max-width: 1120px; margin: 0 auto; padding: 0 24px 40px; color: #6f86a6; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="badge">Aula 14 · Autorização</span>
+  <h1>Login e emissão do JWT</h1>
+  <p>O login continua sendo o mesmo fluxo da Aula 13. A diferença é que as authorities <code>ROLE_*</code> já validadas pelo Spring Security são convertidas em claim <code>perfis</code>. O token emitido será a base das decisões de autorização.</p>
+</header>
+
+<main>
+  <div class="lane">
+    <span>Cliente</span>
+    <span>AutenticacaoController</span>
+    <span>Spring Security / BCrypt</span>
+    <span>TokenService</span>
+  </div>
+
+  <div class="layout">
+    <div class="steps" id="steps" aria-label="Etapas do login">
+      <button class="step" aria-pressed="true" data-step="0"><span class="num">1</span> Credenciais chegam ao login</button>
+      <button class="step" aria-pressed="false" data-step="1"><span class="num">2</span> Provider valida a conta</button>
+      <button class="step" aria-pressed="false" data-step="2"><span class="num">3</span> Authorities são montadas</button>
+      <button class="step" aria-pressed="false" data-step="3"><span class="num">4</span> TokenService lê ROLE_*</button>
+      <button class="step" aria-pressed="false" data-step="4"><span class="num">5</span> Claims e assinatura HS256</button>
+      <button class="step" aria-pressed="false" data-step="5"><span class="num">6</span> Resposta com accessToken</button>
+    </div>
+
+    <section class="panel" id="panel" aria-live="polite"></section>
+  </div>
+  <p class="hint">Clique nas etapas para acompanhar o caminho da credencial até o token. Nenhuma senha, hash ou CPF entra no payload.</p>
+</main>
+
+<footer>AL Sports · material didático da Aula 14 · execute apenas em ambiente local.</footer>
+
+<script>
+const steps = [
+  {
+    title: "Credenciais chegam ao endpoint público",
+    who: "Cliente → AutenticacaoController",
+    html: `
+      <p><code>POST /api/autenticacao/login</code> é público. O corpo contém apenas <code>login</code> e <code>senha</code>.</p>
+      <pre>{
+  "login": "ana.souza",
+  "senha": "uma-frase-senha-2026"
+}</pre>
+      <div class="kv">
+        <div>Rota</div><div><code>POST /api/autenticacao/login</code></div>
+        <div>Autenticação</div><div><span class="pill ok">pública</span> não exige Bearer</div>
+        <div>Resposta de falha</div><div><span class="pill bad">401</span> mensagem genérica</div>
+      </div>`
+  },
+  {
+    title: "O provider valida a conta",
+    who: "AuthenticationManager → DaoAuthenticationProvider",
+    html: `
+      <p>O <code>ProviderManager</code> reutiliza o <code>DaoAuthenticationProvider</code> da Aula 12. O <code>ContaAcessoUserDetailsService</code> localiza a conta e o <code>PasswordEncoder</code> compara a senha com o hash BCrypt.</p>
+      <p>Conta bloqueada, pessoa inativa, login inexistente ou senha errada produzem a mesma exceção pública: <code>Login ou senha inválidos</code>.</p>
+      <div class="kv">
+        <div>Senha</div><div>nunca é persistida em texto aberto</div>
+        <div>Hash</div><div><code>{bcrypt}$2a$...</code> com salt</div>
+        <div>Falha</div><div><span class="pill bad">401</span> sem revelar a causa</div>
+      </div>`
+  },
+  {
+    title: "Authorities são montadas a partir dos perfis",
+    who: "UserDetails → Authentication",
+    html: `
+      <p>A conta possui o conjunto <code>perfis</code> (<code>OPERADOR</code>, <code>ADMINISTRADOR</code>). O <code>UserDetailsService</code> transforma cada perfil em uma authority com o prefixo exigido pelo Spring Security.</p>
+      <pre>perfis do domínio:  [OPERADOR, ADMINISTRADOR]
+authorities:        [ROLE_OPERADOR, ROLE_ADMINISTRADOR]</pre>
+      <p>O prefixo <code>ROLE_</code> é uma convenção do Spring Security. Ele não aparece no enum, no JSON da conta nem no claim <code>perfis</code>.</p>`
+  },
+  {
+    title: "TokenService extrai apenas ROLE_*",
+    who: "TokenService.emitir(Authentication)",
+    html: `
+      <p>O serviço percorre as authorities autenticadas, remove o prefixo, elimina duplicidades e ordena o resultado.</p>
+      <pre>authentication.getAuthorities().stream()
+    .map(GrantedAuthority::getAuthority)
+    .filter(a -> a.startsWith("ROLE_"))
+    .map(a -> a.substring("ROLE_".length()))
+    .distinct()
+    .sorted()
+    .toList();</pre>
+      <p>O cliente não escolhe perfis no login. A única fonte é o objeto <code>Authentication</code> já validado pelo servidor.</p>`
+  },
+  {
+    title: "Claims e assinatura HS256",
+    who: "JwtEncoder",
+    html: `
+      <p>O token recebe emissor, sujeito, instantes e identificador único. A assinatura HS256 protege a integridade do conteúdo.</p>
+      <pre>{
+  "iss": "https://alsports.local",
+  "sub": "ana.souza",
+  "iat": 1763402400,
+  "exp": 1763404200,
+  "jti": "8f14e45f-ea3f-4b1c-9c2f-3b7a1d5e6f70",
+  "perfis": ["ADMINISTRADOR", "OPERADOR"]
+}</pre>
+      <p>O payload é apenas codificado em Base64URL, não criptografado. Nunca inclua senha, hash, CPF ou segredo.</p>`
+  },
+  {
+    title: "Resposta com accessToken",
+    who: "AutenticacaoController → Cliente",
+    html: `
+      <p>O cliente recebe o contrato da Aula 13 e passa a enviar o token nas requisições seguintes.</p>
+      <pre>{
+  "accessToken": "&lt;jwt-assinado&gt;",
+  "tokenType": "Bearer",
+  "expiresIn": 1800,
+  "expiresAt": "2026-11-17T21:30:00Z"
+}</pre>
+      <div class="kv">
+        <div>Uso</div><div><code>Authorization: Bearer &lt;token&gt;</code></div>
+        <div>Validade</div><div>absoluta de 30 minutos, sem renovação pelo uso</div>
+        <div>Próximo passo</div><div>o Resource Server valida a assinatura e o conversor lê <code>perfis</code></div>
+      </div>`
+  }
+];
+
+const panel = document.getElementById("panel");
+const buttons = [...document.querySelectorAll(".step")];
+
+function render(index) {
+  const step = steps[index];
+  panel.innerHTML = `<div class="who">${step.who}</div><h2>${step.title}</h2>${step.html}`;
+  buttons.forEach((button, i) => button.setAttribute("aria-pressed", String(i === index)));
+}
+
+buttons.forEach(button => {
+  button.addEventListener("click", () => render(Number(button.dataset.step)));
+});
+
+render(0);
+</script>
+</body>
+</html>

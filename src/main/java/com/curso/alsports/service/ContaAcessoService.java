@@ -1,8 +1,10 @@
 package com.curso.alsports.service;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +13,9 @@ import com.curso.alsports.dto.ContaAcessoRequest;
 import com.curso.alsports.exception.RecursoDuplicadoException;
 import com.curso.alsports.exception.RecursoNaoEncontradoException;
 import com.curso.alsports.model.ContaAcesso;
+import com.curso.alsports.model.PerfilAcesso;
 import com.curso.alsports.model.Pessoa;
+import com.curso.alsports.model.StatusContaAcesso;
 import com.curso.alsports.repository.ContaAcessoRepository;
 import com.curso.alsports.repository.PessoaRepository;
 
@@ -41,6 +45,7 @@ public class ContaAcessoService {
     }
 
     @Transactional
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ContaAcesso cadastrar(ContaAcessoRequest request) {
         if (request == null) {
             throw new IllegalArgumentException(
@@ -117,7 +122,120 @@ public class ContaAcessoService {
         conta.alterarSenha(passwordEncoder.encode(novaSenha));
     }
 
-    private static String validarLogin(String login) {
+    /**
+     * Substitui os perfis de uma conta. A conta autenticada é identificada
+     * pelo login do token e não por dados enviados no corpo da requisição.
+     */
+    @Transactional
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ContaAcesso alterarPerfis(
+            Long contaId,
+            Set<PerfilAcesso> novosPerfis,
+            String loginAdministrador) {
+
+        if (contaId == null) {
+            throw new IllegalArgumentException(
+                    "Identificador da conta é obrigatório");
+        }
+
+        if (novosPerfis == null || novosPerfis.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A conta deve possuir ao menos um perfil");
+        }
+
+        ContaAcesso conta = buscarDetalhada(contaId);
+        String administrador = validarLoginAdministrador(loginAdministrador);
+
+        boolean removeAdministrador = conta.possuiPerfil(
+                PerfilAcesso.ADMINISTRADOR)
+                && !novosPerfis.contains(PerfilAcesso.ADMINISTRADOR);
+
+        if (removeAdministrador
+                && conta.getLogin().equalsIgnoreCase(administrador)) {
+            throw new IllegalArgumentException(
+                    "O administrador não pode remover o próprio perfil "
+                            + "ADMINISTRADOR");
+        }
+
+        if (removeAdministrador
+                && conta.getStatus() == StatusContaAcesso.ATIVA
+                && contarAdministradoresAtivos() <= 1) {
+            throw new IllegalArgumentException(
+                    "O sistema deve manter ao menos um administrador ativo");
+        }
+
+        conta.substituirPerfis(novosPerfis);
+
+        return conta;
+    }
+
+    /**
+     * Ativa ou bloqueia uma conta. O bloqueio da própria conta e a remoção do
+     * último administrador ativo são recusados para preservar a capacidade de
+     * administração do sistema.
+     */
+    @Transactional
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ContaAcesso alterarStatus(
+            Long contaId,
+            StatusContaAcesso novoStatus,
+            String loginAdministrador) {
+
+        if (contaId == null) {
+            throw new IllegalArgumentException(
+                    "Identificador da conta é obrigatório");
+        }
+
+        if (novoStatus == null) {
+            throw new IllegalArgumentException("Status é obrigatório");
+        }
+
+        ContaAcesso conta = buscarDetalhada(contaId);
+        String administrador = validarLoginAdministrador(loginAdministrador);
+
+        if (novoStatus == StatusContaAcesso.BLOQUEADA) {
+            if (conta.getLogin().equalsIgnoreCase(administrador)) {
+                throw new IllegalArgumentException(
+                        "O administrador não pode bloquear a própria conta");
+            }
+
+            if (conta.getStatus() == StatusContaAcesso.ATIVA
+                    && conta.possuiPerfil(PerfilAcesso.ADMINISTRADOR)
+                    && contarAdministradoresAtivos() <= 1) {
+                throw new IllegalArgumentException(
+                        "O sistema deve manter ao menos um administrador ativo");
+            }
+
+            conta.bloquear();
+        } else {
+            conta.ativar();
+        }
+
+        return conta;
+    }
+
+    private ContaAcesso buscarDetalhada(Long contaId) {
+        return repository.findById(contaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Conta de acesso não encontrada: " + contaId));
+    }
+
+    private long contarAdministradoresAtivos() {
+        return repository.contarPorPerfilEStatus(
+                PerfilAcesso.ADMINISTRADOR,
+                StatusContaAcesso.ATIVA);
+    }
+
+    private static String validarLoginAdministrador(String login) {
+        if (login == null || login.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Administrador autenticado é obrigatório");
+        }
+
+        return login.trim();
+    }
+
+    static String validarLogin(String login) {
         if (login == null || login.isBlank()) {
             throw new IllegalArgumentException("Login é obrigatório");
         }
@@ -140,7 +258,7 @@ public class ContaAcessoService {
         return loginNormalizado;
     }
 
-    private static void validarSenha(String senha) {
+    static void validarSenha(String senha) {
         if (senha == null || senha.isBlank()) {
             throw new IllegalArgumentException("Senha é obrigatória");
         }

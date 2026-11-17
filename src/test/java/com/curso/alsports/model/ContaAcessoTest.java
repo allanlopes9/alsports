@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -132,5 +133,65 @@ class ContaAcessoTest {
         assertThat(conta.getPerfis()).containsExactlyInAnyOrder(
                 PerfilAcesso.OPERADOR,
                 PerfilAcesso.ADMINISTRADOR);
+    }
+
+    @Test
+    void deveSubstituirIntegralmenteOsPerfis() {
+        ContaAcesso conta = new ContaAcesso(pessoa, "ana.souza", HASH);
+
+        conta.substituirPerfis(Set.of(
+                PerfilAcesso.OPERADOR,
+                PerfilAcesso.ADMINISTRADOR));
+
+        assertThat(conta.getPerfis()).containsExactlyInAnyOrder(
+                PerfilAcesso.OPERADOR,
+                PerfilAcesso.ADMINISTRADOR);
+
+        conta.substituirPerfis(Set.of(PerfilAcesso.ADMINISTRADOR));
+
+        assertThat(conta.getPerfis())
+                .containsExactly(PerfilAcesso.ADMINISTRADOR);
+    }
+
+    @Test
+    void naoDeveSubstituirPerfisPorColecaoVazia() {
+        ContaAcesso conta = new ContaAcesso(pessoa, "ana.souza", HASH);
+
+        assertThatThrownBy(() -> conta.substituirPerfis(Set.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A conta deve possuir ao menos um perfil");
+
+        assertThat(conta.getPerfis())
+                .containsExactly(PerfilAcesso.OPERADOR);
+    }
+
+    @Test
+    void naoDeveSubstituirPerfisPorColecaoNula() {
+        ContaAcesso conta = new ContaAcesso(pessoa, "ana.souza", HASH);
+
+        assertThatThrownBy(() -> conta.substituirPerfis(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A conta deve possuir ao menos um perfil");
+    }
+
+    @Test
+    void naoDeveAceitarPerfilNuloNaSubstituicao() {
+        ContaAcesso conta = new ContaAcesso(pessoa, "ana.souza", HASH);
+        Set<PerfilAcesso> perfis = new java.util.LinkedHashSet<>();
+        perfis.add(PerfilAcesso.OPERADOR);
+        perfis.add(null);
+
+        assertThatThrownBy(() -> conta.substituirPerfis(perfis))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Perfil é obrigatório");
+    }
+
+    @Test
+    void deveInformarSePossuiDeterminadoPerfil() {
+        ContaAcesso conta = new ContaAcesso(pessoa, "ana.souza", HASH);
+
+        assertThat(conta.possuiPerfil(PerfilAcesso.OPERADOR)).isTrue();
+        assertThat(conta.possuiPerfil(PerfilAcesso.ADMINISTRADOR)).isFalse();
+        assertThat(conta.possuiPerfil(null)).isFalse();
     }
 }

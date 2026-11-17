@@ -31,7 +31,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.validation.Valid;
@@ -54,7 +53,7 @@ public class PessoaController {
 
     @Operation(
         summary = "Cadastrar pessoa",
-        description = "Cadastra uma pessoa com CPF válido. O e-mail é normalizado para minúsculas e a data de cadastro é controlada pelo servidor."
+        description = "Exige OPERADOR ou ADMINISTRADOR. Cadastra uma pessoa com CPF válido. O e-mail é normalizado para minúsculas e a data de cadastro é controlada pelo servidor."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -82,7 +81,6 @@ public class PessoaController {
             )
         )
     })
-    @SecurityRequirements
     @PostMapping
     public ResponseEntity<PessoaResponse> salvar(
             @Valid @RequestBody PessoaRequest request) {

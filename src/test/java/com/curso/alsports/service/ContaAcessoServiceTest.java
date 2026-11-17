@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -257,6 +258,161 @@ class ContaAcessoServiceTest {
         assertThatThrownBy(() -> service.buscarPorLogin("nao.existe"))
                 .isInstanceOf(RecursoNaoEncontradoException.class)
                 .hasMessage("Conta de acesso não encontrada");
+    }
+
+    @Test
+    void deveSubstituirPerfisDeOutraConta() {
+        ContaAcesso conta = new ContaAcesso(
+                pessoa, "operador.teste", passwordEncoder.encode(SENHA));
+        when(repository.findById(10L)).thenReturn(Optional.of(conta));
+
+        ContaAcesso alterada = service.alterarPerfis(
+                10L,
+                Set.of(PerfilAcesso.OPERADOR, PerfilAcesso.ADMINISTRADOR),
+                "admin.teste");
+
+        assertThat(alterada.getPerfis()).containsExactlyInAnyOrder(
+                PerfilAcesso.OPERADOR,
+                PerfilAcesso.ADMINISTRADOR);
+    }
+
+    @Test
+    void naoDeveSubstituirPerfisPorListaVazia() {
+        assertThatThrownBy(() -> service.alterarPerfis(
+                10L, Set.of(), "admin.teste"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A conta deve possuir ao menos um perfil");
+
+        verify(repository, never()).findById(any());
+    }
+
+    @Test
+    void naoDeveRemoverProprioPerfilAdministrador() {
+        ContaAcesso admin = contaAdministrativa("admin.teste");
+        when(repository.findById(10L)).thenReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> service.alterarPerfis(
+                10L, Set.of(PerfilAcesso.OPERADOR), "ADMIN.TESTE"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O administrador não pode remover o próprio perfil "
+                        + "ADMINISTRADOR");
+
+        assertThat(admin.getPerfis()).contains(
+                PerfilAcesso.ADMINISTRADOR);
+    }
+
+    @Test
+    void naoDeveRemoverAdministradorDoUltimoAdminAtivo() {
+        ContaAcesso outroAdmin = contaAdministrativa("outro.admin");
+        when(repository.findById(10L)).thenReturn(Optional.of(outroAdmin));
+        when(repository.contarPorPerfilEStatus(
+                PerfilAcesso.ADMINISTRADOR,
+                StatusContaAcesso.ATIVA)).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.alterarPerfis(
+                10L, Set.of(PerfilAcesso.OPERADOR), "admin.teste"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O sistema deve manter ao menos um administrador ativo");
+
+        assertThat(outroAdmin.getPerfis()).contains(
+                PerfilAcesso.ADMINISTRADOR);
+    }
+
+    @Test
+    void deveRemoverAdministradorQuandoHaOutroAdminAtivo() {
+        ContaAcesso outroAdmin = contaAdministrativa("outro.admin");
+        when(repository.findById(10L)).thenReturn(Optional.of(outroAdmin));
+        when(repository.contarPorPerfilEStatus(
+                PerfilAcesso.ADMINISTRADOR,
+                StatusContaAcesso.ATIVA)).thenReturn(2L);
+
+        ContaAcesso alterada = service.alterarPerfis(
+                10L, Set.of(PerfilAcesso.OPERADOR), "admin.teste");
+
+        assertThat(alterada.getPerfis())
+                .containsExactly(PerfilAcesso.OPERADOR);
+    }
+
+    @Test
+    void naoDeveAlterarPerfisDeContaInexistente() {
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.alterarPerfis(
+                99L, Set.of(PerfilAcesso.OPERADOR), "admin.teste"))
+                .isInstanceOf(RecursoNaoEncontradoException.class)
+                .hasMessage("Conta de acesso não encontrada: 99");
+    }
+
+    @Test
+    void naoDeveBloquearPropriaConta() {
+        ContaAcesso admin = contaAdministrativa("admin.teste");
+        when(repository.findById(10L)).thenReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> service.alterarStatus(
+                10L, StatusContaAcesso.BLOQUEADA, "admin.teste"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O administrador não pode bloquear a própria conta");
+
+        assertThat(admin.getStatus()).isEqualTo(StatusContaAcesso.ATIVA);
+    }
+
+    @Test
+    void naoDeveBloquearUltimoAdministradorAtivo() {
+        ContaAcesso outroAdmin = contaAdministrativa("outro.admin");
+        when(repository.findById(10L)).thenReturn(Optional.of(outroAdmin));
+        when(repository.contarPorPerfilEStatus(
+                PerfilAcesso.ADMINISTRADOR,
+                StatusContaAcesso.ATIVA)).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.alterarStatus(
+                10L, StatusContaAcesso.BLOQUEADA, "admin.teste"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O sistema deve manter ao menos um administrador ativo");
+
+        assertThat(outroAdmin.getStatus()).isEqualTo(StatusContaAcesso.ATIVA);
+    }
+
+    @Test
+    void deveBloquearOutraConta() {
+        ContaAcesso conta = new ContaAcesso(
+                pessoa, "operador.teste", passwordEncoder.encode(SENHA));
+        when(repository.findById(10L)).thenReturn(Optional.of(conta));
+
+        ContaAcesso alterada = service.alterarStatus(
+                10L, StatusContaAcesso.BLOQUEADA, "admin.teste");
+
+        assertThat(alterada.getStatus())
+                .isEqualTo(StatusContaAcesso.BLOQUEADA);
+    }
+
+    @Test
+    void deveAtivarContaBloqueada() {
+        ContaAcesso conta = new ContaAcesso(
+                pessoa, "operador.teste", passwordEncoder.encode(SENHA));
+        conta.bloquear();
+        when(repository.findById(10L)).thenReturn(Optional.of(conta));
+
+        ContaAcesso alterada = service.alterarStatus(
+                10L, StatusContaAcesso.ATIVA, "admin.teste");
+
+        assertThat(alterada.getStatus()).isEqualTo(StatusContaAcesso.ATIVA);
+    }
+
+    @Test
+    void naoDeveAlterarStatusSemValor() {
+        assertThatThrownBy(() -> service.alterarStatus(
+                10L, null, "admin.teste"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Status é obrigatório");
+
+        verify(repository, never()).findById(any());
+    }
+
+    private ContaAcesso contaAdministrativa(String login) {
+        ContaAcesso conta = new ContaAcesso(
+                pessoa, login, passwordEncoder.encode(SENHA));
+        conta.concederPerfil(PerfilAcesso.ADMINISTRADOR);
+        return conta;
     }
 
     private ContaAcesso contaComSenha(String senha) {

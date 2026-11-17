@@ -104,12 +104,41 @@ public class ContaAcesso {
     }
 
     /**
-     * Concede um perfil à conta. Não é exposto pelo cadastro público; existe
-     * para provisionamento administrativo futuro.
+     * Concede um perfil à conta. Usado pelo provisionamento da primeira
+     * conta administrativa.
      */
     public void concederPerfil(PerfilAcesso perfil) {
         this.perfis.add(Objects.requireNonNull(
                 perfil, "Perfil é obrigatório"));
+    }
+
+    /**
+     * Substitui integralmente os perfis da conta.
+     *
+     * <p>A conta nunca pode ficar sem ao menos um perfil. A decisão sobre
+     * remover o último administrador ativo pertence ao service, que conhece
+     * o estado global do sistema.</p>
+     */
+    public void substituirPerfis(Set<PerfilAcesso> novosPerfis) {
+        if (novosPerfis == null || novosPerfis.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A conta deve possuir ao menos um perfil");
+        }
+
+        // Set.of(...) e outras coleções imutáveis lançam NullPointerException
+        // em contains(null); por isso a validação percorre os elementos.
+        for (PerfilAcesso perfil : novosPerfis) {
+            if (perfil == null) {
+                throw new IllegalArgumentException("Perfil é obrigatório");
+            }
+        }
+
+        this.perfis.clear();
+        this.perfis.addAll(novosPerfis);
+    }
+
+    public boolean possuiPerfil(PerfilAcesso perfil) {
+        return perfil != null && this.perfis.contains(perfil);
     }
 
     private static String validarLogin(String login) {

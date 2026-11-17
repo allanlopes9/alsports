@@ -1,12 +1,12 @@
 # AL Sports
 
-Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 12 do curso de Java Spring Boot.
+Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 14 do curso de Java Spring Boot.
 
 ## Objetivo
 
 O AL Sports tem como objetivo permitir o cadastro e o gerenciamento de produtos de uma loja de artigos esportivos, organizando os produtos por categoria e fornecedor.
 
-O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 12:
+O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 14:
 
 - configuração do ambiente;
 - criação do projeto Spring Boot;
@@ -28,7 +28,9 @@ O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apres
 - filtros, paginação e contrato OpenAPI;
 - vendas, pessoas e estoque fracionado;
 - concorrência, isolamento transacional e bloqueio pessimista;
-- identidade de acesso, hash BCrypt e autenticação Bearer Token com JWT no Spring Security (OAuth2 Resource Server).
+- identidade de acesso, hash BCrypt e autenticação Bearer Token com JWT no Spring Security (OAuth2 Resource Server);
+- autorização por perfis, `@PreAuthorize`, política HTTP e administração de contas;
+- administrador inicial provisionado por configuração externa.
 
 ## Tecnologias
 
@@ -104,7 +106,7 @@ Uma mesma pessoa pode ser cliente ou colaboradora sem possuir acesso ao sistema.
 
 O perfil de acesso é separado da função profissional: `FuncaoColaborador` descreve o trabalho exercido, enquanto `PerfilAcesso` descreve o que a conta pode fazer na API.
 
-O cadastro público sempre cria a conta com status `ATIVA` e somente o perfil `OPERADOR`. O request público não pode escolher perfis. Uma conta bloqueada ou vinculada a uma pessoa inativa não autentica.
+A partir da Aula 14, o cadastro de conta é uma operação administrativa: o administrador cria a conta com status `ATIVA` e perfil inicial `OPERADOR`. Os perfis podem ser substituídos depois por outro administrador. A conta nunca fica sem ao menos um perfil. Uma conta bloqueada ou vinculada a uma pessoa inativa não autentica.
 
 ## Organização do projeto
 
@@ -325,13 +327,15 @@ O `.gitignore` possui a regra:
 
 ### Autenticação e proteção de senhas
 
-A partir da Aula 13, a API usa Spring Security como OAuth2 Resource Server e autentica as rotas protegidas com Bearer Token JWT:
+A partir da Aula 13, a API usa Spring Security como OAuth2 Resource Server e autentica as rotas protegidas com Bearer Token JWT. A partir da Aula 14, a autorização é decidida pelos perfis `OPERADOR` e `ADMINISTRADOR`:
 
 - `POST /api/autenticacao/login` é público e emite o token;
 - `GET /api/health` é público;
-- `GET /v3/api-docs/**`, `/swagger-ui.html` e `/swagger-ui/**` são públicos;
-- `POST /api/pessoas` e `POST /api/contas-acesso` são públicos para o cadastro inicial;
-- todas as demais rotas exigem `Authorization: Bearer <token>`;
+- `GET /v3/api-docs/**`, `/v3/api-docs.yaml`, `/swagger-ui.html` e `/swagger-ui/**` são públicos;
+- `POST /api/pessoas` e `POST /api/contas-acesso` não são mais públicos;
+- `POST /api/contas-acesso`, `PUT /api/contas-acesso/*/perfis`, `PUT /api/contas-acesso/*/status` e `DELETE /api/**` exigem `ADMINISTRADOR`;
+- as demais rotas de `/api/**` exigem `OPERADOR` ou `ADMINISTRADOR`;
+- qualquer rota não classificada termina em `denyAll()`;
 - a autenticação é stateless, sem sessão e sem cookie;
 - o CSRF está desabilitado somente porque a API não mantém sessão nem cookie de autenticação;
 - HTTP Basic foi removido e não autentica mais nenhuma rota.
@@ -355,6 +359,29 @@ As senhas continuam persistidas com `PasswordEncoderFactories.createDelegatingPa
 Um JWT assinado não é criptografado. O payload é apenas codificado em Base64URL e pode ser lido por qualquer pessoa que possua o token; a assinatura garante integridade e autenticidade, não sigilo. Por isso o token contém somente `iss`, `sub`, `iat`, `exp`, `jti` e `perfis`, sem senha, hash, CPF ou outros dados desnecessários.
 
 Esta aplicação é um Resource Server e também um emissor didático de tokens para o próprio login. Ela não é um Authorization Server completo: não implementa OAuth2, não expõe JWK Set, não usa RSA/RS256 e não atende outros clientes.
+
+### Autorização por perfis
+
+A partir da Aula 14, o claim `perfis` do JWT é convertido em authorities `ROLE_OPERADOR` e `ROLE_ADMINISTRADOR` por um `JwtAuthenticationConverter` com `JwtGrantedAuthoritiesConverter`. O claim continua sem o prefixo `ROLE_`; o prefixo é convenção do Spring Security.
+
+A política é aplicada em duas camadas:
+
+- na cadeia HTTP, antes do controller;
+- no service, com `@EnableMethodSecurity` e `@PreAuthorize("hasRole('ADMINISTRADOR')")` em `cadastrar`, `alterarPerfis` e `alterarStatus`.
+
+`401` indica ausência de autenticação válida; `403` indica identidade autenticada sem o perfil exigido.
+
+Invariantes administrativas:
+
+- a conta sempre mantém ao menos um perfil;
+- o administrador não remove o próprio `ADMINISTRADOR`;
+- o administrador não bloqueia a própria conta;
+- o último administrador ativo não pode ser bloqueado nem perder o perfil;
+- violações retornam `400 Bad Request` com mensagem estável.
+
+O administrador inicial é opcional e desativado por padrão. Quando `INITIAL_ADMIN_ENABLED=true`, as propriedades `INITIAL_ADMIN_*` criam uma única `Pessoa` e `ContaAcesso` com `OPERADOR` e `ADMINISTRADOR`, gravando apenas o hash BCrypt. O processo é idempotente e deve ser desligado após a primeira execução. Nenhuma senha real é versionada.
+
+Um token emitido antes de uma alteração de perfil ou bloqueio continua válido até `exp` e preserva os perfis do momento da emissão. Não há revogação nesta aula.
 
 Em produção, a API deve ser publicada exclusivamente sobre HTTPS/TLS. Sem TLS, o Bearer Token pode ser interceptado e reutilizado até expirar.
 
@@ -414,7 +441,7 @@ O projeto também possui operações adicionais de atualização e exclusão de 
 
 ### Contas de acesso
 
-Cadastrar conta (público):
+Cadastrar conta (ADMINISTRADOR):
 
 POST /api/contas-acesso
 
@@ -427,6 +454,30 @@ Exemplo de request:
 }
 
 A resposta `201 Created` contém `id`, `pessoaId`, `nomePessoa`, `login`, `status` e `perfis`. A senha e o hash nunca são devolvidos. A conta é criada `ATIVA` e somente com `OPERADOR`.
+
+Substituir perfis (ADMINISTRADOR):
+
+PUT /api/contas-acesso/{id}/perfis
+
+Exemplo de request:
+
+{
+    "perfis": ["OPERADOR", "ADMINISTRADOR"]
+}
+
+A substituição é integral. A lista não pode ser vazia. O administrador autenticado não pode remover de si mesmo `ADMINISTRADOR`, e o último administrador ativo não pode perder o perfil. Violações retornam `400 Bad Request`.
+
+Ativar ou bloquear conta (ADMINISTRADOR):
+
+PUT /api/contas-acesso/{id}/status
+
+Exemplo de request:
+
+{
+    "status": "BLOQUEADA"
+}
+
+`BLOQUEADA` impede novos logins. O administrador não pode bloquear a própria conta e o último administrador ativo não pode ser bloqueado. Violações retornam `400 Bad Request`. A reativação usa `ATIVA`.
 
 Consultar a própria conta (autenticado):
 
@@ -471,9 +522,11 @@ Exemplo de resposta `200 OK`:
 
 Credenciais inválidas, conta bloqueada ou pessoa inativa retornam `401 Unauthorized` com um `ApiError` genérico. Login ou senha em branco e valores acima dos limites retornam `400 Bad Request`.
 
-As rotas de categorias, fornecedores, produtos, pessoas, clientes, colaboradores, vendas, estoque e contas de acesso (exceto o cadastro público) exigem Bearer Token:
+As rotas de categorias, fornecedores, produtos, pessoas, clientes, colaboradores, vendas, estoque e contas de acesso exigem Bearer Token:
 
 Authorization: Bearer <token>
+
+As rotas cotidianas aceitam `OPERADOR` ou `ADMINISTRADOR`. Criação de conta, alteração de perfis ou status e exclusões exigem `ADMINISTRADOR`; um token válido sem esse perfil recebe `403 Forbidden`.
 
 Sem token, com token malformado, adulterado, expirado, assinado com outra chave ou com emissor incorreto, a resposta é `401 Unauthorized` com o cabeçalho `WWW-Authenticate: Bearer`. O Resource Server não informa se o token existiu, se foi revogado ou qual validação falhou. HTTP Basic também retorna `401`.
 
@@ -692,14 +745,27 @@ Os dados criados por cada teste são removidos ao final.
 Localizados em:
 
 - `src/test/java/com/curso/alsports/AutenticacaoSecurityTest.java`;
+- `src/test/java/com/curso/alsports/AutorizacaoSecurityTest.java`;
 - `src/test/java/com/curso/alsports/ContaAcessoSecurityTest.java`;
 - `src/test/java/com/curso/alsports/config/JwtConfigTest.java`;
+- `src/test/java/com/curso/alsports/config/JwtAuthenticationConverterTest.java`;
 - `src/test/java/com/curso/alsports/service/TokenServiceTest.java`;
-- `src/test/java/com/curso/alsports/service/AutenticacaoServiceTest.java`.
+- `src/test/java/com/curso/alsports/service/AutenticacaoServiceTest.java`;
+- `src/test/java/com/curso/alsports/service/AdministradorInicialServiceTest.java`.
 
 As classes de integração mantêm a cadeia de filtros do Spring Security ativa e usam MockMvc com Bearer Token real, emitido pelo endpoint de login. Os cenários cobrem:
 
-- health, OpenAPI, cadastro inicial e login públicos;
+- health, OpenAPI e login públicos;
+- cadastro de pessoa e conta exigindo `ADMINISTRADOR`;
+- claim `perfis` convertido em `ROLE_OPERADOR` e `ROLE_ADMINISTRADOR`, sem duplicar o prefixo;
+- token sem o claim `perfis` sem authorities de negócio;
+- operador acessando rotas cotidianas e recebendo 403 nas administrativas;
+- administrador criando conta, alterando perfis e alterando status;
+- lista vazia de perfis e status ausente retornando 400;
+- autobloqueio e autorremoção retornando 400;
+- último administrador ativo protegido contra bloqueio e remoção de perfil;
+- provisionamento inicial criando a conta uma única vez e concedendo os dois perfis;
+- provisionamento rejeitando CPF inválido, campos vazios e duplicidades;
 - emissão de token com contrato `accessToken`, `tokenType`, `expiresIn` e `expiresAt`;
 - claims `iss`, `sub`, `iat`, `exp`, `jti` e `perfis`;
 - validade absoluta de 1800 segundos sem renovação pelo uso;
@@ -714,11 +780,11 @@ As classes de integração mantêm a cadeia de filtros do Spring Security ativa 
 - troca de senha com 204 e invalidação da senha anterior para novos logins;
 - ausência de senha, hash e stack trace nas respostas.
 
-`JwtConfigTest` valida a chave Base64, o mínimo de 32 bytes, a recusa de configuração inválida e a rejeição de tokens com emissor errado, expirados, adulterados, malformados, com `alg: none` ou assinados com outra chave. `TokenServiceTest` valida a emissão HS256, as claims, o `jti` único e a expiração absoluta. `AutenticacaoServiceTest` garante que o `AuthenticationManager` da Aula 12 é reutilizado e que nenhum token é emitido quando a autenticação falha.
+`JwtConfigTest` valida a chave Base64, o mínimo de 32 bytes, a recusa de configuração inválida e a rejeição de tokens com emissor errado, expirados, adulterados, malformados, com `alg: none` ou assinados com outra chave. `TokenServiceTest` valida a emissão HS256, as claims, o `jti` único e a expiração absoluta. `AutenticacaoServiceTest` garante que o `AuthenticationManager` da Aula 12 é reutilizado e que nenhum token é emitido quando a autenticação falha. `JwtAuthenticationConverterTest` verifica o claim `perfis` e ignora a authority `FACTOR_BEARER` acrescentada pelo Resource Server. `AutorizacaoSecurityTest` cobre a política HTTP e a defesa em profundidade. `AdministradorInicialServiceTest` cobre criação, idempotência, validações e duplicidades do bootstrap.
 
-Os testes unitários de `ContaAcessoTest`, `ContaAcessoServiceTest` e `ContaAcessoUserDetailsServiceTest` continuam validando as regras de domínio, a geração de hash, a comparação de senhas e o mapeamento de perfis para autoridades.
+Os testes unitários de `ContaAcessoTest`, `ContaAcessoServiceTest` e `ContaAcessoUserDetailsServiceTest` continuam validando as regras de domínio, a geração de hash, a comparação de senhas, a substituição de perfis e o mapeamento de perfis para autoridades.
 
-A suíte possui 283 testes em 24 classes, todos aprovados. Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `AutenticacaoSecurityTest`, `ContaAcessoSecurityTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
+A suíte possui 338 testes em 27 classes, todos aprovados. O ponto de partida da Aula 13 tinha 283 testes em 24 classes, portanto foram acrescentados 55 testes e 3 classes. Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `AutenticacaoSecurityTest`, `AutorizacaoSecurityTest`, `ContaAcessoSecurityTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
 
 Para executar todos os testes:
 
@@ -730,26 +796,37 @@ A collection acumulada para testes manuais da API está em:
 
 docs/postman/AL-Sports-Aula-07.postman_collection.json
 
-O nome da collection foi atualizado para `AL Sports - Aula 13`.
+O nome da collection foi atualizado para `AL Sports - Aula 14`.
 
-A partir da Aula 13, a collection usa Bearer Token na raiz:
+A collection mantém o Bearer Token na raiz:
 
 - `Authorization: Bearer {{accessToken}}`.
 
-A variável `accessToken` é preenchida automaticamente pela requisição de login. As rotas protegidas herdam esse cabeçalho. As rotas públicas (`GET /api/health`, `GET /v3/api-docs`, `POST /api/pessoas`, `POST /api/contas-acesso` e `POST /api/autenticacao/login`) usam `noauth`.
+A variável `accessToken` é preenchida pelo login do operador. As requisições administrativas usam `{{adminAccessToken}}`, preenchido pelo login do administrador. As rotas públicas (`GET /api/health`, `GET /v3/api-docs` e `POST /api/autenticacao/login`) usam `noauth`. O cadastro de pessoa e conta deixou de ser público e usa o token administrativo.
 
-A pasta `07 - Aula 13` contém:
+A pasta `08 - Aula 14` contém 17 requisições:
 
-1. login e salvamento do token em `{{accessToken}}`;
-2. consulta da própria conta com Bearer;
-3. rota protegida de produtos com Bearer;
-4. login com senha incorreta retornando 401;
-5. token inválido retornando 401;
-6. HTTP Basic não autenticando mais e retornando 401.
+1. login do administrador e salvamento de `{{adminAccessToken}}`;
+2. consulta de `/me` do administrador;
+3. criação de pessoa para a conta de operador;
+4. criação da conta de operador;
+5. promoção da conta a `ADMINISTRADOR`;
+6. remoção de `ADMINISTRADOR` da outra conta;
+7. bloqueio da conta do operador;
+8. reativação da conta do operador;
+9. tentativa de bloquear a própria conta, com 400;
+10. tentativa de remover o próprio `ADMINISTRADOR`, com 400;
+11. lista vazia de perfis, com 400;
+12. status ausente, com 400;
+13. login do operador e salvamento de `{{accessToken}}`;
+14. operador tentando criar conta, com 403;
+15. operador tentando excluir categoria, com 403;
+16. requisição administrativa sem token, com 401;
+17. administrador excluindo categoria inexistente, com 404.
 
-A pasta `06 - Aula 12` mantém os fluxos de health, OpenAPI, criação de pessoa e conta, consulta da própria conta, alteração de senha e rota protegida sem credencial. O antigo cenário de senha incorreta via Basic foi atualizado para demonstrar que HTTP Basic não autentica mais.
+A pasta `07 - Aula 13` mantém o fluxo de login e validação do Bearer. A pasta `06 - Aula 12` mantém health, OpenAPI, consulta da própria conta, alteração de senha e rota protegida sem credencial; as requisições de bootstrap de pessoa e conta agora usam `{{adminAccessToken}}`.
 
-As variáveis `authLogin`, `authPassword` e `novaSenha` devem ser preenchidas localmente antes da execução. A collection não contém credenciais reais, chave JWT ou token fixo e não deve ser exportada com valores preenchidos. Como o token expira em 30 minutos, execute novamente o login quando receber 401.
+As variáveis `adminLogin`, `adminPassword`, `authLogin`, `authPassword` e `novaSenha` devem ser preenchidas localmente antes da execução. A collection não contém credenciais reais, chave JWT ou token fixo e não deve ser exportada com valores preenchidos. Como o token expira em 30 minutos, execute novamente o login quando receber 401.
 
 A collection também mantém os cenários anteriores:
 
@@ -849,9 +926,13 @@ Identidade de acesso vinculada a `Pessoa`, senhas persistidas com hash BCrypt, a
 
 Migração do HTTP Basic para Bearer Token JWT com OAuth2 Resource Server, assinatura HS256, chave lida de `JWT_SECRET`, validade absoluta de 30 minutos, endpoint público de login, claims mínimas com `sub` e `perfis`, tratamento genérico de credenciais inválidas, testes de emissão e validação, OpenAPI com `bearerAuth` e collection Postman atualizada.
 
+### Aula 14 — Autorização, perfis e controle de acesso
+
+Conversão do claim `perfis` em authorities `ROLE_*`, política HTTP com `OPERADOR` e `ADMINISTRADOR`, defesa em profundidade com `@PreAuthorize`, endpoints administrativos de perfis e status, invariantes do último administrador ativo, provisionamento opcional do administrador inicial e testes de `401`, `403` e `400`.
+
 ## Status do projeto
 
-**Projeto concluído até a Aula 13.**
+**Projeto concluído até a Aula 14.**
 
 Principais pontos implementados:
 
@@ -875,6 +956,12 @@ Principais pontos implementados:
 - [x] Senhas com hash BCrypt e salt
 - [x] Conta de acesso vinculada a Pessoa
 - [x] Perfis OPERADOR e ADMINISTRADOR
+- [x] Autorização por perfis com `ROLE_*`
+- [x] Política HTTP com `denyAll()` como padrão
+- [x] `@PreAuthorize` nos casos de uso administrativos
+- [x] Endpoints administrativos de perfis e status
+- [x] Proteção do último administrador ativo
+- [x] Administrador inicial por configuração externa
 - [x] Endpoints de conta e troca de senha
 - [x] Regras explícitas de rotas públicas e protegidas
 - [x] Testes de segurança com filtros ativos
@@ -913,6 +1000,7 @@ Principais pontos implementados:
 - `aula-11-concorrencia`
 - `aula-12-autenticacao-http-basic`
 - `aula-13-jwt-bearer-token`
+- `aula-14-autorizacao-perfis`
 
 ## Documentação
 
@@ -936,8 +1024,19 @@ A documentação da Aula 13 está disponível em:
 
 docs/13aula/13aula.md
 
+A documentação da Aula 14 está disponível em:
+
+docs/14aula/14aula.md
+
+Os diagramas interativos da Aula 14 estão em:
+
+- docs/14aula/diagramas/login-jwt.html
+- docs/14aula/diagramas/autorizacao-jwt.html
+- docs/14aula/diagramas/administracao-perfis.html
+- docs/14aula/diagramas/administrador-inicial.html
+
 ## Projeto acadêmico
 
-Projeto desenvolvido para acompanhamento das Aulas 00 a 13 do curso de Java Spring Boot.
+Projeto desenvolvido para acompanhamento das Aulas 00 a 14 do curso de Java Spring Boot.
 
 **AL Sports — Sistema de controle de loja de artigos esportivos.**

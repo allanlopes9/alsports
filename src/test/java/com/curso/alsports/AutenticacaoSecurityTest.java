@@ -511,10 +511,12 @@ class AutenticacaoSecurityTest {
     private String adulterar(String token) {
         String[] partes = token.split("\\.");
         String assinatura = partes[2];
-        char ultimo = assinatura.charAt(assinatura.length() - 1);
-        char substituto = ultimo == 'A' ? 'B' : 'A';
-        partes[2] = assinatura.substring(0, assinatura.length() - 1)
-                + substituto;
+        // O último caractere Base64URL carrega apenas bits de padding; trocá-lo
+        // pode decodificar para a mesma assinatura. O primeiro caractere sempre
+        // possui bits significativos, garantindo adulteração real.
+        char primeiro = assinatura.charAt(0);
+        char substituto = primeiro == 'A' ? 'B' : 'A';
+        partes[2] = substituto + assinatura.substring(1);
         return String.join(".", partes);
     }
 

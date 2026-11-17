@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 14 · Autorização de uma requisição JWT</title>
+<style>
+  :root {
+    --bg: #0b1220; --card: #151f33; --card2: #1b2942; --line: #2b3b57;
+    --text: #e6eefc; --muted: #9db0cc; --accent: #38bdf8;
+    --green: #34d399; --amber: #fbbf24; --red: #f87171; --violet: #a78bfa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #172554 0%, var(--bg) 55%);
+    color: var(--text); min-height: 100vh;
+  }
+  header { max-width: 1180px; margin: 0 auto; padding: 42px 24px 18px; }
+  .badge {
+    display: inline-block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid #1d4ed8; background: #0c1a33;
+    padding: 6px 10px; border-radius: 999px;
+  }
+  h1 { margin: 14px 0 8px; font-size: clamp(24px, 4vw, 38px); line-height: 1.15; }
+  header p { color: var(--muted); max-width: 820px; line-height: 1.6; margin: 0; }
+  main { max-width: 1180px; margin: 0 auto; padding: 10px 24px 56px; }
+  .grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--line); background: linear-gradient(180deg, var(--card), #111a2b);
+    border-radius: 16px; padding: 22px;
+  }
+  .card h2 { margin: 0 0 12px; font-size: 19px; }
+  .card p { color: var(--muted); line-height: 1.6; }
+  .pipeline { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+  .node {
+    border: 1px solid var(--line); background: #0d1728; border-radius: 12px;
+    padding: 11px 13px; display: flex; gap: 10px; align-items: center;
+    transition: border-color .18s, background .18s;
+  }
+  .node.active { border-color: var(--accent); background: #0c2b4a; box-shadow: 0 0 0 1px #0ea5e9 inset; }
+  .node .dot { width: 9px; height: 9px; border-radius: 50%; background: #334155; flex: 0 0 auto; }
+  .node.active .dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .node small { display: block; color: var(--muted); margin-top: 2px; }
+  .controls { display: grid; gap: 10px; margin: 14px 0 4px; }
+  .control {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border: 1px solid var(--line); border-radius: 10px; background: #0d1728;
+  }
+  .control input { width: 18px; height: 18px; accent-color: #0ea5e9; }
+  .control label { color: var(--text); font-size: 14px; }
+  select {
+    background: #0d1728; color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 9px; font: inherit; margin-left: auto;
+  }
+  .result {
+    margin-top: 16px; border-radius: 12px; padding: 16px;
+    border: 1px solid var(--line); background: #0a1424;
+  }
+  .result .code { font-size: 34px; font-weight: 800; line-height: 1; }
+  .result .why { color: var(--muted); margin-top: 8px; line-height: 1.55; }
+  .ok { color: var(--green); } .warn { color: var(--amber); } .bad { color: var(--red); }
+  code, pre { font-family: "Cascadia Code", Consolas, monospace; }
+  code { color: #bae6fd; background: #0b1a2d; padding: 2px 5px; border-radius: 5px; }
+  pre {
+    background: #0a1424; border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; overflow: auto; color: #d7e6ff; font-size: 13px; line-height: 1.55;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; }
+  .pill.ok { background: #052e22; color: var(--green); border: 1px solid #065f46; }
+  .pill.warn { background: #33240a; color: var(--amber); border: 1px solid #92400e; }
+  .pill.bad { background: #3b0d12; color: var(--red); border: 1px solid #991b1b; }
+  .note { font-size: 13px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 12px; margin-top: 14px; }
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 24px 40px; color: #6f86a6; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="badge">Aula 14 · Autorização</span>
+  <h1>Autorização de uma requisição JWT</h1>
+  <p>Autenticar responde <strong>quem é</strong>. Autorizar responde <strong>o que pode fazer</strong>. A cadeia abaixo mostra onde cada decisão acontece: validação do token, conversão do claim <code>perfis</code>, política HTTP e, por fim, <code>@PreAuthorize</code> no caso de uso.</p>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>Cadeia de decisão</h2>
+      <div class="pipeline" id="pipeline">
+        <div class="node" data-node="0"><span class="dot"></span><div><strong>1. BearerTokenAuthenticationFilter</strong><small>extrai o token do cabeçalho Authorization</small></div></div>
+        <div class="node" data-node="1"><span class="dot"></span><div><strong>2. JwtDecoder</strong><small>valida assinatura HS256, emissor e expiração</small></div></div>
+        <div class="node" data-node="2"><span class="dot"></span><div><strong>3. JwtAuthenticationConverter</strong><small>claim perfis → authorities ROLE_*</small></div></div>
+        <div class="node" data-node="3"><span class="dot"></span><div><strong>4. AuthorizationFilter</strong><small>aplica a política HTTP na ordem declarada</small></div></div>
+        <div class="node" data-node="4"><span class="dot"></span><div><strong>5. @PreAuthorize</strong><small>revalida o perfil no service (defesa em profundidade)</small></div></div>
+        <div class="node" data-node="5"><span class="dot"></span><div><strong>6. Controller / Service</strong><small>executa a regra de negócio ou responde 403</small></div></div>
+      </div>
+
+      <h2>Simulador de política</h2>
+      <div class="controls">
+        <div class="control">
+          <input id="token" type="checkbox" checked>
+          <label for="token">Token presente e válido</label>
+        </div>
+        <div class="control">
+          <label for="route">Rota solicitada</label>
+          <select id="route">
+            <option value="public">/api/health, OpenAPI ou login</option>
+            <option value="operador">/api/produtos, /api/pessoas, /api/vendas</option>
+            <option value="admin">POST /api/contas-acesso ou PUT .../perfis, .../status</option>
+            <option value="delete">DELETE /api/**</option>
+            <option value="fora">Rota fora de /api</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="role">Perfil no token</label>
+          <select id="role">
+            <option value="OPERADOR">OPERADOR</option>
+            <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+            <option value="NENHUM">Nenhum perfil</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="result" id="result" aria-live="polite"></div>
+    </section>
+
+    <aside class="card">
+      <h2>Política HTTP implementada</h2>
+      <pre>requestMatchers(
+    "/api/health",
+    "/v3/api-docs/**",
+    "/swagger-ui/**").permitAll()
+
+requestMatchers(POST,
+    "/api/autenticacao/login").permitAll()
+
+requestMatchers(POST,
+    "/api/contas-acesso")
+    .hasRole("ADMINISTRADOR")
+
+requestMatchers(
+    "/api/contas-acesso/*/perfis",
+    "/api/contas-acesso/*/status")
+    .hasRole("ADMINISTRADOR")
+
+requestMatchers(DELETE, "/api/**")
+    .hasRole("ADMINISTRADOR")
+
+requestMatchers("/api/**")
+    .hasAnyRole("OPERADOR", "ADMINISTRADOR")
+
+anyRequest().denyAll()</pre>
+
+      <h2>Como ler o resultado</h2>
+      <div class="legend">
+        <span class="pill ok">200/201/204 · autorizado</span>
+        <span class="pill bad">401 · não autenticado</span>
+        <span class="pill bad">403 · autenticado sem permissão</span>
+        <span class="pill warn">400 · regra de negócio</span>
+      </div>
+      <p class="note">A ordem importa: regras administrativas são declaradas antes de <code>/api/**</code>. Terminar com <code>denyAll()</code> impede que uma rota nova fique pública por esquecimento.</p>
+      <p class="note">O <code>@PreAuthorize("hasRole('ADMINISTRADOR')")</code> também protege <code>cadastrar</code>, <code>alterarPerfis</code> e <code>alterarStatus</code>. Se a regra HTTP for alterada por engano, o service continua exigindo o perfil.</p>
+    </aside>
+  </div>
+</main>
+
+<footer>AL Sports · material didático da Aula 14 · execute apenas em ambiente local.</footer>
+
+<script>
+const nodes = [...document.querySelectorAll(".node")];
+const token = document.getElementById("token");
+const route = document.getElementById("route");
+const role = document.getElementById("role");
+const result = document.getElementById("result");
+
+function evaluate() {
+  const hasToken = token.checked;
+  const selectedRoute = route.value;
+  const selectedRole = role.value;
+
+  let code, cls, why, active;
+
+  if (selectedRoute === "public") {
+    code = "200"; cls = "ok";
+    why = "A rota é pública e não exige token. O filtro Bearer não bloqueia a requisição.";
+    active = [0, 3];
+  } else if (!hasToken) {
+    code = "401"; cls = "bad";
+    why = "Sem token válido, o Resource Server responde 401 com WWW-Authenticate: Bearer. A política de autorização nem chega a ser avaliada.";
+    active = [0];
+  } else if (selectedRoute === "fora") {
+    code = "403"; cls = "bad";
+    why = "A rota não está classificada em /api nem nas rotas públicas. anyRequest().denyAll() nega por padrão.";
+    active = [1, 2, 3];
+  } else if (selectedRoute === "admin" || selectedRoute === "delete") {
+    if (selectedRole === "ADMINISTRADOR") {
+      code = selectedRoute === "delete" ? "204/404" : "200/201";
+      cls = "ok";
+      why = "A regra administrativa aceita ADMINISTRADOR. Se o recurso não existir, o controller responde 404; a autorização já foi concedida.";
+      active = [1, 2, 3, 4, 5];
+    } else {
+      code = "403"; cls = "bad";
+      why = "O token é válido, mas o perfil não satisfaz hasRole(\"ADMINISTRADOR\"). O resultado é 403, não 401.";
+      active = [1, 2, 3];
+    }
+  } else {
+    if (selectedRole === "OPERADOR" || selectedRole === "ADMINISTRADOR") {
+      code = "200"; cls = "ok";
+      why = "A regra geral de /api/** aceita OPERADOR ou ADMINISTRADOR. O caso de uso decide o restante da regra de negócio.";
+      active = [1, 2, 3, 5];
+    } else {
+      code = "403"; cls = "bad";
+      why = "O token é válido, mas não contém OPERADOR nem ADMINISTRADOR. A regra geral nega o acesso.";
+      active = [1, 2, 3];
+    }
+  }
+
+  nodes.forEach(node => node.classList.toggle("active", active.includes(Number(node.dataset.node))));
+  result.innerHTML = `<div class="code ${cls}">${code}</div><div class="why">${why}</div>`;
+}
+
+[token, route, role].forEach(control => control.addEventListener("change", evaluate));
+evaluate();
+</script>
+</body>
+</html>

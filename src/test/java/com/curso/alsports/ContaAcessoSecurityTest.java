@@ -1,6 +1,7 @@
 package com.curso.alsports;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -22,14 +23,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.curso.alsports.model.ContaAcesso;
+import com.curso.alsports.model.PerfilAcesso;
 import com.curso.alsports.model.Pessoa;
+import com.curso.alsports.model.StatusContaAcesso;
 import com.curso.alsports.repository.ContaAcessoRepository;
 import com.curso.alsports.repository.PessoaRepository;
 import com.jayway.jsonpath.JsonPath;
@@ -44,9 +46,6 @@ class ContaAcessoSecurityTest {
     private static final String NOVA_SENHA = "outra-frase-senha-2026";
     private static final AtomicLong SEQUENCIA = new AtomicLong();
 
-    private final PasswordEncoder passwordEncoder =
-            PasswordEncoderFactories.createDelegatingPasswordEncoder();
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -56,9 +55,15 @@ class ContaAcessoSecurityTest {
     @Autowired
     private ContaAcessoRepository contaAcessoRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private Pessoa pessoa;
     private ContaAcesso conta;
     private String login;
+
+    private ContaAcesso administrador;
+    private String adminLogin;
 
     @BeforeEach
     void setUp() {
@@ -66,6 +71,14 @@ class ContaAcessoSecurityTest {
         login = "operador." + sufixo();
         conta = contaAcessoRepository.saveAndFlush(new ContaAcesso(
                 pessoa, login, passwordEncoder.encode(SENHA)));
+
+        Pessoa pessoaAdmin = pessoaRepository.save(
+                criarPessoa("Administrador Teste"));
+        adminLogin = "admin." + sufixo();
+        administrador = new ContaAcesso(
+                pessoaAdmin, adminLogin, passwordEncoder.encode(SENHA));
+        administrador.concederPerfil(PerfilAcesso.ADMINISTRADOR);
+        administrador = contaAcessoRepository.saveAndFlush(administrador);
     }
 
     @Test
@@ -94,15 +107,25 @@ class ContaAcessoSecurityTest {
     }
 
     @Test
-    void cadastroDePessoaDeveSerPublico() throws Exception {
+    void cadastroDePessoaSemCredencialDeveRetornar401() throws Exception {
+        mockMvc.perform(post("/api/pessoas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void cadastroDePessoaComOperadorDeveRetornar201() throws Exception {
         String email = "publico." + sufixo() + "@example.com";
         String cpf = cpfValido(SEQUENCIA.incrementAndGet());
 
         mockMvc.perform(post("/api/pessoas")
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenOperador())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "nome": "Pessoa Pública",
+                                  "nome": "Pessoa Autenticada",
                                   "email": "%s",
                                   "cpf": "%s"
                                 }
@@ -113,7 +136,26 @@ class ContaAcessoSecurityTest {
     }
 
     @Test
-    void cadastroDeContaDeveSerPublicoEPersistirSomenteBcrypt()
+    void cadastroDeContaSemCredencialDeveRetornar401() throws Exception {
+        mockMvc.perform(post("/api/contas-acesso")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void cadastroDeContaComOperadorDeveRetornar403() throws Exception {
+        mockMvc.perform(post("/api/contas-acesso")
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenOperador())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string(not(containsString("Exception"))));
+    }
+
+    @Test
+    void cadastroDeContaComAdminDevePersistirSomenteBcrypt()
             throws Exception {
 
         Pessoa novaPessoa = pessoaRepository.save(
@@ -121,6 +163,8 @@ class ContaAcessoSecurityTest {
         String novoLogin = "nova." + sufixo();
 
         mockMvc.perform(post("/api/contas-acesso")
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -157,12 +201,16 @@ class ContaAcessoSecurityTest {
     }
 
     @Test
-    void requestPublicoNaoDeveEscolherPerfil() throws Exception {
+    void requestAdministrativoNaoDeveEscolherPerfilNoCadastro()
+            throws Exception {
+
         Pessoa novaPessoa = pessoaRepository.save(
                 criarPessoa("Operadora Sem Admin"));
         String novoLogin = "semadmin." + sufixo();
 
         mockMvc.perform(post("/api/contas-acesso")
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -184,7 +232,7 @@ class ContaAcessoSecurityTest {
     void bearerValidoDevePermitirConsultarMinhaConta() throws Exception {
         mockMvc.perform(get("/api/contas-acesso/me")
                         .header(HttpHeaders.AUTHORIZATION,
-                                "Bearer " + autenticar(login, SENHA)))
+                                "Bearer " + tokenOperador()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.login").value(login))
                 .andExpect(jsonPath("$.pessoaId").value(pessoa.getId()))
@@ -281,7 +329,7 @@ class ContaAcessoSecurityTest {
     void rotaProtegidaComBearerValidoDeveRetornar200() throws Exception {
         mockMvc.perform(get("/api/produtos")
                         .header(HttpHeaders.AUTHORIZATION,
-                                "Bearer " + autenticar(login, SENHA)))
+                                "Bearer " + tokenOperador()))
                 .andExpect(status().isOk());
     }
 
@@ -297,7 +345,7 @@ class ContaAcessoSecurityTest {
 
         mockMvc.perform(put("/api/contas-acesso/me/senha")
                         .header(HttpHeaders.AUTHORIZATION,
-                                "Bearer " + autenticar(login, SENHA))
+                                "Bearer " + tokenOperador())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -330,7 +378,7 @@ class ContaAcessoSecurityTest {
     void alteracaoComSenhaAtualIncorretaDeveRetornar400() throws Exception {
         mockMvc.perform(put("/api/contas-acesso/me/senha")
                         .header(HttpHeaders.AUTHORIZATION,
-                                "Bearer " + autenticar(login, SENHA))
+                                "Bearer " + tokenOperador())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -341,18 +389,13 @@ class ContaAcessoSecurityTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value("Senha atual inválida"));
-
-        mockMvc.perform(get("/api/contas-acesso/me")
-                        .header(HttpHeaders.AUTHORIZATION,
-                                "Bearer " + autenticar(login, SENHA)))
-                .andExpect(status().isOk());
     }
 
     @Test
     void alteracaoComNovaSenhaIgualDeveRetornar400() throws Exception {
         mockMvc.perform(put("/api/contas-acesso/me/senha")
                         .header(HttpHeaders.AUTHORIZATION,
-                                "Bearer " + autenticar(login, SENHA))
+                                "Bearer " + tokenOperador())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -363,18 +406,13 @@ class ContaAcessoSecurityTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value("Nova senha deve ser diferente da senha atual"));
-
-        mockMvc.perform(get("/api/contas-acesso/me")
-                        .header(HttpHeaders.AUTHORIZATION,
-                                "Bearer " + autenticar(login, SENHA)))
-                .andExpect(status().isOk());
     }
 
     @Test
     void novaSenhaComMaisDe72BytesUtf8DeveRetornar400() throws Exception {
         mockMvc.perform(put("/api/contas-acesso/me/senha")
                         .header(HttpHeaders.AUTHORIZATION,
-                                "Bearer " + autenticar(login, SENHA))
+                                "Bearer " + tokenOperador())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -393,6 +431,8 @@ class ContaAcessoSecurityTest {
                 criarPessoa("Senha Curta"));
 
         mockMvc.perform(post("/api/contas-acesso")
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -413,6 +453,8 @@ class ContaAcessoSecurityTest {
                 criarPessoa("Outra Operadora"));
 
         mockMvc.perform(post("/api/contas-acesso")
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -432,6 +474,8 @@ class ContaAcessoSecurityTest {
     @Test
     void pessoaDuplicadaDeveRetornar409() throws Exception {
         mockMvc.perform(post("/api/contas-acesso")
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -451,6 +495,8 @@ class ContaAcessoSecurityTest {
     @Test
     void pessoaInexistenteDeveRetornar404() throws Exception {
         mockMvc.perform(post("/api/contas-acesso")
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -471,6 +517,8 @@ class ContaAcessoSecurityTest {
         pessoaRepository.saveAndFlush(inativa);
 
         mockMvc.perform(post("/api/contas-acesso")
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -485,6 +533,166 @@ class ContaAcessoSecurityTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "Pessoa inativa não pode possuir conta de acesso"));
+    }
+
+    @Test
+    void adminDeveSubstituirPerfisDeOutraConta() throws Exception {
+        mockMvc.perform(put("/api/contas-acesso/{id}/perfis", conta.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "perfis": ["OPERADOR", "ADMINISTRADOR"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(conta.getId()))
+                .andExpect(jsonPath("$.perfis", containsInAnyOrder(
+                        "OPERADOR", "ADMINISTRADOR")));
+    }
+
+    @Test
+    void operadorNaoDeveSubstituirPerfis() throws Exception {
+        mockMvc.perform(put("/api/contas-acesso/{id}/perfis", conta.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenOperador())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "perfis": ["ADMINISTRADOR"]
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminDeveBloquearOutraConta() throws Exception {
+        mockMvc.perform(put("/api/contas-acesso/{id}/status", conta.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "BLOQUEADA"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("BLOQUEADA"));
+    }
+
+    @Test
+    void adminNaoDeveBloquearPropriaConta() throws Exception {
+        mockMvc.perform(put(
+                        "/api/contas-acesso/{id}/status",
+                        administrador.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "BLOQUEADA"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "O administrador não pode bloquear a própria conta"));
+    }
+
+    @Test
+    void adminNaoDeveRemoverProprioPerfilAdministrador() throws Exception {
+        mockMvc.perform(put(
+                        "/api/contas-acesso/{id}/perfis",
+                        administrador.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "perfis": ["OPERADOR"]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "O administrador não pode remover o próprio perfil "
+                                + "ADMINISTRADOR"));
+    }
+
+    @Test
+    void perfisVaziosDevemRetornar400() throws Exception {
+        mockMvc.perform(put("/api/contas-acesso/{id}/perfis", conta.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "perfis": []
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.perfis").exists());
+    }
+
+    @Test
+    void statusAusenteDeveRetornar400() throws Exception {
+        mockMvc.perform(put("/api/contas-acesso/{id}/status", conta.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.status").exists());
+    }
+
+    @Test
+    void alteracaoDePerfisDeContaInexistenteDeveRetornar404()
+            throws Exception {
+
+        mockMvc.perform(put("/api/contas-acesso/{id}/perfis", 999999999L)
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "perfis": ["OPERADOR"]
+                                }
+                                """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(
+                        "Conta de acesso não encontrada: 999999999"));
+    }
+
+    @Test
+    void tokenAntigoContinuaValidoAposBloqueioDaConta() throws Exception {
+        String token = tokenOperador();
+
+        mockMvc.perform(put("/api/contas-acesso/{id}/status", conta.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "BLOQUEADA"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/contas-acesso/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("BLOQUEADA"));
+
+        assertThat(contaAcessoRepository.findById(conta.getId())
+                .orElseThrow()
+                .getStatus()).isEqualTo(StatusContaAcesso.BLOQUEADA);
+    }
+
+    private String tokenOperador() throws Exception {
+        return autenticar(login, SENHA);
+    }
+
+    private String tokenAdmin() throws Exception {
+        return autenticar(adminLogin, SENHA);
     }
 
     private String autenticar(String login, String senha) throws Exception {

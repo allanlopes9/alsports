@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 14 · Administrador inicial</title>
+<style>
+  :root {
+    --bg: #0b1220; --card: #151f33; --card2: #1b2942; --line: #2b3b57;
+    --text: #e6eefc; --muted: #9db0cc; --accent: #38bdf8;
+    --green: #34d399; --amber: #fbbf24; --red: #f87171; --violet: #a78bfa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(1200px 600px at 85% -10%, #172554 0%, var(--bg) 55%);
+    color: var(--text); min-height: 100vh;
+  }
+  header { max-width: 1120px; margin: 0 auto; padding: 42px 24px 18px; }
+  .badge {
+    display: inline-block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid #1d4ed8; background: #0c1a33;
+    padding: 6px 10px; border-radius: 999px;
+  }
+  h1 { margin: 14px 0 8px; font-size: clamp(24px, 4vw, 38px); line-height: 1.15; }
+  header p { color: var(--muted); max-width: 820px; line-height: 1.6; margin: 0; }
+  main { max-width: 1120px; margin: 0 auto; padding: 10px 24px 56px; }
+  .layout { display: grid; grid-template-columns: 310px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
+  .steps { display: flex; flex-direction: column; gap: 8px; }
+  .step {
+    text-align: left; border: 1px solid var(--line); background: var(--card);
+    color: var(--text); padding: 12px 14px; border-radius: 12px; cursor: pointer;
+    transition: border-color .18s, transform .18s, background .18s;
+    font: inherit; display: flex; gap: 10px; align-items: center;
+  }
+  .step:hover { border-color: var(--accent); transform: translateX(2px); }
+  .step[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: linear-gradient(90deg, #0c2b4a, var(--card2));
+    box-shadow: 0 0 0 1px #0ea5e9 inset;
+  }
+  .num {
+    flex: 0 0 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: #0c1a33; color: var(--accent);
+    font-size: 12px; font-weight: 700; border: 1px solid #1d4ed8;
+  }
+  .panel {
+    border: 1px solid var(--line); background: linear-gradient(180deg, var(--card), #111a2b);
+    border-radius: 16px; padding: 22px; min-height: 360px;
+  }
+  .panel h2 { margin: 0 0 6px; font-size: 20px; }
+  .panel .who { color: var(--accent); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  .panel p { color: var(--muted); line-height: 1.65; }
+  .panel ul { color: var(--muted); line-height: 1.7; padding-left: 20px; }
+  .panel li strong { color: var(--text); }
+  code, pre { font-family: "Cascadia Code", Consolas, monospace; }
+  code { color: #bae6fd; background: #0b1a2d; padding: 2px 5px; border-radius: 5px; }
+  pre {
+    background: #0a1424; border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; overflow: auto; color: #d7e6ff; font-size: 13px; line-height: 1.55;
+  }
+  .kv { display: grid; grid-template-columns: 150px 1fr; gap: 8px 14px; margin-top: 12px; }
+  .kv div:nth-child(odd) { color: var(--muted); font-size: 13px; }
+  .kv div:nth-child(even) { color: var(--text); font-size: 14px; }
+  .lane { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
+  .lane span {
+    text-align: center; font-size: 12px; color: var(--muted);
+    border: 1px dashed var(--line); border-radius: 8px; padding: 8px;
+    background: #0d1728;
+  }
+  .pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; margin-right: 6px; }
+  .pill.ok { background: #052e22; color: var(--green); border: 1px solid #065f46; }
+  .pill.warn { background: #33240a; color: var(--amber); border: 1px solid #92400e; }
+  .pill.bad { background: #3b0d12; color: var(--red); border: 1px solid #991b1b; }
+  .pill.neutral { background: #111a2b; color: var(--muted); border: 1px solid var(--line); }
+  .hint { margin-top: 14px; color: var(--muted); font-size: 13px; }
+  footer { max-width: 1120px; margin: 0 auto; padding: 0 24px 40px; color: #6f86a6; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="badge">Aula 14 · Autorização</span>
+  <h1>Administrador inicial</h1>
+  <p>Depois de remover o cadastro público, um banco vazio não teria como criar a primeira conta administrativa. O provisionamento didático resolve esse bootstrap sem transformar o cadastro em rota pública: ele é opcional, condicional, idempotente e executado uma única vez.</p>
+</header>
+
+<main>
+  <div class="lane">
+    <span>Configuração</span>
+    <span>ApplicationRunner</span>
+    <span>AdministradorInicialService</span>
+    <span>Pessoa + ContaAcesso</span>
+  </div>
+
+  <div class="layout">
+    <div class="steps" id="steps" aria-label="Etapas do administrador inicial">
+      <button class="step" aria-pressed="true" data-step="0"><span class="num">1</span> Desativado por padrão</button>
+      <button class="step" aria-pressed="false" data-step="1"><span class="num">2</span> Ativação explícita</button>
+      <button class="step" aria-pressed="false" data-step="2"><span class="num">3</span> Idempotência</button>
+      <button class="step" aria-pressed="false" data-step="3"><span class="num">4</span> Validação dos campos</button>
+      <button class="step" aria-pressed="false" data-step="4"><span class="num">5</span> Duplicidades</button>
+      <button class="step" aria-pressed="false" data-step="5"><span class="num">6</span> Criação transacional</button>
+      <button class="step" aria-pressed="false" data-step="6"><span class="num">7</span> Desativação</button>
+    </div>
+
+    <section class="panel" id="panel" aria-live="polite"></section>
+  </div>
+  <p class="hint">Clique nas etapas para acompanhar o provisionamento. O mecanismo não substitui um processo de identidade corporativo e não deve permanecer ativo em produção.</p>
+</main>
+
+<footer>AL Sports · material didático da Aula 14 · execute apenas em ambiente local.</footer>
+
+<script>
+const steps = [
+  {
+    title: "Desativado por padrão",
+    who: "application.properties → AdministradorInicialRunner",
+    html: `
+      <p>A flag é lida de uma variável de ambiente e assume <code>false</code> quando ausente. Com ela desligada, o <code>@ConditionalOnProperty</code> nem cria o runner.</p>
+      <pre>app.security.initial-admin.enabled=\${INITIAL_ADMIN_ENABLED:false}</pre>
+      <div class="kv">
+        <div>Flag</div><div><span class="pill neutral">false</span> padrão seguro</div>
+        <div>Efeito</div><div>nenhuma pessoa ou conta é criada</div>
+        <div>Senha padrão</div><div>não existe no código</div>
+      </div>`
+  },
+  {
+    title: "Ativação explícita",
+    who: "Variáveis de ambiente → AdministradorInicialProperties",
+    html: `
+      <p>O provisionamento só ocorre quando a flag é exatamente <code>true</code>. Os demais valores vêm do ambiente local e nunca do repositório.</p>
+      <pre>INITIAL_ADMIN_ENABLED=true
+INITIAL_ADMIN_NAME=Administrador Local
+INITIAL_ADMIN_EMAIL=administrador@example.com
+INITIAL_ADMIN_CPF=&lt;cpf-valido-de-teste&gt;
+INITIAL_ADMIN_LOGIN=administrador
+INITIAL_ADMIN_PASSWORD=&lt;senha-local-forte&gt;</pre>
+      <p>O <code>.env.example</code> contém apenas placeholders. O <code>.env</code> real é ignorado pelo Git e não deve ser copiado para documentação, testes ou coleções Postman.</p>
+      <div class="kv">
+        <div>Classe</div><div><code>@ConfigurationProperties(prefix = "app.security.initial-admin")</code></div>
+        <div>Execução</div><div><code>ApplicationRunner</code> após o contexto subir</div>
+        <div>Log</div><div>somente login e resultado</div>
+      </div>`
+  },
+  {
+    title: "Idempotência",
+    who: "AdministradorInicialService.criarSeNecessario",
+    html: `
+      <p>Antes de validar qualquer campo, o service conta quantos administradores ativos existem. Se houver ao menos um, encerra sem gravar nada.</p>
+      <pre>if (contaAcessoRepository.contarPorPerfilEStatus(
+        PerfilAcesso.ADMINISTRADOR,
+        StatusContaAcesso.ATIVA) &gt; 0) {
+    return Optional.empty();
+}</pre>
+      <p>Reiniciar a aplicação com a flag ainda ligada não duplica a conta nem sobrescreve a senha. O runner registra <code>Administrador inicial não criado: já existe administrador ativo</code>.</p>
+      <div class="kv">
+        <div>Resultado</div><div><span class="pill ok">idempotente</span> no cenário de uma instância</div>
+        <div>Limite</div><div>a contagem não usa lock distribuído</div>
+      </div>`
+  },
+  {
+    title: "Validação dos campos",
+    who: "Properties → validadores compartilhados",
+    html: `
+      <p>Todos os campos são obrigatórios. O service reutiliza as regras de login e senha do cadastro de contas e valida o CPF pelo domínio.</p>
+      <ul>
+        <li><strong>Nome, e-mail e CPF:</strong> não podem ser vazios.</li>
+        <li><strong>CPF:</strong> precisa satisfazer <code>DocumentoFiscal.cpfValido</code>.</li>
+        <li><strong>Login:</strong> 3 a 80 caracteres, apenas letras, números, ponto, sublinhado ou hífen.</li>
+        <li><strong>Senha:</strong> 12 a 72 caracteres e no máximo 72 bytes em UTF-8.</li>
+      </ul>
+      <p>Uma configuração incompleta falha com mensagem clara e sem gravar parcialmente. Nenhuma senha aberta é registrada em log.</p>`
+  },
+  {
+    title: "Duplicidades",
+    who: "ContaAcessoRepository e PessoaRepository",
+    html: `
+      <p>Mesmo sem administrador ativo, os dados não podem colidir com registros existentes. O service verifica login, CPF e e-mail antes de criar.</p>
+      <pre>Login do administrador inicial já está em uso
+CPF do administrador inicial já está cadastrado
+E-mail do administrador inicial já está cadastrado</pre>
+      <p>Essas falhas usam <code>IllegalStateException</code> e interrompem o provisionamento. A correção é ajustar a configuração local, não relaxar as constraints do banco.</p>
+      <div class="kv">
+        <div>Login</div><div>comparação sem diferenciar maiúsculas</div>
+        <div>CPF / e-mail</div><div>unicidade também garantida no banco</div>
+      </div>`
+  },
+  {
+    title: "Criação transacional",
+    who: "PessoaRepository + ContaAcessoRepository",
+    html: `
+      <p>Pessoa e conta são gravadas na mesma transação. O construtor de <code>ContaAcesso</code> cria a conta <code>ATIVA</code> com <code>OPERADOR</code>; o provisionamento concede <code>ADMINISTRADOR</code> antes de salvar.</p>
+      <pre>Pessoa pessoa = pessoaRepository.save(
+        new Pessoa(nome, email, cpf, LocalDate.now(clock)));
+
+ContaAcesso conta = new ContaAcesso(
+        pessoa, login, passwordEncoder.encode(senha));
+conta.concederPerfil(PerfilAcesso.ADMINISTRADOR);</pre>
+      <div class="kv">
+        <div>Perfis</div><div><span class="pill ok">OPERADOR</span><span class="pill ok">ADMINISTRADOR</span></div>
+        <div>Status</div><div><span class="pill ok">ATIVA</span></div>
+        <div>Senha</div><div>apenas hash BCrypt com salt</div>
+        <div>Atomicidade</div><div>falha em qualquer etapa não deixa pessoa órfã</div>
+      </div>`
+  },
+  {
+    title: "Desativação",
+    who: "Operação local",
+    html: `
+      <p>Depois do primeiro login, o provisionamento cumpriu seu papel. Remova ou esvazie as variáveis e reinicie a aplicação com a flag desligada.</p>
+      <pre>INITIAL_ADMIN_ENABLED=false
+INITIAL_ADMIN_NAME=
+INITIAL_ADMIN_EMAIL=
+INITIAL_ADMIN_CPF=
+INITIAL_ADMIN_LOGIN=
+INITIAL_ADMIN_PASSWORD=</pre>
+      <p>Nunca mantenha a senha em texto aberto no ambiente além do necessário. A conta criada continua existindo no banco e deve ser administrada pelos endpoints da Aula 14.</p>
+      <div class="kv">
+        <div>Uso correto</div><div>primeira execução de banco vazio, ambiente local</div>
+        <div>Uso incorreto</div><div>seed permanente, produção sem controle ou múltiplas instâncias simultâneas</div>
+      </div>`
+  }
+];
+
+const panel = document.getElementById("panel");
+const buttons = [...document.querySelectorAll(".step")];
+
+function render(index) {
+  const step = steps[index];
+  panel.innerHTML = `<div class="who">${step.who}</div><h2>${step.title}</h2>${step.html}`;
+  buttons.forEach((button, i) => button.setAttribute("aria-pressed", String(i === index)));
+}
+
+buttons.forEach(button => {
+  button.addEventListener("click", () => render(Number(button.dataset.step)));
+});
+
+render(0);
+</script>
+</body>
+</html>

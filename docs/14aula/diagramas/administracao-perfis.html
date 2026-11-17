@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 14 · Administração de perfis e status</title>
+<style>
+  :root {
+    --bg: #0b1220; --card: #151f33; --card2: #1b2942; --line: #2b3b57;
+    --text: #e6eefc; --muted: #9db0cc; --accent: #38bdf8;
+    --green: #34d399; --amber: #fbbf24; --red: #f87171; --violet: #a78bfa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(1200px 600px at 15% -10%, #172554 0%, var(--bg) 55%);
+    color: var(--text); min-height: 100vh;
+  }
+  header { max-width: 1180px; margin: 0 auto; padding: 42px 24px 18px; }
+  .badge {
+    display: inline-block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid #1d4ed8; background: #0c1a33;
+    padding: 6px 10px; border-radius: 999px;
+  }
+  h1 { margin: 14px 0 8px; font-size: clamp(24px, 4vw, 38px); line-height: 1.15; }
+  header p { color: var(--muted); max-width: 840px; line-height: 1.6; margin: 0; }
+  main { max-width: 1180px; margin: 0 auto; padding: 10px 24px 56px; }
+  .grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 20px; align-items: start; }
+  @media (max-width: 940px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--line); background: linear-gradient(180deg, var(--card), #111a2b);
+    border-radius: 16px; padding: 22px;
+  }
+  .card h2 { margin: 0 0 12px; font-size: 19px; }
+  .card h3 { margin: 20px 0 8px; font-size: 15px; color: var(--accent); }
+  .card p { color: var(--muted); line-height: 1.6; }
+  .controls { display: grid; gap: 9px; margin: 12px 0; }
+  .control {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border: 1px solid var(--line); border-radius: 10px; background: #0d1728;
+  }
+  .control > label:first-child { font-size: 14px; color: var(--text); }
+  .control input[type="checkbox"] { width: 18px; height: 18px; accent-color: #0ea5e9; }
+  select {
+    background: #0d1728; color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 8px; font: inherit; margin-left: auto; min-width: 210px;
+  }
+  .result {
+    margin-top: 16px; border-radius: 12px; padding: 16px;
+    border: 1px solid var(--line); background: #0a1424;
+  }
+  .result .code { font-size: 32px; font-weight: 800; line-height: 1; }
+  .result .why { color: var(--muted); margin-top: 8px; line-height: 1.55; }
+  .result .state { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .ok { color: var(--green); } .warn { color: var(--amber); } .bad { color: var(--red); }
+  code, pre { font-family: "Cascadia Code", Consolas, monospace; }
+  code { color: #bae6fd; background: #0b1a2d; padding: 2px 5px; border-radius: 5px; }
+  pre {
+    background: #0a1424; border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; overflow: auto; color: #d7e6ff; font-size: 13px; line-height: 1.55;
+  }
+  .pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; }
+  .pill.ok { background: #052e22; color: var(--green); border: 1px solid #065f46; }
+  .pill.warn { background: #33240a; color: var(--amber); border: 1px solid #92400e; }
+  .pill.bad { background: #3b0d12; color: var(--red); border: 1px solid #991b1b; }
+  .pill.neutral { background: #111a2b; color: var(--muted); border: 1px solid var(--line); }
+  .invariants { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .invariants li {
+    border: 1px solid var(--line); background: #0d1728; border-radius: 10px;
+    padding: 10px 12px; font-size: 14px; line-height: 1.45;
+  }
+  .invariants li strong { color: var(--text); }
+  .note { font-size: 13px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 12px; margin-top: 14px; }
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 24px 40px; color: #6f86a6; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="badge">Aula 14 · Autorização</span>
+  <h1>Administração de perfis e status</h1>
+  <p>Os dois endpoints administrativos evoluem o cadastro da Aula 12. Além de exigir <code>ADMINISTRADOR</code> na cadeia HTTP e no service, o sistema recusa operações que deixariam a instalação sem administração. Use o simulador para combinar alvo, perfis, status e quantidade de administradores ativos.</p>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>Simulador de invariantes</h2>
+      <div class="controls">
+        <div class="control">
+          <label for="operacao">Operação</label>
+          <select id="operacao">
+            <option value="perfis">PUT /api/contas-acesso/{id}/perfis</option>
+            <option value="status">PUT /api/contas-acesso/{id}/status</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="alvo">Conta alvo</label>
+          <select id="alvo">
+            <option value="outra">Outra conta</option>
+            <option value="propria">A própria conta autenticada</option>
+          </select>
+        </div>
+        <div class="control" data-for="perfis">
+          <label for="perfis">Perfis enviados</label>
+          <select id="perfis">
+            <option value="OPERADOR,ADMINISTRADOR">OPERADOR + ADMINISTRADOR</option>
+            <option value="OPERADOR">Somente OPERADOR</option>
+            <option value="VAZIO">Lista vazia</option>
+          </select>
+        </div>
+        <div class="control" data-for="status">
+          <label for="status">Novo status</label>
+          <select id="status">
+            <option value="BLOQUEADA">BLOQUEADA</option>
+            <option value="ATIVA">ATIVA</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="alvoAdmin">Conta alvo possui ADMINISTRADOR</label>
+          <input id="alvoAdmin" type="checkbox" checked>
+        </div>
+        <div class="control">
+          <label for="alvoAtiva">Conta alvo está ATIVA</label>
+          <input id="alvoAtiva" type="checkbox" checked>
+        </div>
+        <div class="control">
+          <label for="admins">Administradores ativos no sistema</label>
+          <select id="admins">
+            <option value="1">1 (último administrador)</option>
+            <option value="2">2 ou mais</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="result" id="result" aria-live="polite"></div>
+
+      <p class="note">A contagem do último administrador é feita no service, dentro da transação. O projeto não usa locking para essa contagem: duas requisições concorrentes podem, em teoria, aprovar a mesma remoção. A limitação é didática e está documentada; em produção, a invariante precisaria de lock ou constraint dedicada.</p>
+    </section>
+
+    <aside class="card">
+      <h2>Invariantes aplicadas</h2>
+      <ul class="invariants">
+        <li><strong>A conta nunca fica sem perfil.</strong> O DTO usa <code>@NotEmpty</code> e o service repete a checagem. <code>substituirPerfis</code> também recusa conjunto vazio.</li>
+        <li><strong>O administrador não se auto-remove.</strong> Se o login do token é o dono da conta, remover <code>ADMINISTRADOR</code> retorna 400.</li>
+        <li><strong>O administrador não se auto-bloqueia.</strong> <code>PUT .../status</code> com <code>BLOQUEADA</code> na própria conta retorna 400.</li>
+        <li><strong>Sempre existe administrador ativo.</strong> O último <code>ADMINISTRADOR</code> ativo não pode perder o perfil nem ser bloqueado.</li>
+        <li><strong>O alvo é identificado pelo caminho.</strong> O login do administrador vem do token (<code>authentication.getName()</code>), nunca do corpo.</li>
+      </ul>
+
+      <h3>Requisições</h3>
+      <pre>PUT /api/contas-acesso/42/perfis
+Authorization: Bearer &lt;token-admin&gt;
+
+{"perfis": ["OPERADOR", "ADMINISTRADOR"]}</pre>
+      <pre>PUT /api/contas-acesso/42/status
+Authorization: Bearer &lt;token-admin&gt;
+
+{"status": "BLOQUEADA"}</pre>
+
+      <h3>Respostas</h3>
+      <div class="state">
+        <span class="pill ok">200 · alterado</span>
+        <span class="pill warn">400 · invariante ou validação</span>
+        <span class="pill bad">401 · sem token</span>
+        <span class="pill bad">403 · sem ADMINISTRADOR</span>
+        <span class="pill neutral">404 · conta inexistente</span>
+      </div>
+
+      <p class="note">As mensagens de 400 são estáveis e testadas: <code>O administrador não pode bloquear a própria conta</code>, <code>O administrador não pode remover o próprio perfil ADMINISTRADOR</code> e <code>O sistema deve manter ao menos um administrador ativo</code>.</p>
+    </aside>
+  </div>
+</main>
+
+<footer>AL Sports · material didático da Aula 14 · execute apenas em ambiente local.</footer>
+
+<script>
+const operacao = document.getElementById("operacao");
+const alvo = document.getElementById("alvo");
+const perfis = document.getElementById("perfis");
+const status = document.getElementById("status");
+const alvoAdmin = document.getElementById("alvoAdmin");
+const alvoAtiva = document.getElementById("alvoAtiva");
+const admins = document.getElementById("admins");
+const result = document.getElementById("result");
+
+function toggleVisibility() {
+  const isPerfis = operacao.value === "perfis";
+  document.querySelectorAll("[data-for]").forEach(group => {
+    group.style.display = group.dataset.for === operacao.value ? "flex" : "none";
+  });
+  if (isPerfis) {
+    // A própria conta autenticada é, por definição, um administrador ativo.
+    if (alvo.value === "propria") {
+      alvoAdmin.checked = true;
+      alvoAtiva.checked = true;
+      alvoAdmin.disabled = true;
+      alvoAtiva.disabled = true;
+    } else {
+      alvoAdmin.disabled = false;
+      alvoAtiva.disabled = false;
+    }
+  } else {
+    alvoAdmin.disabled = false;
+    alvoAtiva.disabled = false;
+  }
+}
+
+function chips(list) {
+  return list.map(item => `<span class="pill ${item.cls}">${item.text}</span>`).join("");
+}
+
+function evaluate() {
+  toggleVisibility();
+
+  const isPerfis = operacao.value === "perfis";
+  const isPropria = alvo.value === "propria";
+  const possuiAdmin = alvoAdmin.checked;
+  const estaAtiva = alvoAtiva.checked;
+  const somenteUmAdmin = admins.value === "1";
+
+  let code, cls, why, estado;
+
+  if (isPerfis) {
+    const escolhidos = perfis.value;
+    const mantemAdmin = escolhidos.includes("ADMINISTRADOR");
+
+    if (escolhidos === "VAZIO") {
+      code = "400"; cls = "warn";
+      why = "O DTO @NotEmpty barra a lista vazia antes do service. A conta nunca pode ficar sem perfil.";
+      estado = [ { text: "nenhuma alteração", cls: "neutral" } ];
+    } else if (isPropria && possuiAdmin && !mantemAdmin) {
+      code = "400"; cls = "warn";
+      why = "O login do token pertence à conta alvo. Remover ADMINISTRADOR de si mesmo é recusado mesmo que existam outros administradores.";
+      estado = [ { text: "perfis preservados", cls: "neutral" } ];
+    } else if (!isPropria && possuiAdmin && !mantemAdmin && estaAtiva && somenteUmAdmin) {
+      code = "400"; cls = "warn";
+      why = "A conta é o último administrador ativo. Remover o perfil deixaria o sistema sem administração.";
+      estado = [ { text: "perfis preservados", cls: "neutral" } ];
+    } else {
+      code = "200"; cls = "ok";
+      why = "A substituição é integral: os perfis anteriores são descartados e o conjunto enviado passa a valer. A ordem e as duplicidades do JSON não importam.";
+      estado = escolhidos.split(",").map(p => ({ text: p, cls: "ok" }));
+    }
+  } else {
+    const bloquear = status.value === "BLOQUEADA";
+
+    if (bloquear && isPropria) {
+      code = "400"; cls = "warn";
+      why = "O administrador autenticado não pode bloquear a própria conta. O bloqueio impediria novos logins do próprio operador da ação.";
+      estado = [ { text: "status preservado", cls: "neutral" } ];
+    } else if (bloquear && !isPropria && estaAtiva && possuiAdmin && somenteUmAdmin) {
+      code = "400"; cls = "warn";
+      why = "A conta é o último administrador ativo. Bloqueá-la deixaria o sistema sem administração.";
+      estado = [ { text: "status preservado", cls: "neutral" } ];
+    } else {
+      code = "200"; cls = "ok";
+      why = bloquear
+        ? "O bloqueio é aplicado. A conta deixa de autenticar, mas o histórico e os vínculos permanecem; nenhum dado é apagado."
+        : "A reativação é aplicada. O próximo login passa a ser aceito novamente, desde que a pessoa vinculada também esteja ativa.";
+      estado = [ { text: status.value, cls: "ok" } ];
+    }
+  }
+
+  result.innerHTML = `
+    <div class="code ${cls}">${code}</div>
+    <div class="why">${why}</div>
+    <div class="state">${chips(estado)}</div>`;
+}
+
+[operacao, alvo, perfis, status, alvoAdmin, alvoAtiva, admins]
+  .forEach(control => control.addEventListener("change", evaluate));
+
+evaluate();
+</script>
+</body>
+</html>

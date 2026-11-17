@@ -23,8 +23,11 @@ public class OpenApiConfig {
                 .description(
                     "Autenticação Bearer com JWT emitido por "
                         + "POST /api/autenticacao/login. O token tem validade "
-                        + "absoluta de 30 minutos. Em produção, use somente "
-                        + "sobre HTTPS/TLS.");
+                        + "absoluta de 30 minutos e carrega o claim 'perfis'. "
+                        + "As rotas de negócio exigem OPERADOR ou ADMINISTRADOR; "
+                        + "criação e administração de contas e exclusões exigem "
+                        + "ADMINISTRADOR. Em produção, use somente sobre "
+                        + "HTTPS/TLS.");
 
         return new OpenAPI()
             .info(new Info()
@@ -33,7 +36,9 @@ public class OpenApiConfig {
                     "API REST para gerenciamento de produtos, "
                         + "categorias, fornecedores, estoque, vendas e acessos da AL Sports. "
                         + "As operações são autenticadas por Bearer Token (JWT), exceto as "
-                        + "rotas públicas de saúde, documentação, cadastro inicial e login.")
+                        + "rotas públicas de saúde, documentação e login. O perfil OPERADOR "
+                        + "executa as operações cotidianas; ADMINISTRADOR também administra "
+                        + "contas e exclusões.")
                 .version("1.0.0")
                 .contact(new Contact()
                     .name("AL Sports")))

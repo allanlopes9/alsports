@@ -124,11 +124,15 @@ class OpenApiDocumentationTest {
 
             // Operações públicas sem exigência de credencial
             .andExpect(jsonPath("$.paths['/api/health'].get.security").isEmpty())
-            .andExpect(jsonPath("$.paths['/api/pessoas'].post.security").isEmpty())
-            .andExpect(jsonPath(
-                "$.paths['/api/contas-acesso'].post.security").isEmpty())
             .andExpect(jsonPath(
                 "$.paths['/api/autenticacao/login'].post.security").isEmpty())
+
+            // Operações autenticadas herdam o esquema global; pessoas e
+            // criação de conta não são mais públicas.
+            .andExpect(jsonPath("$.paths['/api/pessoas'].post.security")
+                .doesNotExist())
+            .andExpect(jsonPath("$.paths['/api/contas-acesso'].post.security")
+                .doesNotExist())
 
             // Login público
             .andExpect(jsonPath(
@@ -160,6 +164,8 @@ class OpenApiDocumentationTest {
             .andExpect(jsonPath(
                 "$.paths['/api/contas-acesso'].post.responses['201']").exists())
             .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso'].post.responses['403']").exists())
+            .andExpect(jsonPath(
                 "$.paths['/api/contas-acesso/me'].get").exists())
             .andExpect(jsonPath(
                 "$.paths['/api/contas-acesso/me'].get.responses['401']").exists())
@@ -168,11 +174,27 @@ class OpenApiDocumentationTest {
             .andExpect(jsonPath(
                 "$.paths['/api/contas-acesso/me/senha'].put.responses['204']").exists())
             .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/{id}/perfis'].put").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/{id}/perfis'].put.responses['200']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/{id}/perfis'].put.responses['403']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/{id}/status'].put").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/{id}/status'].put.responses['200']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/{id}/status'].put.responses['403']").exists())
+            .andExpect(jsonPath(
                 "$.components.schemas.ContaAcessoRequest").exists())
             .andExpect(jsonPath(
                 "$.components.schemas.ContaAcessoResponse").exists())
             .andExpect(jsonPath(
                 "$.components.schemas.AlteracaoSenhaRequest").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.PerfisContaAcessoRequest").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.StatusContaAcessoRequest").exists())
             .andExpect(jsonPath(
                 "$.components.schemas.ContaAcessoRequest.properties.senha.format")
                 .value("password"))
