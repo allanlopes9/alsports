@@ -20,6 +20,9 @@ import com.curso.alsports.repository.FornecedorRepository;
 import com.curso.alsports.repository.ProdutoRepository;
 import com.curso.alsports.repository.ProdutoSpecification;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+
 @Service
 public class ProdutoService {
 
@@ -38,15 +41,18 @@ public class ProdutoService {
     private final ProdutoRepository repository;
     private final CategoriaProdutoRepository categoriaProdutoRepository;
     private final FornecedorRepository fornecedorRepository;
+    private final EntityManager entityManager;
 
     public ProdutoService(
         ProdutoRepository repository,
         CategoriaProdutoRepository categoriaProdutoRepository,
-        FornecedorRepository fornecedorRepository) {
+        FornecedorRepository fornecedorRepository,
+        EntityManager entityManager) {
 
         this.repository = repository;
         this.categoriaProdutoRepository = categoriaProdutoRepository;
         this.fornecedorRepository = fornecedorRepository;
+        this.entityManager = entityManager;
     }
 
     @Transactional
@@ -155,6 +161,10 @@ public class ProdutoService {
 
     @Transactional(readOnly = true)
     public Produto buscarPorId(Long id) {
+        return buscarEntidade(id);
+    }
+
+    private Produto buscarEntidade(Long id) {
         return repository.findById(id)
             .orElseThrow(() -> new RecursoNaoEncontradoException(
                 "Produto não encontrado: " + id));
@@ -206,14 +216,20 @@ public class ProdutoService {
 
     @Transactional
     public Produto receberEstoque(Long id, BigDecimal quantidade) {
-        Produto produto = buscarPorId(id);
+        Produto produto = buscarEntidade(id);
+        entityManager.refresh(
+            produto,
+            LockModeType.PESSIMISTIC_WRITE);
         produto.receberEstoque(quantidade);
         return produto;
     }
 
     @Transactional
     public Produto retirarEstoque(Long id, BigDecimal quantidade) {
-        Produto produto = buscarPorId(id);
+        Produto produto = buscarEntidade(id);
+        entityManager.refresh(
+            produto,
+            LockModeType.PESSIMISTIC_WRITE);
         produto.retirarEstoque(quantidade);
         return produto;
     }

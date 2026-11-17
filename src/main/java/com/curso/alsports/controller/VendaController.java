@@ -294,7 +294,7 @@ public class VendaController {
 
     @Operation(
         summary = "Finalizar venda",
-        description = "Finaliza uma venda ABERTA com ao menos um item, validando participantes e produtos ativos e baixando o estoque de todos os itens na mesma transação. Se qualquer item não possuir saldo suficiente, nada é alterado."
+        description = "Finaliza uma venda ABERTA com ao menos um item, validando participantes e produtos ativos. Os produtos são bloqueados com lock pessimista de escrita em ordem determinística pelo identificador, e a baixa de estoque de todos os itens ocorre na mesma transação. Se qualquer item não possuir saldo suficiente, nada é alterado."
     )
     @ApiResponses(value = {
         @ApiResponse(

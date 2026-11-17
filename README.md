@@ -1,12 +1,12 @@
 # AL Sports
 
-Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 07 do curso de Java Spring Boot.
+Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 11 do curso de Java Spring Boot.
 
 ## Objetivo
 
 O AL Sports tem como objetivo permitir o cadastro e o gerenciamento de produtos de uma loja de artigos esportivos, organizando os produtos por categoria e fornecedor.
 
-O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 07:
+O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 11:
 
 - configuração do ambiente;
 - criação do projeto Spring Boot;
@@ -24,7 +24,10 @@ O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apres
 - validação de dados;
 - tratamento padronizado de erros;
 - testes automatizados;
-- testes da API com Postman.
+- testes da API com Postman;
+- filtros, paginação e contrato OpenAPI;
+- vendas, pessoas e estoque fracionado;
+- concorrência, isolamento transacional e bloqueio pessimista.
 
 ## Tecnologias
 
@@ -355,6 +358,22 @@ Exemplo de item de venda fracionado:
 
 O subtotal do item é calculado multiplicando a quantidade fracionada pelo preço unitário registrado no momento da venda. O total da venda soma os subtotais e é arredondado para duas casas decimais com `HALF_UP`.
 
+## Concorrência e bloqueio de estoque
+
+A partir da Aula 11, todas as operações que alteram saldo coordenam o acesso ao produto no banco de dados:
+
+- finalização de venda;
+- recebimento manual de estoque;
+- retirada manual de estoque.
+
+A finalização de uma venda executa dentro de uma única transação (`@Transactional`). Antes de validar o status do produto e o saldo disponível, o serviço atualiza a entidade com `EntityManager.refresh(produto, LockModeType.PESSIMISTIC_WRITE)`. O bloqueio pessimista de escrita é mantido até o fim da transação, de modo que outra operação concorrente sobre o mesmo produto aguarda a conclusão da primeira.
+
+Os itens da venda são processados em ordem crescente de `produto.id`, independentemente da ordem em que foram incluídos. Essa ordenação determinística reduz o risco de deadlock quando duas vendas compartilham mais de um produto. A baixa de estoque de cada item ocorre somente depois da aquisição do bloqueio, e a venda só passa para `FINALIZADA` depois que todos os itens foram processados. Se qualquer item não possuir saldo suficiente ou estiver inativo, a transação é desfeita por completo.
+
+As operações de entrada e saída manual também bloqueiam o produto antes de somar ou subtrair a quantidade. Consultas, listagens e alterações de preço ou descrição não adquirem bloqueio.
+
+O comportamento é validado por testes que executam chamadas reais e simultâneas aos beans transacionais em PostgreSQL, com `ExecutorService`, `CountDownLatch` e timeout nos `Future`.
+
 ## Validações
 
 Entre as validações implementadas estão:
@@ -458,6 +477,31 @@ São testados cenários como:
 - categorias;
 - fornecedores.
 
+### Testes de serviços
+
+Localizados em:
+
+src/test/java/com/curso/alsports/service/
+
+Os testes de `ProdutoServiceTest` e `VendaServiceTest` usam Mockito para verificar a ordem dos bloqueios, a aquisição do lock antes da baixa, a preservação do saldo em caso de falha e a manutenção da venda em `ABERTA` quando algum item não pode ser processado.
+
+### Testes de concorrência
+
+Localizados em:
+
+src/test/java/com/curso/alsports/Aula11ConcorrenciaTests.java
+
+A classe não abre transação de teste. Cada chamada aos serviços parte de uma thread própria e atravessa o proxy do Spring, gerando transações independentes em PostgreSQL. Os cenários cobrem:
+
+- duas finalizações disputando o mesmo saldo;
+- finalização concorrente com retirada manual;
+- finalização concorrente com entrada manual;
+- rollback de venda com múltiplos itens quando um deles não possui saldo;
+- vendas com produtos em ordens opostas, sem deadlock;
+- saldo fracionado em finalizações concorrentes.
+
+Os dados criados por cada teste são removidos ao final.
+
 Para executar todos os testes:
 
 .\mvnw.cmd clean test
@@ -544,9 +588,25 @@ Evolução do modelo de dados, fornecedor, estoque mínimo, constraints e novas 
 
 Implementação da API REST, DTOs, mapeadores, validações, tratamento de erros, testes com MockMvc e testes manuais utilizando Postman.
 
+### Aula 08 — CRUD, filtros e paginação
+
+Evolução dos endpoints com atualização, exclusão, filtros e paginação.
+
+### Aula 09 — OpenAPI
+
+Documentação do contrato da API com OpenAPI e Swagger UI.
+
+### Aula 10 — Pessoas, vendas e estoque fracionado
+
+Modelagem de pessoas, clientes, colaboradores, vendas e itens de venda, com quantidades decimais e finalização transacional.
+
+### Aula 11 — Concorrência de estoque e locking
+
+Bloqueio pessimista de escrita nas operações que alteram saldo, ordenação determinística dos itens da venda e testes de concorrência com PostgreSQL real.
+
 ## Status do projeto
 
-**Projeto concluído até a Aula 10.**
+**Projeto concluído até a Aula 11.**
 
 Principais pontos implementados:
 
@@ -561,6 +621,8 @@ Principais pontos implementados:
 - [x] Fornecedores
 - [x] Estoque mínimo
 - [x] Quantidades fracionadas com até 3 casas decimais
+- [x] Concorrência de estoque com bloqueio pessimista
+- [x] Testes de concorrência com PostgreSQL real
 - [x] Código de barras
 - [x] Repositories
 - [x] Services
@@ -587,6 +649,10 @@ Principais pontos implementados:
 - `aula-05-repositories-servicos-transacoes`
 - `aula-06-evolucao-modelo-liquibase-diff`
 - `aula-07-api-rest-dtos`
+- `aula-07-api-rest-dtos-mappers`
+- `aula-08-crud-filtros-paginacao`
+- `aula-09-openapi`
+- `aula-10-vendas`
 
 ## Documentação
 
@@ -598,8 +664,12 @@ A collection do Postman da Aula 07 está disponível em:
 
 docs/postman/AL-Sports-Aula-07.postman_collection.json
 
+A documentação da Aula 11 está disponível em:
+
+docs/11aula/11aula.md
+
 ## Projeto acadêmico
 
-Projeto desenvolvido para acompanhamento das Aulas 00 a 07 do curso de Java Spring Boot.
+Projeto desenvolvido para acompanhamento das Aulas 00 a 11 do curso de Java Spring Boot.
 
 **AL Sports — Sistema de controle de loja de artigos esportivos.**

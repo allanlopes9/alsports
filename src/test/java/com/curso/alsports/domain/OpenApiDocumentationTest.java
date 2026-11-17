@@ -1,5 +1,6 @@
 package com.curso.alsports.domain;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -62,6 +63,12 @@ class OpenApiDocumentationTest {
             .andExpect(jsonPath("$.paths['/api/vendas/{id}/itens'].post").exists())
             .andExpect(jsonPath("$.paths['/api/vendas/{vendaId}/itens/{itemId}'].delete").exists())
             .andExpect(jsonPath("$.paths['/api/vendas/{id}/finalizacao'].post").exists())
+            .andExpect(jsonPath("$.paths['/api/vendas/{id}/finalizacao'].post.description")
+                .value(containsString("ordem determinística")))
+            .andExpect(jsonPath("$.paths['/api/produtos/{id}/estoque/entradas'].post.description")
+                .value(containsString("Bloqueia o produto")))
+            .andExpect(jsonPath("$.paths['/api/produtos/{id}/estoque/saidas'].post.description")
+                .value(containsString("Bloqueia o produto")))
             .andExpect(jsonPath("$.paths['/api/vendas/{id}/cancelamento'].post").exists())
 
             // Schemas

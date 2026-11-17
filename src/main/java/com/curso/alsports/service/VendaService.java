@@ -3,6 +3,8 @@ package com.curso.alsports.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -23,6 +25,9 @@ import com.curso.alsports.repository.ProdutoRepository;
 import com.curso.alsports.repository.VendaRepository;
 import com.curso.alsports.repository.VendaSpecification;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+
 @Service
 public class VendaService {
 
@@ -35,17 +40,20 @@ public class VendaService {
     private final ClienteRepository clienteRepository;
     private final ColaboradorRepository colaboradorRepository;
     private final ProdutoRepository produtoRepository;
+    private final EntityManager entityManager;
 
     public VendaService(
             VendaRepository repository,
             ClienteRepository clienteRepository,
             ColaboradorRepository colaboradorRepository,
-            ProdutoRepository produtoRepository) {
+            ProdutoRepository produtoRepository,
+            EntityManager entityManager) {
 
         this.repository = repository;
         this.clienteRepository = clienteRepository;
         this.colaboradorRepository = colaboradorRepository;
         this.produtoRepository = produtoRepository;
+        this.entityManager = entityManager;
     }
 
     @Transactional
@@ -119,8 +127,17 @@ public class VendaService {
 
         validarParticipantes(venda.getCliente(), venda.getVendedor());
 
-        for (ItemVenda item : venda.getItens()) {
+        List<ItemVenda> itensOrdenados = venda.getItens().stream()
+                .sorted(Comparator.comparing(
+                        item -> item.getProduto().getId()))
+                .toList();
+
+        for (ItemVenda item : itensOrdenados) {
             Produto produto = item.getProduto();
+
+            entityManager.refresh(
+                    produto,
+                    LockModeType.PESSIMISTIC_WRITE);
 
             if (!Boolean.TRUE.equals(produto.getAtivo())) {
                 throw new IllegalArgumentException(

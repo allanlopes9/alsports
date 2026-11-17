@@ -310,7 +310,7 @@ public class ProdutoController {
 
     @Operation(
         summary = "Receber estoque",
-        description = "Soma uma quantidade positiva ao saldo atual do produto. A operação não é idempotente: repetir a chamada repete o efeito."
+        description = "Bloqueia o produto com lock pessimista de escrita e soma uma quantidade positiva ao saldo atual. A operação não é idempotente: repetir a chamada repete o efeito."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -357,7 +357,7 @@ public class ProdutoController {
 
     @Operation(
         summary = "Retirar estoque",
-        description = "Subtrai uma quantidade positiva do saldo atual. A retirada não pode exceder o estoque disponível e a operação não é idempotente."
+        description = "Bloqueia o produto com lock pessimista de escrita e subtrai uma quantidade positiva do saldo atual, sem permitir saldo negativo. A operação não é idempotente: repetir a chamada repete o efeito."
     )
     @ApiResponses(value = {
         @ApiResponse(
