@@ -1,12 +1,12 @@
 # AL Sports
 
-Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 14 do curso de Java Spring Boot.
+Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 15 do curso de Java Spring Boot.
 
 ## Objetivo
 
 O AL Sports tem como objetivo permitir o cadastro e o gerenciamento de produtos de uma loja de artigos esportivos, organizando os produtos por categoria e fornecedor.
 
-O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 14:
+O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 15:
 
 - configuração do ambiente;
 - criação do projeto Spring Boot;
@@ -30,7 +30,8 @@ O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apres
 - concorrência, isolamento transacional e bloqueio pessimista;
 - identidade de acesso, hash BCrypt e autenticação Bearer Token com JWT no Spring Security (OAuth2 Resource Server);
 - autorização por perfis, `@PreAuthorize`, política HTTP e administração de contas;
-- administrador inicial provisionado por configuração externa.
+- administrador inicial provisionado por configuração externa;
+- estratégia de testes em camadas, JUnit Jupiter, Mockito e cobertura de código com JaCoCo.
 
 ## Tecnologias
 
@@ -45,8 +46,10 @@ O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apres
 - PostgreSQL
 - Liquibase
 - Maven
-- JUnit
+- JUnit Jupiter
+- Mockito
 - MockMvc
+- JaCoCo
 - Postman
 
 ## Domínio
@@ -784,7 +787,61 @@ As classes de integração mantêm a cadeia de filtros do Spring Security ativa 
 
 Os testes unitários de `ContaAcessoTest`, `ContaAcessoServiceTest` e `ContaAcessoUserDetailsServiceTest` continuam validando as regras de domínio, a geração de hash, a comparação de senhas, a substituição de perfis e o mapeamento de perfis para autoridades.
 
-A suíte possui 338 testes em 27 classes, todos aprovados. O ponto de partida da Aula 13 tinha 283 testes em 24 classes, portanto foram acrescentados 55 testes e 3 classes. Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `AutenticacaoSecurityTest`, `AutorizacaoSecurityTest`, `ContaAcessoSecurityTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
+A suíte possui 353 testes em 28 classes, todos aprovados. O ponto de partida da Aula 14 tinha 338 testes em 27 classes: a Aula 15 acrescentou `ClienteServiceTest` com 11 testes e ampliou `ContaAcessoTest` de 16 para 20 execuções, sem remover testes existentes. Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `AutenticacaoSecurityTest`, `AutorizacaoSecurityTest`, `ContaAcessoSecurityTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
+
+### Testes de domínio da Aula 15
+
+`ContaAcessoTest` permanece unitário, sem Spring e sem banco, e agora usa `assertAll` para verificar todos os atributos da conta criada. O cenário de login nulo ou em branco é parametrizado com `@NullAndEmptySource` e `@ValueSource`, cobrindo nulo, vazio, um espaço e múltiplos espaços. O teste `deveAlterarSenhaSomenteQuandoOHashForValido` usa `assertThrows` para garantir que hash em branco ou nulo é rejeitado e que o hash anterior é preservado. A classe executa 20 cenários e pode ser executada isoladamente:
+
+```powershell
+.\mvnw.cmd "-Dtest=ContaAcessoTest" test
+```
+
+### Testes de aplicação da Aula 15
+
+`ClienteServiceTest` usa Mockito para cobrir as regras reais de `ClienteService` sem iniciar o Spring:
+
+- cadastro para pessoa ativa, com normalização do telefone;
+- pessoa inexistente;
+- pessoa inativa;
+- cliente duplicado para a mesma pessoa;
+- busca por identificador e cliente inexistente;
+- ordenação inválida e paginação ausente;
+- pesquisa com ordenação permitida;
+- atualização de telefone e atualização de cliente inexistente.
+
+```powershell
+.\mvnw.cmd "-Dtest=ClienteServiceTest" test
+```
+
+### Cobertura com JaCoCo
+
+A partir da Aula 15, o `pom.xml` configura o `jacoco-maven-plugin` 0.8.16 com `prepare-agent`, `report` e `check` na fase `verify`. O portão usa a regra `BUNDLE` com cobertura mínima de 70% de linhas e 40% de branches. O agente é injetado via `argLine`, sem interferir no Mockito.
+
+Resultados medidos no AL Sports:
+
+| Momento | Testes | Linhas | Branches | Instruções | Métodos | Classes |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Baseline antes dos novos testes | 338 | 84,13% | 69,56% | 82,70% | 84,02% | 94,95% |
+| Resultado final | 353 | 85,21% | 71,57% | 84,04% | 85,06% | 94,95% |
+
+O `ClienteService` passou de 28,6% para 88,6% de linhas e 83,3% de branches. O `ContaAcesso` permanece em 100% de linhas e branches.
+
+Para executar o ciclo completo com cobertura e portão:
+
+```powershell
+.\mvnw.cmd clean verify
+```
+
+O relatório HTML é gerado em:
+
+```text
+target/site/jacoco/index.html
+```
+
+O XML fica em `target/site/jacoco/jacoco.xml` e os dados de execução em `target/jacoco.exec`. A falha controlada do portão foi demonstrada elevando temporariamente o limite de branches para `0.90`: o `jacoco:check` bloqueou o build com os 353 testes aprovados. O limite foi restaurado para `0.40` e o `clean verify` final passou.
+
+A cobertura é interpretada por risco: domínio, segurança e serviços de negócio importam mais do que DTOs e classes de infraestrutura. Classes como `ErroResponse` (sem uso no código de produção), `AdministradorInicialRunner` (execução condicional) e `ColaboradorService` permanecem com lacunas registradas, sem testes artificiais ou exclusões de cobertura.
 
 Para executar todos os testes:
 
@@ -930,9 +987,13 @@ Migração do HTTP Basic para Bearer Token JWT com OAuth2 Resource Server, assin
 
 Conversão do claim `perfis` em authorities `ROLE_*`, política HTTP com `OPERADOR` e `ADMINISTRADOR`, defesa em profundidade com `@PreAuthorize`, endpoints administrativos de perfis e status, invariantes do último administrador ativo, provisionamento opcional do administrador inicial e testes de `401`, `403` e `400`.
 
+### Aula 15 — Testes de software, estratégia e cobertura
+
+Organização da suíte como sistema de evidências: níveis de teste, Arrange–Act–Assert, JUnit Jupiter, testes parametrizados, dublês com Mockito, distinção entre testes unitários e de integração, PostgreSQL real, MockMvc com segurança ativa, TDD e limites da cobertura. O `ContaAcessoTest` foi ampliado e o `ClienteServiceTest` foi criado para uma lacuna real. O JaCoCo 0.8.16 mede linhas, branches, instruções, métodos e classes, com portão de 70% de linhas e 40% de branches na fase `verify`.
+
 ## Status do projeto
 
-**Projeto concluído até a Aula 14.**
+**Projeto concluído até a Aula 15.**
 
 Principais pontos implementados:
 
@@ -977,6 +1038,15 @@ Principais pontos implementados:
 - [x] Tratamento global de exceções
 - [x] API REST
 - [x] Testes automatizados
+- [x] Estratégia de testes em camadas
+- [x] JUnit Jupiter, `assertAll`, `assertThrows` e testes parametrizados
+- [x] Dublês de teste com Mockito
+- [x] Testes unitários de domínio e aplicação
+- [x] Testes de integração com PostgreSQL e Liquibase
+- [x] Testes de API e segurança com MockMvc
+- [x] Cobertura de código com JaCoCo 0.8.16
+- [x] Portão de cobertura de linhas e branches em `verify`
+- [x] Relatório HTML de cobertura
 - [x] MockMvc
 - [x] Testes com Postman
 - [x] Configuração por variáveis de ambiente
@@ -1001,6 +1071,7 @@ Principais pontos implementados:
 - `aula-12-autenticacao-http-basic`
 - `aula-13-jwt-bearer-token`
 - `aula-14-autorizacao-perfis`
+- `aula-15-testes-cobertura`
 
 ## Documentação
 
@@ -1028,6 +1099,10 @@ A documentação da Aula 14 está disponível em:
 
 docs/14aula/14aula.md
 
+A documentação da Aula 15 está disponível em:
+
+docs/15aula/15aula.md
+
 Os diagramas interativos da Aula 14 estão em:
 
 - docs/14aula/diagramas/login-jwt.html
@@ -1037,6 +1112,6 @@ Os diagramas interativos da Aula 14 estão em:
 
 ## Projeto acadêmico
 
-Projeto desenvolvido para acompanhamento das Aulas 00 a 14 do curso de Java Spring Boot.
+Projeto desenvolvido para acompanhamento das Aulas 00 a 15 do curso de Java Spring Boot.
 
 **AL Sports — Sistema de controle de loja de artigos esportivos.**

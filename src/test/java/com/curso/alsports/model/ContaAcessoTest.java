@@ -2,12 +2,18 @@ package com.curso.alsports.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ContaAcessoTest {
 
@@ -31,13 +37,15 @@ class ContaAcessoTest {
     void deveCriarContaAtivaComSomentePerfilOperador() {
         ContaAcesso conta = new ContaAcesso(pessoa, "ana.souza", HASH);
 
-        assertThat(conta.getPessoa()).isSameAs(pessoa);
-        assertThat(conta.getLogin()).isEqualTo("ana.souza");
-        assertThat(conta.getSenhaHash()).isEqualTo(HASH);
-        assertThat(conta.getStatus()).isEqualTo(StatusContaAcesso.ATIVA);
-        assertThat(conta.getPerfis())
-                .containsExactly(PerfilAcesso.OPERADOR);
-        assertThat(conta.podeAutenticar()).isTrue();
+        assertAll(
+                () -> assertThat(conta.getPessoa()).isSameAs(pessoa),
+                () -> assertThat(conta.getLogin()).isEqualTo("ana.souza"),
+                () -> assertThat(conta.getSenhaHash()).isEqualTo(HASH),
+                () -> assertThat(conta.getStatus())
+                        .isEqualTo(StatusContaAcesso.ATIVA),
+                () -> assertThat(conta.getPerfis())
+                        .containsExactly(PerfilAcesso.OPERADOR),
+                () -> assertThat(conta.podeAutenticar()).isTrue());
     }
 
     @Test
@@ -55,11 +63,15 @@ class ContaAcessoTest {
                 .hasMessage("Pessoa é obrigatória");
     }
 
-    @Test
-    void naoDeveCriarContaComLoginEmBranco() {
-        assertThatThrownBy(() -> new ContaAcesso(pessoa, "   ", HASH))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Login é obrigatório");
+    @ParameterizedTest(name = "login inválido: [{0}]")
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "   "})
+    void naoDeveAceitarLoginNuloOuEmBranco(String loginInvalido) {
+        IllegalArgumentException erro = assertThrows(
+                IllegalArgumentException.class,
+                () -> new ContaAcesso(pessoa, loginInvalido, HASH));
+
+        assertEquals("Login é obrigatório", erro.getMessage());
     }
 
     @Test
@@ -89,6 +101,24 @@ class ContaAcessoTest {
                 .doesNotContain(HASH)
                 .doesNotContain(OUTRO_HASH)
                 .contains("ana.souza");
+    }
+
+    @Test
+    void deveAlterarSenhaSomenteQuandoOHashForValido() {
+        ContaAcesso conta = new ContaAcesso(pessoa, "ana.souza", HASH);
+
+        conta.alterarSenha(OUTRO_HASH);
+
+        assertAll(
+                () -> assertEquals(OUTRO_HASH, conta.getSenhaHash()),
+                () -> assertThrows(
+                        IllegalArgumentException.class,
+                        () -> conta.alterarSenha("  ")),
+                () -> assertThrows(
+                        IllegalArgumentException.class,
+                        () -> conta.alterarSenha(null)));
+
+        assertEquals(OUTRO_HASH, conta.getSenhaHash());
     }
 
     @Test
