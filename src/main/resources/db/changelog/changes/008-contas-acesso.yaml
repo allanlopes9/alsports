@@ -1,0 +1,148 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-01-create-conta-acesso
+      author: allan
+      comment: >-
+        Cria a credencial de acesso vinculada a uma pessoa. A senha é armazenada
+        somente como hash e a conta é independente dos papéis de cliente e
+        colaborador.
+      changes:
+        - createTable:
+            tableName: conta_acesso
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_conta_acesso
+                    nullable: false
+              - column:
+                  name: pessoa_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: login
+                  type: VARCHAR(80)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: senha_hash
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: conta_acesso
+
+  - changeSet:
+      id: 008-02-create-conta-acesso-perfil
+      author: allan
+      comment: >-
+        Cria a coleção de perfis da conta. O perfil é um valor do domínio e usa
+        chave composta com a conta.
+      changes:
+        - createTable:
+            tableName: conta_acesso_perfil
+            columns:
+              - column:
+                  name: conta_acesso_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: perfil
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: conta_acesso_perfil
+
+  - changeSet:
+      id: 008-03-constraints-conta-acesso
+      author: allan
+      comment: >-
+        Garante uma conta por pessoa, login único sem diferenciar caixa ou
+        espaços externos, status conhecido e vínculo preservado com a pessoa.
+      changes:
+        - addUniqueConstraint:
+            tableName: conta_acesso
+            columnNames: pessoa_id
+            constraintName: uk_conta_acesso_pessoa
+        - addForeignKeyConstraint:
+            baseTableName: conta_acesso
+            baseColumnNames: pessoa_id
+            referencedTableName: pessoa
+            referencedColumnNames: id
+            constraintName: fk_conta_acesso_pessoa
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - sql:
+            sql: >
+              CREATE UNIQUE INDEX uk_conta_acesso_login_lower
+              ON conta_acesso (LOWER(BTRIM(login)))
+        - sql:
+            sql: >
+              ALTER TABLE conta_acesso
+              ADD CONSTRAINT ck_conta_acesso_status
+              CHECK (status IN ('ATIVA', 'BLOQUEADA'))
+        - sql:
+            sql: >
+              ALTER TABLE conta_acesso
+              ADD CONSTRAINT ck_conta_acesso_login_tamanho
+              CHECK (CHAR_LENGTH(BTRIM(login)) BETWEEN 3 AND 80)
+      rollback:
+        - sql:
+            sql: ALTER TABLE conta_acesso DROP CONSTRAINT IF EXISTS ck_conta_acesso_login_tamanho
+        - sql:
+            sql: ALTER TABLE conta_acesso DROP CONSTRAINT IF EXISTS ck_conta_acesso_status
+        - sql:
+            sql: DROP INDEX IF EXISTS uk_conta_acesso_login_lower
+        - dropForeignKeyConstraint:
+            baseTableName: conta_acesso
+            constraintName: fk_conta_acesso_pessoa
+        - dropUniqueConstraint:
+            tableName: conta_acesso
+            constraintName: uk_conta_acesso_pessoa
+
+  - changeSet:
+      id: 008-04-constraints-conta-acesso-perfil
+      author: allan
+      comment: >-
+        Define a chave composta dos perfis, restringe os valores conhecidos e
+        remove os perfis em cascata quando a conta for removida.
+      changes:
+        - addPrimaryKey:
+            tableName: conta_acesso_perfil
+            columnNames: conta_acesso_id, perfil
+            constraintName: pk_conta_acesso_perfil
+        - addForeignKeyConstraint:
+            baseTableName: conta_acesso_perfil
+            baseColumnNames: conta_acesso_id
+            referencedTableName: conta_acesso
+            referencedColumnNames: id
+            constraintName: fk_conta_acesso_perfil_conta
+            onDelete: CASCADE
+            onUpdate: RESTRICT
+        - sql:
+            sql: >
+              ALTER TABLE conta_acesso_perfil
+              ADD CONSTRAINT ck_conta_acesso_perfil_valor
+              CHECK (perfil IN ('OPERADOR', 'ADMINISTRADOR'))
+      rollback:
+        - sql:
+            sql: ALTER TABLE conta_acesso_perfil DROP CONSTRAINT IF EXISTS ck_conta_acesso_perfil_valor
+        - dropForeignKeyConstraint:
+            baseTableName: conta_acesso_perfil
+            constraintName: fk_conta_acesso_perfil_conta
+        - dropPrimaryKey:
+            tableName: conta_acesso_perfil
+            constraintName: pk_conta_acesso_perfil

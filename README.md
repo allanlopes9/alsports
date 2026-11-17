@@ -1,12 +1,12 @@
 # AL Sports
 
-Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 11 do curso de Java Spring Boot.
+Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 12 do curso de Java Spring Boot.
 
 ## Objetivo
 
 O AL Sports tem como objetivo permitir o cadastro e o gerenciamento de produtos de uma loja de artigos esportivos, organizando os produtos por categoria e fornecedor.
 
-O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 11:
+O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 12:
 
 - configuração do ambiente;
 - criação do projeto Spring Boot;
@@ -27,7 +27,8 @@ O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apres
 - testes da API com Postman;
 - filtros, paginação e contrato OpenAPI;
 - vendas, pessoas e estoque fracionado;
-- concorrência, isolamento transacional e bloqueio pessimista.
+- concorrência, isolamento transacional e bloqueio pessimista;
+- identidade de acesso, hash BCrypt e autenticação HTTP Basic com Spring Security.
 
 ## Tecnologias
 
@@ -35,6 +36,7 @@ O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apres
 - Spring Boot 4.0.7
 - Spring Web MVC
 - Spring Data JPA
+- Spring Security
 - Bean Validation
 - PostgreSQL
 - Liquibase
@@ -77,6 +79,31 @@ O fornecedor representa a empresa responsável pelo fornecimento dos produtos.
 
 Um produto pode possuir um fornecedor associado.
 
+### Pessoa, Cliente e Colaborador
+
+`Pessoa` é a identidade civil central do sistema, com nome, e-mail, CPF e status. Os papéis de negócio são separados:
+
+- `Cliente` representa a pessoa que compra;
+- `Colaborador` representa a pessoa que trabalha na loja;
+- `FuncaoColaborador` representa a função profissional exercida.
+
+Uma mesma pessoa pode ser cliente ou colaboradora sem possuir acesso ao sistema. O papel de negócio não concede, por si só, autorização para usar a API.
+
+### Conta de acesso
+
+`ContaAcesso` é a credencial de autenticação associada a uma pessoa:
+
+- `id`;
+- `pessoa` — relação um-para-um, com no máximo uma conta por pessoa nesta versão;
+- `login` — único sem diferenciar maiúsculas, minúsculas ou espaços externos;
+- `senhaHash` — somente o hash BCrypt, nunca a senha em texto aberto;
+- `status` — `ATIVA` ou `BLOQUEADA`;
+- `perfis` — `OPERADOR` ou `ADMINISTRADOR`.
+
+O perfil de acesso é separado da função profissional: `FuncaoColaborador` descreve o trabalho exercido, enquanto `PerfilAcesso` descreve o que a conta pode fazer na API.
+
+O cadastro público sempre cria a conta com status `ATIVA` e somente o perfil `OPERADOR`. O request público não pode escolher perfis. Uma conta bloqueada ou vinculada a uma pessoa inativa não autentica.
+
 ## Organização do projeto
 
 O projeto utiliza separação de responsabilidades entre as principais camadas:
@@ -118,6 +145,9 @@ Atualmente existem controllers para:
 - categorias;
 - fornecedores;
 - produtos;
+- pessoas, clientes e colaboradores;
+- vendas;
+- contas de acesso;
 - health check.
 
 ### domain
@@ -167,7 +197,14 @@ Repositories atuais:
 
 - `ProdutoRepository`;
 - `CategoriaProdutoRepository`;
-- `FornecedorRepository`.
+- `FornecedorRepository`;
+- `PessoaRepository`;
+- `ClienteRepository`;
+- `ColaboradorRepository`;
+- `VendaRepository`;
+- `ContaAcessoRepository`.
+
+O `ContaAcessoRepository` oferece consultas de unicidade por login sem diferenciar caixa e por pessoa, além de carregar a pessoa e os perfis com `@EntityGraph` na autenticação.
 
 ### service
 
@@ -177,7 +214,13 @@ Services atuais:
 
 - `ProdutoService`;
 - `CategoriaProdutoService`;
-- `FornecedorService`.
+- `FornecedorService`;
+- `PessoaService`;
+- `ClienteService`;
+- `ColaboradorService`;
+- `VendaService`;
+- `ContaAcessoService`;
+- `ContaAcessoUserDetailsService`.
 
 As operações de persistência que precisam de transação utilizam `@Transactional`.
 
@@ -210,6 +253,7 @@ Atualmente existem:
 005-pessoas-clientes-vendas.yaml
 006-consolidate-categorias.yaml
 007-quantidade-decimal.yaml
+008-contas-acesso.yaml
 
 Entre as alterações realizadas estão:
 
@@ -227,11 +271,22 @@ Entre as alterações realizadas estão:
 - consolidação de categorias duplicadas;
 - nome de categoria único, ignorando maiúsculas, minúsculas e espaços nas extremidades;
 - criação das tabelas de pessoas, clientes, colaboradores, vendas e itens de venda;
-- conversão de `produto.quantidade` e `item_venda.quantidade` para `NUMERIC(18,3)`.
+- conversão de `produto.quantidade` e `item_venda.quantidade` para `NUMERIC(18,3)`;
+- criação das tabelas `conta_acesso` e `conta_acesso_perfil`, com uma conta por pessoa, login único normalizado, status conhecido e perfis restritos.
 
 O changeset `007-quantidade-decimal.yaml` converte as colunas `INTEGER` para `NUMERIC(18,3)` com `USING quantidade::NUMERIC(18,3)`, sem perda dos valores inteiros existentes. As constraints `ck_produto_quantidade` (`quantidade >= 0`) e `ck_item_venda_quantidade` (`quantidade > 0`) são recriadas após a conversão.
 
 O rollback desses changesets converte as colunas de volta para `INTEGER` e recria as constraints. Como a conversão para inteiro arredondaria frações, o rollback é bloqueado por uma verificação que falha caso existam quantidades fracionadas gravadas em `produto.quantidade` ou `item_venda.quantidade`.
+
+A migration `008-contas-acesso.yaml` cria `conta_acesso` (`id`, `pessoa_id`, `login`, `senha_hash`, `status`) e `conta_acesso_perfil` (`conta_acesso_id`, `perfil`, com chave primária composta). Ela adiciona:
+
+- chave estrangeira de `conta_acesso.pessoa_id` para `pessoa.id`, com `ON DELETE RESTRICT`;
+- restrição de unicidade de `pessoa_id`, garantindo uma conta por pessoa nesta versão;
+- índice único `uk_conta_acesso_login_lower` sobre `LOWER(BTRIM(login))`;
+- `CHECK` de status (`ATIVA`, `BLOQUEADA`), de tamanho do login e de perfil (`OPERADOR`, `ADMINISTRADOR`);
+- chave estrangeira de `conta_acesso_perfil.conta_acesso_id` para `conta_acesso.id`, com `ON DELETE CASCADE`.
+
+A migration não cria contas, senhas ou hashes reais. O rollback remove as constraints e as tabelas na ordem inversa.
 
 O arquivo principal das migrations é:
 
@@ -265,6 +320,23 @@ O `.gitignore` possui a regra:
 
 .env
 
+### Autenticação e proteção de senhas
+
+A partir da Aula 12, a API usa Spring Security com HTTP Basic:
+
+- `GET /api/health` é público;
+- `GET /v3/api-docs/**`, `/swagger-ui.html` e `/swagger-ui/**` são públicos;
+- `POST /api/pessoas` e `POST /api/contas-acesso` são públicos para o cadastro inicial;
+- todas as demais rotas exigem credencial válida;
+- a autenticação é stateless, sem sessão e sem cookie;
+- o CSRF está desabilitado somente porque a API não mantém sessão nem cookie de autenticação.
+
+As senhas são persistidas com `PasswordEncoderFactories.createDelegatingPasswordEncoder()`, que produz hashes BCrypt prefixados com `{bcrypt}`. O hash inclui salt aleatório e fator de trabalho. A senha em texto aberto nunca é armazenada, devolvida, registrada em log ou incluída em mensagens de erro.
+
+O login é comparado sem diferenciar maiúsculas, minúsculas ou espaços externos. Tentativas com login inexistente, senha incorreta, conta bloqueada ou pessoa inativa recebem a mesma resposta genérica `401 Unauthorized`, sem revelar qual condição falhou.
+
+HTTP Basic transmite login e senha em cada requisição. Em produção, a API deve ser publicada exclusivamente sobre HTTPS/TLS; sem TLS, o cabeçalho `Authorization` pode ser interceptado.
+
 ## API REST
 
 ### Health Check
@@ -279,45 +351,88 @@ OK
 
 Criar categoria:
 
-POST /categorias
+POST /api/categorias
 
 Listar categorias:
 
-GET /categorias
+GET /api/categorias
 
 Buscar categoria:
 
-GET /categorias/{id}
+GET /api/categorias/{id}
 
 ### Fornecedores
 
 Criar fornecedor:
 
-POST /fornecedores
+POST /api/fornecedores
 
 Listar fornecedores:
 
-GET /fornecedores
+GET /api/fornecedores
 
 Buscar fornecedor:
 
-GET /fornecedores/{id}
+GET /api/fornecedores/{id}
 
 ### Produtos
 
 Criar produto:
 
-POST /produtos
+POST /api/produtos
 
 Listar produtos:
 
-GET /produtos
+GET /api/produtos
 
 Buscar produto:
 
-GET /produtos/{id}
+GET /api/produtos/{id}
 
 O projeto também possui operações adicionais de atualização e exclusão de produtos.
+
+### Contas de acesso
+
+Cadastrar conta (público):
+
+POST /api/contas-acesso
+
+Exemplo de request:
+
+{
+    "pessoaId": 1,
+    "login": "ana.souza",
+    "senha": "uma-frase-senha-2026"
+}
+
+A resposta `201 Created` contém `id`, `pessoaId`, `nomePessoa`, `login`, `status` e `perfis`. A senha e o hash nunca são devolvidos. A conta é criada `ATIVA` e somente com `OPERADOR`.
+
+Consultar a própria conta (autenticado):
+
+GET /api/contas-acesso/me
+
+Alterar a própria senha (autenticado):
+
+PUT /api/contas-acesso/me/senha
+
+Exemplo de request:
+
+{
+    "senhaAtual": "uma-frase-senha-2026",
+    "novaSenha": "outra-frase-senha-2026"
+}
+
+A resposta é `204 No Content`. A senha atual é conferida, a nova senha precisa ser diferente e o servidor persiste somente o novo hash.
+
+As rotas `/me` usam o login do usuário autenticado no HTTP Basic; o cliente não informa o identificador da conta.
+
+### Autenticação das demais rotas
+
+As rotas de categorias, fornecedores, produtos, pessoas, clientes, colaboradores, vendas, estoque e contas de acesso (exceto o cadastro público) exigem HTTP Basic:
+
+Authorization: Basic <credencial>
+
+Sem credencial válida, a resposta é `401 Unauthorized` com o cabeçalho `WWW-Authenticate: Basic`. A resposta não informa se o login existe, se a senha está errada ou se a conta está bloqueada.
 
 ## DTO de produto
 
@@ -422,7 +537,7 @@ Utilizado quando o recurso solicitado não existe.
 
 Exemplo:
 
-GET /produtos/999999999
+GET /api/produtos/999999999
 
 ### HTTP 409 — Conflict
 
@@ -432,7 +547,23 @@ Exemplos:
 
 - código de barras duplicado;
 - nome de produto duplicado;
-- CNPJ de fornecedor já cadastrado.
+- CNPJ de fornecedor já cadastrado;
+- login de conta de acesso duplicado;
+- pessoa que já possui conta de acesso.
+
+### HTTP 401 — Unauthorized
+
+Utilizado quando a credencial está ausente ou inválida em uma rota protegida.
+
+Exemplos:
+
+- requisição sem cabeçalho `Authorization`;
+- login inexistente;
+- senha incorreta;
+- conta bloqueada;
+- pessoa vinculada à conta está inativa.
+
+A resposta é genérica e não revela senha, hash, existência do login ou motivo específico da falha.
 
 ### HTTP 500 — Internal Server Error
 
@@ -502,19 +633,64 @@ A classe não abre transação de teste. Cada chamada aos serviços parte de uma
 
 Os dados criados por cada teste são removidos ao final.
 
+### Testes de segurança
+
+Localizados em:
+
+src/test/java/com/curso/alsports/ContaAcessoSecurityTest.java
+
+A classe mantém a cadeia de filtros do Spring Security ativa e usa MockMvc com HTTP Basic real. Os cenários cobrem:
+
+- health e OpenAPI públicos;
+- rotas protegidas sem credencial retornando 401;
+- cadastro público de pessoa e de conta;
+- persistência somente de hash BCrypt;
+- login sem diferenciar caixa;
+- `/me` com credencial válida;
+- senha incorreta, login inexistente, conta bloqueada e pessoa inativa retornando 401;
+- troca de senha com 204 e invalidação da senha anterior;
+- senha atual incorreta, nova senha igual e excesso de bytes UTF-8 retornando 400;
+- login duplicado e pessoa já vinculada retornando 409;
+- pessoa inexistente retornando 404;
+- ausência de senha, hash e stack trace nas respostas.
+
+Os testes unitários de `ContaAcessoTest`, `ContaAcessoServiceTest` e `ContaAcessoUserDetailsServiceTest` validam as regras de domínio, a geração de hash, a comparação de senhas e o mapeamento de perfis para autoridades.
+
+Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `ContaAcessoSecurityTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
+
 Para executar todos os testes:
 
 .\mvnw.cmd clean test
 
 ## Postman
 
-A Aula 07 também possui uma collection para testes manuais da API.
-
-Arquivo:
+A collection acumulada para testes manuais da API está em:
 
 docs/postman/AL-Sports-Aula-07.postman_collection.json
 
-A collection contém cenários de:
+O nome da collection foi atualizado para `AL Sports - Aula 12`.
+
+A partir da Aula 12, a collection usa HTTP Basic na raiz com as variáveis:
+
+- `authLogin`;
+- `authPassword`.
+
+As rotas protegidas herdam essa credencial. As rotas públicas (`GET /api/health`, `GET /v3/api-docs`, `POST /api/pessoas` e `POST /api/contas-acesso`) usam `noauth`.
+
+A pasta `06 - Aula 12` contém:
+
+1. health público;
+2. OpenAPI público;
+3. criação de pessoa bootstrap;
+4. criação de conta de acesso;
+5. consulta da própria conta;
+6. alteração de senha;
+7. rota protegida sem credencial retornando 401;
+8. senha incorreta retornando 401.
+
+As variáveis `authLogin`, `authPassword` e `novaSenha` devem ser preenchidas localmente antes da execução. A collection não contém credenciais reais e não deve ser exportada com valores preenchidos.
+
+A collection também mantém os cenários anteriores:
 
 1. Health Check;
 2. criação de categoria;
@@ -604,9 +780,13 @@ Modelagem de pessoas, clientes, colaboradores, vendas e itens de venda, com quan
 
 Bloqueio pessimista de escrita nas operações que alteram saldo, ordenação determinística dos itens da venda e testes de concorrência com PostgreSQL real.
 
+### Aula 12 — Autenticação, senhas e Spring Security
+
+Identidade de acesso vinculada a `Pessoa`, senhas persistidas com hash BCrypt, autenticação HTTP Basic stateless, endpoints de conta, regras de autorização explícitas, testes de segurança com filtros ativos e documentação OpenAPI do esquema `basicAuth`.
+
 ## Status do projeto
 
-**Projeto concluído até a Aula 11.**
+**Projeto concluído até a Aula 12.**
 
 Principais pontos implementados:
 
@@ -623,6 +803,14 @@ Principais pontos implementados:
 - [x] Quantidades fracionadas com até 3 casas decimais
 - [x] Concorrência de estoque com bloqueio pessimista
 - [x] Testes de concorrência com PostgreSQL real
+- [x] Spring Security com HTTP Basic
+- [x] Senhas com hash BCrypt e salt
+- [x] Conta de acesso vinculada a Pessoa
+- [x] Perfis OPERADOR e ADMINISTRADOR
+- [x] Endpoints de conta e troca de senha
+- [x] Regras explícitas de rotas públicas e protegidas
+- [x] Testes de segurança com filtros ativos
+- [x] OpenAPI com esquema basicAuth
 - [x] Código de barras
 - [x] Repositories
 - [x] Services
@@ -653,6 +841,7 @@ Principais pontos implementados:
 - `aula-08-crud-filtros-paginacao`
 - `aula-09-openapi`
 - `aula-10-vendas`
+- `aula-11-concorrencia`
 
 ## Documentação
 
@@ -668,8 +857,12 @@ A documentação da Aula 11 está disponível em:
 
 docs/11aula/11aula.md
 
+A documentação da Aula 12 está disponível em:
+
+docs/12aula/12aula.md
+
 ## Projeto acadêmico
 
-Projeto desenvolvido para acompanhamento das Aulas 00 a 11 do curso de Java Spring Boot.
+Projeto desenvolvido para acompanhamento das Aulas 00 a 12 do curso de Java Spring Boot.
 
 **AL Sports — Sistema de controle de loja de artigos esportivos.**

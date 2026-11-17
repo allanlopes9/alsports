@@ -38,7 +38,7 @@ import com.curso.alsports.repository.ProdutoRepository;
 import com.curso.alsports.service.ProdutoService;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 @Transactional
 class AlsportsApplicationTests {

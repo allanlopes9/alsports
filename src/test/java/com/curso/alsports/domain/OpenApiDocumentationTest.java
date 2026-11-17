@@ -104,6 +104,50 @@ class OpenApiDocumentationTest {
             .andExpect(jsonPath("$.tags[?(@.name == 'Pessoas')]").exists())
             .andExpect(jsonPath("$.tags[?(@.name == 'Clientes')]").exists())
             .andExpect(jsonPath("$.tags[?(@.name == 'Colaboradores')]").exists())
-            .andExpect(jsonPath("$.tags[?(@.name == 'Vendas')]").exists());
+            .andExpect(jsonPath("$.tags[?(@.name == 'Vendas')]").exists())
+            .andExpect(jsonPath("$.tags[?(@.name == 'Contas de acesso')]").exists())
+
+            // Segurança HTTP Basic documentada globalmente
+            .andExpect(jsonPath(
+                "$.components.securitySchemes.basicAuth.type")
+                .value("http"))
+            .andExpect(jsonPath(
+                "$.components.securitySchemes.basicAuth.scheme")
+                .value("basic"))
+            .andExpect(jsonPath("$.security[0].basicAuth").isArray())
+
+            // Operações públicas sem exigência de credencial
+            .andExpect(jsonPath("$.paths['/api/health'].get.security").isEmpty())
+            .andExpect(jsonPath("$.paths['/api/pessoas'].post.security").isEmpty())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso'].post.security").isEmpty())
+
+            // Contas de acesso
+            .andExpect(jsonPath("$.paths['/api/contas-acesso'].post").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso'].post.responses['201']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/me'].get").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/me'].get.responses['401']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/me/senha'].put").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/contas-acesso/me/senha'].put.responses['204']").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.ContaAcessoRequest").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.ContaAcessoResponse").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.AlteracaoSenhaRequest").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.ContaAcessoRequest.properties.senha.format")
+                .value("password"))
+            .andExpect(jsonPath(
+                "$.components.schemas.ContaAcessoResponse.properties.senha")
+                .doesNotExist())
+            .andExpect(jsonPath(
+                "$.components.schemas.ContaAcessoResponse.properties.senhaHash")
+                .doesNotExist());
     }
 }

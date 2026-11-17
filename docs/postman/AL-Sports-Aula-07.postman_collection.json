@@ -1,8 +1,8 @@
 {
     "info":  {
                  "_postman_id":  "alsports-aula-07",
-                 "name":  "AL Sports - Aula 10",
-                 "description":  "Collection acumulada do AL Sports, com a pasta 05 - Aula 10 (pessoas, clientes, colaboradores, vendas, CPF/CNPJ e integridade referencial).",
+                 "name":  "AL Sports - Aula 12",
+                 "description":  "Collection acumulada do AL Sports. A partir da Aula 12, as rotas protegidas usam HTTP Basic na raiz com {{authLogin}} e {{authPassword}}. As rotas públicas (health, OpenAPI e cadastros iniciais de pessoa e conta) não enviam credencial. Preencha as variáveis authLogin, authPassword e novaSenha antes de executar os fluxos protegidos. Nunca exporte credenciais reais.",
                  "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
              },
     "variable":  [
@@ -23,39 +23,59 @@
                          "value":  ""
                      },
                      {
-                           "key":  "pessoaClienteId",
+                         "key":  "pessoaClienteId",
                          "value":  ""
                      },
                      {
-                           "key":  "pessoaVendedorId",
+                         "key":  "pessoaVendedorId",
                          "value":  ""
                      },
                      {
-                           "key":  "clienteId",
+                         "key":  "clienteId",
                          "value":  ""
                      },
                      {
-                           "key":  "colaboradorId",
+                         "key":  "colaboradorId",
                          "value":  ""
                      },
                      {
-                           "key":  "vendaId",
+                         "key":  "vendaId",
                          "value":  ""
                      },
                      {
-                           "key":  "itemId",
+                         "key":  "itemId",
                          "value":  ""
                      },
                      {
-                           "key":  "segundaVendaId",
+                         "key":  "segundaVendaId",
                          "value":  ""
                      },
                      {
-                           "key":  "cpfGerado",
+                         "key":  "cpfGerado",
                          "value":  ""
                      },
                      {
-                           "key":  "emailGerado",
+                         "key":  "emailGerado",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "authLogin",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "authPassword",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "novaSenha",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "pessoaBootstrapId",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "contaAcessoId",
                          "value":  ""
                      }
                  ],
@@ -79,7 +99,10 @@
                                                                                "api",
                                                                                "health"
                                                                            ]
-                                                              }
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
                                                   }
                                   }
                               ]
@@ -365,1282 +388,1683 @@
                                                   }
                                   }
                               ]
-                  },
-                  {
-                      "name":  "04 - Aula 08",
-                      "item":  [
-                          {
-                              "name":  "06 - Alterar categoria",
-                              "event":  [
+                 },
+                 {
+                     "name":  "04 - Aula 08",
+                     "item":  [
                                   {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Status 200\", function () {",
-                                              "    pm.response.to.have.status(200);",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "PUT",
-                                  "header":  [
-                                      {
-                                          "key":  "Content-Type",
-                                          "value":  "application/json"
-                                      }
-                                  ],
-                                  "body":  {
-                                      "mode":  "raw",
-                                      "raw":  "{\"nome\":\"Futebol Postman Atualizado\"}"
+                                      "name":  "06 - Alterar categoria",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"nome\":\"Futebol Postman Atualizado\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/categorias/{{categoriaId}}",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "categorias",
+                                                                               "{{categoriaId}}"
+                                                                           ]
+                                                              }
+                                                  }
                                   },
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/categorias/{{categoriaId}}",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "categorias",
-                                          "{{categoriaId}}"
-                                      ]
-                                  }
-                              }
-                          },
-                          {
-                              "name":  "07 - Inativar categoria",
-                              "event":  [
                                   {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Status 200\", function () {",
-                                              "    pm.response.to.have.status(200);",
-                                              "});",
-                                              "",
-                                              "pm.test(\"Categoria inativa\", function () {",
-                                              "    pm.expect(pm.response.json().ativo).to.eql(false);",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "PUT",
-                                  "header":  [
-                                      {
-                                          "key":  "Content-Type",
-                                          "value":  "application/json"
-                                      }
-                                  ],
-                                  "body":  {
-                                      "mode":  "raw",
-                                      "raw":  "{\"status\":\"INATIVO\"}"
+                                      "name":  "07 - Inativar categoria",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Categoria inativa\", function () {",
+                                                                                    "    pm.expect(pm.response.json().ativo).to.eql(false);",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"status\":\"INATIVO\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/categorias/{{categoriaId}}/status",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "categorias",
+                                                                               "{{categoriaId}}",
+                                                                               "status"
+                                                                           ]
+                                                              }
+                                                  }
                                   },
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/categorias/{{categoriaId}}/status",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "categorias",
-                                          "{{categoriaId}}",
-                                          "status"
-                                      ]
-                                  }
-                              }
-                          },
-                          {
-                              "name":  "08 - Alterar produto",
-                              "event":  [
                                   {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Status 200\", function () {",
-                                              "    pm.response.to.have.status(200);",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "PUT",
-                                  "header":  [
-                                      {
-                                          "key":  "Content-Type",
-                                          "value":  "application/json"
-                                      }
-                                  ],
-                                  "body":  {
-                                      "mode":  "raw",
-                                      "raw":  "{\"nome\":\"Bola Postman Alterada\",\"estoqueMinimo\":4.000,\"preco\":129.90,\"categoriaId\":{{categoriaId}},\"fornecedorId\":{{fornecedorId}}}"
+                                      "name":  "08 - Alterar produto",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"nome\":\"Bola Postman Alterada\",\"estoqueMinimo\":4.000,\"preco\":129.90,\"categoriaId\":{{categoriaId}},\"fornecedorId\":{{fornecedorId}}}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos",
+                                                                               "{{produtoId}}"
+                                                                           ]
+                                                              }
+                                                  }
                                   },
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "produtos",
-                                          "{{produtoId}}"
-                                      ]
-                                  }
-                              }
-                          },
-                          {
-                              "name":  "09 - Entrada de estoque",
-                              "event":  [
                                   {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Status 200\", function () {",
-                                              "    pm.response.to.have.status(200);",
-                                              "});",
-                                              "",
-                                              "pm.test(\"Saldo atualizado\", function () {",
-                                              "    pm.expect(pm.response.json().quantidade).to.eql(15);",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "POST",
-                                  "header":  [
-                                      {
-                                          "key":  "Content-Type",
-                                          "value":  "application/json"
-                                      }
-                                  ],
-                                  "body":  {
-                                      "mode":  "raw",
-                                      "raw":  "{\"quantidade\":5}"
+                                      "name":  "09 - Entrada de estoque",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Saldo atualizado\", function () {",
+                                                                                    "    pm.expect(pm.response.json().quantidade).to.eql(15);",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"quantidade\":5}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}/estoque/entradas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos",
+                                                                               "{{produtoId}}",
+                                                                               "estoque",
+                                                                               "entradas"
+                                                                           ]
+                                                              }
+                                                  }
                                   },
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}/estoque/entradas",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "produtos",
-                                          "{{produtoId}}",
-                                          "estoque",
-                                          "entradas"
-                                      ]
-                                  }
-                              }
-                          },
-                          {
-                              "name":  "10 - Saída de estoque",
-                              "event":  [
                                   {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Status 200\", function () {",
-                                              "    pm.response.to.have.status(200);",
-                                              "});",
-                                              "",
-                                              "pm.test(\"Saldo atualizado\", function () {",
-                                              "    pm.expect(pm.response.json().quantidade).to.eql(13);",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "POST",
-                                  "header":  [
-                                      {
-                                          "key":  "Content-Type",
-                                          "value":  "application/json"
-                                      }
-                                  ],
-                                  "body":  {
-                                      "mode":  "raw",
-                                      "raw":  "{\"quantidade\":2}"
+                                      "name":  "10 - Saída de estoque",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Saldo atualizado\", function () {",
+                                                                                    "    pm.expect(pm.response.json().quantidade).to.eql(13);",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"quantidade\":2}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}/estoque/saidas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos",
+                                                                               "{{produtoId}}",
+                                                                               "estoque",
+                                                                               "saidas"
+                                                                           ]
+                                                              }
+                                                  }
                                   },
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}/estoque/saidas",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "produtos",
-                                          "{{produtoId}}",
-                                          "estoque",
-                                          "saidas"
-                                      ]
-                                  }
-                              }
-                          },
-                          {
-                              "name":  "11 - Pesquisar produtos",
-                              "event":  [
                                   {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Status 200\", function () {",
-                                              "    pm.response.to.have.status(200);",
-                                              "});",
-                                              "",
-                                              "pm.test(\"Página com conteúdo\", function () {",
-                                              "    pm.expect(pm.response.json().conteudo).to.be.an(\"array\");",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "GET",
-                                  "header":  [
-                                  ],
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/produtos?nome=Bola&ativo=true&page=0&size=10&sort=id,asc",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "produtos"
-                                      ],
-                                      "query":  [
-                                          {
-                                              "key":  "nome",
-                                              "value":  "Bola"
-                                          },
-                                          {
-                                              "key":  "ativo",
-                                              "value":  "true"
-                                          },
-                                          {
-                                              "key":  "page",
-                                              "value":  "0"
-                                          },
-                                          {
-                                              "key":  "size",
-                                              "value":  "10"
-                                          },
-                                          {
-                                              "key":  "sort",
-                                              "value":  "id,asc"
-                                          }
-                                      ]
-                                  }
-                              }
-                          },
-                          {
-                              "name":  "Categoria em uso - 409",
-                              "event":  [
-                                  {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Status 409\", function () {",
-                                              "    pm.response.to.have.status(409);",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "DELETE",
-                                  "header":  [
-                                  ],
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/categorias/{{categoriaId}}",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "categorias",
-                                          "{{categoriaId}}"
-                                      ]
-                                  }
-                              }
-                          },
-                          {
-                              "name":  "Ordenação inválida - 400",
-                              "event":  [
-                                  {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Status 400\", function () {",
-                                              "    pm.response.to.have.status(400);",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "GET",
-                                  "header":  [
-                                  ],
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/produtos?sort=campoInexistente",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "produtos"
-                                      ],
-                                      "query":  [
-                                          {
-                                              "key":  "sort",
-                                              "value":  "campoInexistente"
-                                          }
-                                      ]
-                                  }
-                              }
-                          },
-                          {
-                              "name":  "Saída maior que saldo - 400",
-                              "event":  [
-                                  {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Status 400\", function () {",
-                                              "    pm.response.to.have.status(400);",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "POST",
-                                  "header":  [
-                                      {
-                                          "key":  "Content-Type",
-                                          "value":  "application/json"
-                                      }
-                                  ],
-                                  "body":  {
-                                      "mode":  "raw",
-                                      "raw":  "{\"quantidade\":999999}"
-                                  },
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}/estoque/saidas",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "produtos",
-                                          "{{produtoId}}",
-                                          "estoque",
-                                          "saidas"
-                                      ]
-                                  }
-                              }
-                          },
-                          {
-                              "name":  "12 - Excluir produto",
-                              "event":  [
-                                  {
-                                      "listen":  "test",
-                                      "script":  {
-                                          "exec":  [
-                                              "pm.test(\"Exclusão deve retornar 204\", function () {",
-                                              "    pm.response.to.have.status(204);",
-                                              "});",
-                                              "",
-                                              "pm.test(\"Resposta não deve possuir corpo\", function () {",
-                                              "    pm.expect(pm.response.text()).to.eql(\"\");",
-                                              "});"
-                                          ],
-                                          "type":  "text/javascript"
-                                      }
-                                  }
-                              ],
-                              "request":  {
-                                  "method":  "DELETE",
-                                  "header":  [
-                                  ],
-                                  "url":  {
-                                      "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}",
-                                      "host":  [
-                                          "{{baseUrl}}"
-                                      ],
-                                      "path":  [
-                                          "api",
-                                          "produtos",
-                                          "{{produtoId}}"
-                                      ]
-                                  }
-                              }
-                          }
-                      ]
-                  },
-{
-    "name": "05 - Aula 10",
-    "item": [
-        {
-            "name": "13 - Criar pessoa (cliente)",
-            "event": [
-                {
-                    "listen": "prerequest",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "function digitoCpf(base, pesoInicial) {",
-                            "    var soma = 0;",
-                            "    for (var i = 0; i < base.length; i++) {",
-                            "        soma += parseInt(base.charAt(i), 10) * (pesoInicial - i);",
-                            "    }",
-                            "    var resto = soma % 11;",
-                            "    return resto < 2 ? 0 : 11 - resto;",
-                            "}",
-                            "var base = String(Math.floor(Math.random() * 900000000) + 100000000);",
-                            "var primeiro = digitoCpf(base, 10);",
-                            "var segundo = digitoCpf(base + primeiro, 11);",
-                            "pm.collectionVariables.set(\"cpfGerado\", base + primeiro + segundo);",
-                            "pm.collectionVariables.set(\"emailGerado\", \"ana.\" + Date.now() + \"@example.com\");"
-                        ]
-                    }
-                },
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Pessoa criada com 201\", function () {",
-                            "    pm.response.to.have.status(201);",
-                            "});",
-                            "",
-                            "pm.test(\"Pessoa inicia ATIVO\", function () {",
-                            "    pm.expect(pm.response.json().status).to.eql(\"ATIVO\");",
-                            "});",
-                            "",
-                            "pm.collectionVariables.set(\"pessoaClienteId\", pm.response.json().id);"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"nome\":\"Ana Souza\",\"email\":\"{{emailGerado}}\",\"cpf\":\"{{cpfGerado}}\"}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/pessoas",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "pessoas"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "14 - Criar cliente",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Cliente criado com 201\", function () {",
-                            "    pm.response.to.have.status(201);",
-                            "});",
-                            "",
-                            "pm.collectionVariables.set(\"clienteId\", pm.response.json().id);"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"pessoaId\":{{pessoaClienteId}},\"telefone\":\"(11) 99999-0000\"}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/clientes",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "clientes"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "15 - Criar pessoa (vendedor)",
-            "event": [
-                {
-                    "listen": "prerequest",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "function digitoCpf(base, pesoInicial) {",
-                            "    var soma = 0;",
-                            "    for (var i = 0; i < base.length; i++) {",
-                            "        soma += parseInt(base.charAt(i), 10) * (pesoInicial - i);",
-                            "    }",
-                            "    var resto = soma % 11;",
-                            "    return resto < 2 ? 0 : 11 - resto;",
-                            "}",
-                            "var base = String(Math.floor(Math.random() * 900000000) + 100000000);",
-                            "var primeiro = digitoCpf(base, 10);",
-                            "var segundo = digitoCpf(base + primeiro, 11);",
-                            "pm.collectionVariables.set(\"cpfGerado\", base + primeiro + segundo);",
-                            "pm.collectionVariables.set(\"emailGerado\", \"bruno.\" + Date.now() + \"@example.com\");"
-                        ]
-                    }
-                },
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Pessoa criada com 201\", function () {",
-                            "    pm.response.to.have.status(201);",
-                            "});",
-                            "",
-                            "pm.collectionVariables.set(\"pessoaVendedorId\", pm.response.json().id);"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"nome\":\"Bruno Lima\",\"email\":\"{{emailGerado}}\",\"cpf\":\"{{cpfGerado}}\"}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/pessoas",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "pessoas"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "16 - Criar colaborador",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Colaborador criado com 201\", function () {",
-                            "    pm.response.to.have.status(201);",
-                            "});",
-                            "",
-                            "pm.test(\"Função informada é preservada\", function () {",
-                            "    pm.expect(pm.response.json().funcao).to.eql(\"VENDEDOR\");",
-                            "});",
-                            "",
-                            "pm.collectionVariables.set(\"colaboradorId\", pm.response.json().id);"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"pessoaId\":{{pessoaVendedorId}},\"matricula\":\"VEN-{{$timestamp}}\",\"funcao\":\"VENDEDOR\",\"dataAdmissao\":\"2026-09-29\"}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/colaboradores",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "colaboradores"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "17 - Abrir venda",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Venda aberta com 201\", function () {",
-                            "    pm.response.to.have.status(201);",
-                            "});",
-                            "",
-                            "pm.test(\"Venda inicia ABERTA e sem itens\", function () {",
-                            "    const body = pm.response.json();",
-                            "    pm.expect(body.status).to.eql(\"ABERTA\");",
-                            "    pm.expect(body.itens).to.be.an(\"array\").that.is.empty;",
-                            "});",
-                            "",
-                            "pm.collectionVariables.set(\"vendaId\", pm.response.json().id);"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"clienteId\":{{clienteId}},\"vendedorId\":{{colaboradorId}}}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/vendas",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "vendas"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "18 - Incluir item",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Item incluído com 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Total calculado a partir do item\", function () {",
-                            "    pm.expect(pm.response.json().total).to.be.a(\"number\");",
-                            "});",
-                            "",
-                            "pm.collectionVariables.set(\"itemId\", pm.response.json().itens[0].id);"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"produtoId\":{{produtoId}},\"quantidade\":2}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/vendas/{{vendaId}}/itens",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "vendas",
-                        "{{vendaId}}",
-                        "itens"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "19 - Remover item",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Item removido com 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Venda fica sem itens\", function () {",
-                            "    pm.expect(pm.response.json().itens).to.be.an(\"array\").that.is.empty;",
-                            "});"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "DELETE",
-                "header": [],
-                "url": {
-                    "raw": "{{baseUrl}}/api/vendas/{{vendaId}}/itens/{{itemId}}",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "vendas",
-                        "{{vendaId}}",
-                        "itens",
-                        "{{itemId}}"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "20 - Reincluir item",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Item reincluído com 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.collectionVariables.set(\"itemId\", pm.response.json().itens[0].id);"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"produtoId\":{{produtoId}},\"quantidade\":1}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/vendas/{{vendaId}}/itens",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "vendas",
-                        "{{vendaId}}",
-                        "itens"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "21 - Finalizar venda",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Venda finalizada com 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Status passa a FINALIZADA\", function () {",
-                            "    pm.expect(pm.response.json().status).to.eql(\"FINALIZADA\");",
-                            "});"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [],
-                "url": {
-                    "raw": "{{baseUrl}}/api/vendas/{{vendaId}}/finalizacao",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "vendas",
-                        "{{vendaId}}",
-                        "finalizacao"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "22 - Abrir segunda venda",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Segunda venda aberta com 201\", function () {",
-                            "    pm.response.to.have.status(201);",
-                            "});",
-                            "",
-                            "pm.collectionVariables.set(\"segundaVendaId\", pm.response.json().id);"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"clienteId\":{{clienteId}},\"vendedorId\":{{colaboradorId}}}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/vendas",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "vendas"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "23 - Cancelar venda",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Venda cancelada com 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Status passa a CANCELADA\", function () {",
-                            "    pm.expect(pm.response.json().status).to.eql(\"CANCELADA\");",
-                            "});"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [],
-                "url": {
-                    "raw": "{{baseUrl}}/api/vendas/{{segundaVendaId}}/cancelamento",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "vendas",
-                        "{{segundaVendaId}}",
-                        "cancelamento"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "24 - Excluir produto vendido - 409",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Produto vendido não pode ser excluído\", function () {",
-                            "    pm.response.to.have.status(409);",
-                            "});",
-                            "",
-                            "pm.test(\"Erro indica vínculo com outros dados\", function () {",
-                            "    pm.expect(pm.response.json().message).to.include(\"vinculado a outros dados\");",
-                            "});"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "DELETE",
-                "header": [],
-                "url": {
-                    "raw": "{{baseUrl}}/api/produtos/{{produtoId}}",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "produtos",
-                        "{{produtoId}}"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "25 - Pessoa com CPF inválido - 400",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"CPF inválido retorna 400\", function () {",
-                            "    pm.response.to.have.status(400);",
-                            "});",
-                            "",
-                            "pm.test(\"Erro é associado ao campo cpf\", function () {",
-                            "    pm.expect(pm.response.json().fields).to.have.property(\"cpf\");",
-                            "});"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"nome\":\"Pessoa Inválida\",\"email\":\"invalida.{{$timestamp}}@example.com\",\"cpf\":\"11111111111\"}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/pessoas",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "pessoas"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "26 - Fornecedor com CNPJ inválido - 400",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"CNPJ com DV incorreto retorna 400\", function () {",
-                            "    pm.response.to.have.status(400);",
-                            "});",
-                            "",
-                            "pm.test(\"Erro é associado ao campo cnpj\", function () {",
-                            "    pm.expect(pm.response.json().fields).to.have.property(\"cnpj\");",
-                            "});"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"razaoSocial\":\"Fornecedor Inválido Ltda\",\"cnpj\":\"11222333000182\"}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/fornecedores",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "fornecedores"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "27 - Venda fracionada",
-            "item": [
-                {
-                    "name": "27.1 - Abrir venda fracionada",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test(\"Venda fracionada aberta com 201\", function () {",
-                                    "    pm.response.to.have.status(201);",
-                                    "});",
-                                    "",
-                                    "pm.collectionVariables.set(\"vendaFracionadaId\", pm.response.json().id);"
-                                ]
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\"clienteId\":{{clienteId}},\"vendedorId\":{{colaboradorId}}}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/vendas",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "vendas"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "27.2 - Incluir item fracionado (1.500)",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test(\"Item fracionado incluído com 200\", function () {",
-                                    "    pm.response.to.have.status(200);",
-                                    "});",
-                                    "",
-                                    "const body = pm.response.json();",
-                                    "",
-                                    "pm.test(\"Quantidade decimal preservada\", function () {",
-                                    "    pm.expect(body.itens[0].quantidade).to.be.closeTo(1.5, 0.0001);",
-                                    "});",
-                                    "",
-                                    "pm.test(\"Subtotal e total fracionados\", function () {",
-                                    "    pm.expect(body.itens[0].subtotal).to.be.closeTo(194.85, 0.01);",
-                                    "    pm.expect(body.total).to.be.closeTo(194.85, 0.01);",
-                                    "});",
-                                    "",
-                                    "pm.collectionVariables.set(\"itemFracionadoId\", body.itens[0].id);"
-                                ]
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\"produtoId\":{{produtoId}},\"quantidade\":1.500}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/vendas/{{vendaFracionadaId}}/itens",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "vendas",
-                                "{{vendaFracionadaId}}",
-                                "itens"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "27.3 - Finalizar venda fracionada",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test(\"Venda fracionada finalizada com 200\", function () {",
-                                    "    pm.response.to.have.status(200);",
-                                    "});",
-                                    "",
-                                    "const body = pm.response.json();",
-                                    "",
-                                    "pm.test(\"Status passa a FINALIZADA\", function () {",
-                                    "    pm.expect(body.status).to.eql(\"FINALIZADA\");",
-                                    "});",
-                                    "",
-                                    "pm.test(\"Total fracionado preservado\", function () {",
-                                    "    pm.expect(body.total).to.be.closeTo(194.85, 0.01);",
-                                    "});"
-                                ]
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/vendas/{{vendaFracionadaId}}/finalizacao",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "vendas",
-                                "{{vendaFracionadaId}}",
-                                "finalizacao"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "27.4 - Consultar saldo fracionado",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test(\"Saldo consultado com 200\", function () {",
-                                    "    pm.response.to.have.status(200);",
-                                    "});",
-                                    "",
-                                    "pm.test(\"Baixa fracionada aplicada ao estoque\", function () {",
-                                    "    pm.expect(pm.response.json().quantidade).to.be.closeTo(10.5, 0.0001);",
-                                    "});"
-                                ]
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/produtos/{{produtoId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "produtos",
-                                "{{produtoId}}"
-                            ]
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "name": "28 - Quantidade com mais de 3 casas - 400",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                            "pm.test(\"Quantidade com 4 casas retorna 400\", function () {",
-                            "    pm.response.to.have.status(400);",
-                            "});",
-                            "",
-                            "pm.test(\"Erro é associado ao campo quantidade\", function () {",
-                            "    pm.expect(pm.response.json().fields).to.have.property(\"quantidade\");",
-                            "});"
-                        ]
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\"produtoId\":{{produtoId}},\"quantidade\":1.0001}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/vendas/{{vendaFracionadaId}}/itens",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "api",
-                        "vendas",
-                        "{{vendaFracionadaId}}",
-                        "itens"
-                    ]
-                }
-            }
-        }
-    ]
-}
+                                      "name":  "11 - Pesquisar produtos",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Página com conteúdo\", function () {",
+                                                                                    "    pm.expect(pm.response.json().conteudo).to.be.an(\"array\");",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
 
-              ]
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos?nome=Bola\u0026ativo=true\u0026page=0\u0026size=10\u0026sort=id,asc",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "nome",
+                                                                                    "value":  "Bola"
+                                                                                },
+                                                                                {
+                                                                                    "key":  "ativo",
+                                                                                    "value":  "true"
+                                                                                },
+                                                                                {
+                                                                                    "key":  "page",
+                                                                                    "value":  "0"
+                                                                                },
+                                                                                {
+                                                                                    "key":  "size",
+                                                                                    "value":  "10"
+                                                                                },
+                                                                                {
+                                                                                    "key":  "sort",
+                                                                                    "value":  "id,asc"
+                                                                                }
+                                                                            ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Categoria em uso - 409",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 409\", function () {",
+                                                                                    "    pm.response.to.have.status(409);",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/categorias/{{categoriaId}}",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "categorias",
+                                                                               "{{categoriaId}}"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Ordenação inválida - 400",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 400\", function () {",
+                                                                                    "    pm.response.to.have.status(400);",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos?sort=campoInexistente",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "sort",
+                                                                                    "value":  "campoInexistente"
+                                                                                }
+                                                                            ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Saída maior que saldo - 400",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status 400\", function () {",
+                                                                                    "    pm.response.to.have.status(400);",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"quantidade\":999999}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}/estoque/saidas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos",
+                                                                               "{{produtoId}}",
+                                                                               "estoque",
+                                                                               "saidas"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "12 - Excluir produto",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Exclusão deve retornar 204\", function () {",
+                                                                                    "    pm.response.to.have.status(204);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Resposta não deve possuir corpo\", function () {",
+                                                                                    "    pm.expect(pm.response.text()).to.eql(\"\");",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos",
+                                                                               "{{produtoId}}"
+                                                                           ]
+                                                              }
+                                                  }
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "05 - Aula 10",
+                     "item":  [
+                                  {
+                                      "name":  "13 - Criar pessoa (cliente)",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "function digitoCpf(base, pesoInicial) {",
+                                                                                    "    var soma = 0;",
+                                                                                    "    for (var i = 0; i \u003c base.length; i++) {",
+                                                                                    "        soma += parseInt(base.charAt(i), 10) * (pesoInicial - i);",
+                                                                                    "    }",
+                                                                                    "    var resto = soma % 11;",
+                                                                                    "    return resto \u003c 2 ? 0 : 11 - resto;",
+                                                                                    "}",
+                                                                                    "var base = String(Math.floor(Math.random() * 900000000) + 100000000);",
+                                                                                    "var primeiro = digitoCpf(base, 10);",
+                                                                                    "var segundo = digitoCpf(base + primeiro, 11);",
+                                                                                    "pm.collectionVariables.set(\"cpfGerado\", base + primeiro + segundo);",
+                                                                                    "pm.collectionVariables.set(\"emailGerado\", \"ana.\" + Date.now() + \"@example.com\");"
+                                                                                ]
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Pessoa criada com 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Pessoa inicia ATIVO\", function () {",
+                                                                                    "    pm.expect(pm.response.json().status).to.eql(\"ATIVO\");",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.collectionVariables.set(\"pessoaClienteId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"nome\":\"Ana Souza\",\"email\":\"{{emailGerado}}\",\"cpf\":\"{{cpfGerado}}\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/pessoas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "pessoas"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "14 - Criar cliente",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Cliente criado com 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.collectionVariables.set(\"clienteId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"pessoaId\":{{pessoaClienteId}},\"telefone\":\"(11) 99999-0000\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/clientes",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "clientes"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "15 - Criar pessoa (vendedor)",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "function digitoCpf(base, pesoInicial) {",
+                                                                                    "    var soma = 0;",
+                                                                                    "    for (var i = 0; i \u003c base.length; i++) {",
+                                                                                    "        soma += parseInt(base.charAt(i), 10) * (pesoInicial - i);",
+                                                                                    "    }",
+                                                                                    "    var resto = soma % 11;",
+                                                                                    "    return resto \u003c 2 ? 0 : 11 - resto;",
+                                                                                    "}",
+                                                                                    "var base = String(Math.floor(Math.random() * 900000000) + 100000000);",
+                                                                                    "var primeiro = digitoCpf(base, 10);",
+                                                                                    "var segundo = digitoCpf(base + primeiro, 11);",
+                                                                                    "pm.collectionVariables.set(\"cpfGerado\", base + primeiro + segundo);",
+                                                                                    "pm.collectionVariables.set(\"emailGerado\", \"bruno.\" + Date.now() + \"@example.com\");"
+                                                                                ]
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Pessoa criada com 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.collectionVariables.set(\"pessoaVendedorId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"nome\":\"Bruno Lima\",\"email\":\"{{emailGerado}}\",\"cpf\":\"{{cpfGerado}}\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/pessoas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "pessoas"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "16 - Criar colaborador",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Colaborador criado com 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Função informada é preservada\", function () {",
+                                                                                    "    pm.expect(pm.response.json().funcao).to.eql(\"VENDEDOR\");",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.collectionVariables.set(\"colaboradorId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"pessoaId\":{{pessoaVendedorId}},\"matricula\":\"VEN-{{$timestamp}}\",\"funcao\":\"VENDEDOR\",\"dataAdmissao\":\"2026-09-29\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/colaboradores",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "colaboradores"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "17 - Abrir venda",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Venda aberta com 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Venda inicia ABERTA e sem itens\", function () {",
+                                                                                    "    const body = pm.response.json();",
+                                                                                    "    pm.expect(body.status).to.eql(\"ABERTA\");",
+                                                                                    "    pm.expect(body.itens).to.be.an(\"array\").that.is.empty;",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.collectionVariables.set(\"vendaId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"clienteId\":{{clienteId}},\"vendedorId\":{{colaboradorId}}}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/vendas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "vendas"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "18 - Incluir item",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Item incluído com 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Total calculado a partir do item\", function () {",
+                                                                                    "    pm.expect(pm.response.json().total).to.be.a(\"number\");",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.collectionVariables.set(\"itemId\", pm.response.json().itens[0].id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"produtoId\":{{produtoId}},\"quantidade\":2}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/vendas/{{vendaId}}/itens",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "vendas",
+                                                                               "{{vendaId}}",
+                                                                               "itens"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "19 - Remover item",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Item removido com 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Venda fica sem itens\", function () {",
+                                                                                    "    pm.expect(pm.response.json().itens).to.be.an(\"array\").that.is.empty;",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/vendas/{{vendaId}}/itens/{{itemId}}",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "vendas",
+                                                                               "{{vendaId}}",
+                                                                               "itens",
+                                                                               "{{itemId}}"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "20 - Reincluir item",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Item reincluído com 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.collectionVariables.set(\"itemId\", pm.response.json().itens[0].id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"produtoId\":{{produtoId}},\"quantidade\":1}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/vendas/{{vendaId}}/itens",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "vendas",
+                                                                               "{{vendaId}}",
+                                                                               "itens"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "21 - Finalizar venda",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Venda finalizada com 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Status passa a FINALIZADA\", function () {",
+                                                                                    "    pm.expect(pm.response.json().status).to.eql(\"FINALIZADA\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/vendas/{{vendaId}}/finalizacao",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "vendas",
+                                                                               "{{vendaId}}",
+                                                                               "finalizacao"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "22 - Abrir segunda venda",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Segunda venda aberta com 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.collectionVariables.set(\"segundaVendaId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"clienteId\":{{clienteId}},\"vendedorId\":{{colaboradorId}}}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/vendas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "vendas"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "23 - Cancelar venda",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Venda cancelada com 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Status passa a CANCELADA\", function () {",
+                                                                                    "    pm.expect(pm.response.json().status).to.eql(\"CANCELADA\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/vendas/{{segundaVendaId}}/cancelamento",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "vendas",
+                                                                               "{{segundaVendaId}}",
+                                                                               "cancelamento"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "24 - Excluir produto vendido - 409",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Produto vendido não pode ser excluído\", function () {",
+                                                                                    "    pm.response.to.have.status(409);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Erro indica vínculo com outros dados\", function () {",
+                                                                                    "    pm.expect(pm.response.json().message).to.include(\"vinculado a outros dados\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos",
+                                                                               "{{produtoId}}"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "25 - Pessoa com CPF inválido - 400",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"CPF inválido retorna 400\", function () {",
+                                                                                    "    pm.response.to.have.status(400);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Erro é associado ao campo cpf\", function () {",
+                                                                                    "    pm.expect(pm.response.json().fields).to.have.property(\"cpf\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"nome\":\"Pessoa Inválida\",\"email\":\"invalida.{{$timestamp}}@example.com\",\"cpf\":\"11111111111\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/pessoas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "pessoas"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "26 - Fornecedor com CNPJ inválido - 400",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"CNPJ com DV incorreto retorna 400\", function () {",
+                                                                                    "    pm.response.to.have.status(400);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Erro é associado ao campo cnpj\", function () {",
+                                                                                    "    pm.expect(pm.response.json().fields).to.have.property(\"cnpj\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"razaoSocial\":\"Fornecedor Inválido Ltda\",\"cnpj\":\"11222333000182\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/fornecedores",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "fornecedores"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "27 - Venda fracionada",
+                                      "item":  [
+                                                   {
+                                                       "name":  "27.1 - Abrir venda fracionada",
+                                                       "event":  [
+                                                                     {
+                                                                         "listen":  "test",
+                                                                         "script":  {
+                                                                                        "type":  "text/javascript",
+                                                                                        "exec":  [
+                                                                                                     "pm.test(\"Venda fracionada aberta com 201\", function () {",
+                                                                                                     "    pm.response.to.have.status(201);",
+                                                                                                     "});",
+                                                                                                     "",
+                                                                                                     "pm.collectionVariables.set(\"vendaFracionadaId\", pm.response.json().id);"
+                                                                                                 ]
+                                                                                    }
+                                                                     }
+                                                                 ],
+                                                       "request":  {
+                                                                       "method":  "POST",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\"clienteId\":{{clienteId}},\"vendedorId\":{{colaboradorId}}}"
+                                                                                },
+                                                                       "url":  {
+                                                                                   "raw":  "{{baseUrl}}/api/vendas",
+                                                                                   "host":  [
+                                                                                                "{{baseUrl}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "api",
+                                                                                                "vendas"
+                                                                                            ]
+                                                                               }
+                                                                   }
+                                                   },
+                                                   {
+                                                       "name":  "27.2 - Incluir item fracionado (1.500)",
+                                                       "event":  [
+                                                                     {
+                                                                         "listen":  "test",
+                                                                         "script":  {
+                                                                                        "type":  "text/javascript",
+                                                                                        "exec":  [
+                                                                                                     "pm.test(\"Item fracionado incluído com 200\", function () {",
+                                                                                                     "    pm.response.to.have.status(200);",
+                                                                                                     "});",
+                                                                                                     "",
+                                                                                                     "const body = pm.response.json();",
+                                                                                                     "",
+                                                                                                     "pm.test(\"Quantidade decimal preservada\", function () {",
+                                                                                                     "    pm.expect(body.itens[0].quantidade).to.be.closeTo(1.5, 0.0001);",
+                                                                                                     "});",
+                                                                                                     "",
+                                                                                                     "pm.test(\"Subtotal e total fracionados\", function () {",
+                                                                                                     "    pm.expect(body.itens[0].subtotal).to.be.closeTo(194.85, 0.01);",
+                                                                                                     "    pm.expect(body.total).to.be.closeTo(194.85, 0.01);",
+                                                                                                     "});",
+                                                                                                     "",
+                                                                                                     "pm.collectionVariables.set(\"itemFracionadoId\", body.itens[0].id);"
+                                                                                                 ]
+                                                                                    }
+                                                                     }
+                                                                 ],
+                                                       "request":  {
+                                                                       "method":  "POST",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Content-Type",
+                                                                                          "value":  "application/json"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "raw",
+                                                                                    "raw":  "{\"produtoId\":{{produtoId}},\"quantidade\":1.500}"
+                                                                                },
+                                                                       "url":  {
+                                                                                   "raw":  "{{baseUrl}}/api/vendas/{{vendaFracionadaId}}/itens",
+                                                                                   "host":  [
+                                                                                                "{{baseUrl}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "api",
+                                                                                                "vendas",
+                                                                                                "{{vendaFracionadaId}}",
+                                                                                                "itens"
+                                                                                            ]
+                                                                               }
+                                                                   }
+                                                   },
+                                                   {
+                                                       "name":  "27.3 - Finalizar venda fracionada",
+                                                       "event":  [
+                                                                     {
+                                                                         "listen":  "test",
+                                                                         "script":  {
+                                                                                        "type":  "text/javascript",
+                                                                                        "exec":  [
+                                                                                                     "pm.test(\"Venda fracionada finalizada com 200\", function () {",
+                                                                                                     "    pm.response.to.have.status(200);",
+                                                                                                     "});",
+                                                                                                     "",
+                                                                                                     "const body = pm.response.json();",
+                                                                                                     "",
+                                                                                                     "pm.test(\"Status passa a FINALIZADA\", function () {",
+                                                                                                     "    pm.expect(body.status).to.eql(\"FINALIZADA\");",
+                                                                                                     "});",
+                                                                                                     "",
+                                                                                                     "pm.test(\"Total fracionado preservado\", function () {",
+                                                                                                     "    pm.expect(body.total).to.be.closeTo(194.85, 0.01);",
+                                                                                                     "});"
+                                                                                                 ]
+                                                                                    }
+                                                                     }
+                                                                 ],
+                                                       "request":  {
+                                                                       "method":  "POST",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{baseUrl}}/api/vendas/{{vendaFracionadaId}}/finalizacao",
+                                                                                   "host":  [
+                                                                                                "{{baseUrl}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "api",
+                                                                                                "vendas",
+                                                                                                "{{vendaFracionadaId}}",
+                                                                                                "finalizacao"
+                                                                                            ]
+                                                                               }
+                                                                   }
+                                                   },
+                                                   {
+                                                       "name":  "27.4 - Consultar saldo fracionado",
+                                                       "event":  [
+                                                                     {
+                                                                         "listen":  "test",
+                                                                         "script":  {
+                                                                                        "type":  "text/javascript",
+                                                                                        "exec":  [
+                                                                                                     "pm.test(\"Saldo consultado com 200\", function () {",
+                                                                                                     "    pm.response.to.have.status(200);",
+                                                                                                     "});",
+                                                                                                     "",
+                                                                                                     "pm.test(\"Baixa fracionada aplicada ao estoque\", function () {",
+                                                                                                     "    pm.expect(pm.response.json().quantidade).to.be.closeTo(10.5, 0.0001);",
+                                                                                                     "});"
+                                                                                                 ]
+                                                                                    }
+                                                                     }
+                                                                 ],
+                                                       "request":  {
+                                                                       "method":  "GET",
+                                                                       "header":  [
+
+                                                                                  ],
+                                                                       "url":  {
+                                                                                   "raw":  "{{baseUrl}}/api/produtos/{{produtoId}}",
+                                                                                   "host":  [
+                                                                                                "{{baseUrl}}"
+                                                                                            ],
+                                                                                   "path":  [
+                                                                                                "api",
+                                                                                                "produtos",
+                                                                                                "{{produtoId}}"
+                                                                                            ]
+                                                                               }
+                                                                   }
+                                                   }
+                                               ]
+                                  },
+                                  {
+                                      "name":  "28 - Quantidade com mais de 3 casas - 400",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Quantidade com 4 casas retorna 400\", function () {",
+                                                                                    "    pm.response.to.have.status(400);",
+                                                                                    "});",
+                                                                                    "",
+                                                                                    "pm.test(\"Erro é associado ao campo quantidade\", function () {",
+                                                                                    "    pm.expect(pm.response.json().fields).to.have.property(\"quantidade\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"produtoId\":{{produtoId}},\"quantidade\":1.0001}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/vendas/{{vendaFracionadaId}}/itens",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "vendas",
+                                                                               "{{vendaFracionadaId}}",
+                                                                               "itens"
+                                                                           ]
+                                                              }
+                                                  }
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "06 - Aula 12",
+                     "item":  [
+                                  {
+                                      "name":  "01 - Health público",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Health responde 200 sem credencial\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/health",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "health"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "02 - OpenAPI público",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"OpenAPI responde 200 sem credencial\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Esquema basicAuth documentado\", function () {",
+                                                                                    "    var doc = pm.response.json();",
+                                                                                    "    pm.expect(doc.components.securitySchemes.basicAuth.type).to.eql(\"http\");",
+                                                                                    "    pm.expect(doc.components.securitySchemes.basicAuth.scheme).to.eql(\"basic\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/v3/api-docs",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "v3",
+                                                                               "api-docs"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "03 - Criar pessoa bootstrap",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "function digitoCpf(base, pesoInicial) {",
+                                                                                    "    var soma = 0;",
+                                                                                    "    for (var i = 0; i \u003c base.length; i++) {",
+                                                                                    "        soma += parseInt(base.charAt(i), 10) * (pesoInicial - i);",
+                                                                                    "    }",
+                                                                                    "    var resto = soma % 11;",
+                                                                                    "    return resto \u003c 2 ? 0 : 11 - resto;",
+                                                                                    "}",
+                                                                                    "var base = String(Math.floor(Math.random() * 900000000) + 100000000);",
+                                                                                    "var primeiro = digitoCpf(base, 10);",
+                                                                                    "var segundo = digitoCpf(base + primeiro, 11);",
+                                                                                    "pm.collectionVariables.set(\"cpfGerado\", base + primeiro + segundo);",
+                                                                                    "pm.collectionVariables.set(\"emailGerado\", \"bootstrap.\" + Date.now() + \"@example.com\");"
+                                                                                ]
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Pessoa criada com 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "pm.collectionVariables.set(\"pessoaBootstrapId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/pessoas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "pessoas"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"nome\":\"Operador Bootstrap\",\"email\":\"{{emailGerado}}\",\"cpf\":\"{{cpfGerado}}\"}"
+                                                               },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "04 - Criar conta de acesso",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Conta criada com 201\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Conta inicia ATIVA com OPERADOR\", function () {",
+                                                                                    "    var body = pm.response.json();",
+                                                                                    "    pm.expect(body.status).to.eql(\"ATIVA\");",
+                                                                                    "    pm.expect(body.perfis).to.eql([\"OPERADOR\"]);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Resposta não expõe senha nem hash\", function () {",
+                                                                                    "    var body = pm.response.json();",
+                                                                                    "    pm.expect(body.senha).to.be.undefined;",
+                                                                                    "    pm.expect(body.senhaHash).to.be.undefined;",
+                                                                                    "});",
+                                                                                    "pm.collectionVariables.set(\"contaAcessoId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"pessoaId\":{{pessoaBootstrapId}},\"login\":\"{{authLogin}}\",\"senha\":\"{{authPassword}}\"}"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "05 - Minha conta",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Minha conta responde 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Resposta não expõe senha nem hash\", function () {",
+                                                                                    "    var body = pm.response.json();",
+                                                                                    "    pm.expect(body.senha).to.be.undefined;",
+                                                                                    "    pm.expect(body.senhaHash).to.be.undefined;",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/me",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "me"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "06 - Alterar senha",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Senha alterada com 204\", function () {",
+                                                                                    "    pm.response.to.have.status(204);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Atualize authPassword com o valor de novaSenha\", function () {",
+                                                                                    "    pm.expect(pm.collectionVariables.get(\"novaSenha\")).to.not.be.empty;",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"senhaAtual\":\"{{authPassword}}\",\"novaSenha\":\"{{novaSenha}}\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/me/senha",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "me",
+                                                                               "senha"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "07 - Rota protegida sem credencial - 401",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Rota protegida sem credencial retorna 401\", function () {",
+                                                                                    "    pm.response.to.have.status(401);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/produtos",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "produtos"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "08 - Senha incorreta - 401",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Senha incorreta retorna 401\", function () {",
+                                                                                    "    pm.response.to.have.status(401);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "auth":  {
+                                                                   "type":  "basic",
+                                                                   "basic":  [
+                                                                                 {
+                                                                                     "key":  "username",
+                                                                                     "value":  "{{authLogin}}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "key":  "password",
+                                                                                     "value":  "senha-incorreta-2026",
+                                                                                     "type":  "string"
+                                                                                 }
+                                                                             ]
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/me",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "me"
+                                                                           ]
+                                                              }
+                                                  }
+                                  }
+                              ]
+                 }
+             ],
+    "auth":  {
+                 "type":  "basic",
+                 "basic":  [
+                               {
+                                   "key":  "username",
+                                   "value":  "{{authLogin}}",
+                                   "type":  "string"
+                               },
+                               {
+                                   "key":  "password",
+                                   "value":  "{{authPassword}}",
+                                   "type":  "string"
+                               }
+                           ]
+             }
 }
