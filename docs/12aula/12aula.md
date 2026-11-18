@@ -422,7 +422,7 @@ A descrição do esquema reforça que HTTP Basic deve ser usado somente sobre HT
 A collection existente foi atualizada:
 
 ```text
-docs/postman/AL-Sports-Aula-07.postman_collection.json
+docs/postman/AL-Sports-Aula-17.postman_collection.json
 ```
 
 Ela agora se chama `AL Sports - Aula 12` e usa HTTP Basic na raiz:

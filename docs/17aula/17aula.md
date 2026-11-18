@@ -239,15 +239,42 @@ do Liquibase não aceita `addCheckConstraint` nesse contexto, por isso as
 constraints foram criadas com SQL e removidas com `DROP CONSTRAINT IF EXISTS`.
 
 O histórico real do AL Sports possuía **43** changeSets antes da aula; com a
-010 passa a **46**. O número citado no material didático de origem pertence a
-outro histórico e não foi forçado artificialmente.
+010 passou a **46**. O número citado no material didático de origem pertence a
+outro histórico e não foi forçado artificialmente. A complementação publicada
+das correções V1–V4 acrescentou a migration
+`011-adicionar-geracao-sessao-conta-acesso.yaml`, com o changeset
+`011-01-adicionar-geracao-sessao-conta-acesso`, elevando o estado atual a
+**47** changeSets.
 
 `Aula17MigrationRollbackTest` cria um banco PostgreSQL temporário exclusivo,
-aplica os 46 changeSets, verifica tabelas/constraints/índices, confirma a
-rejeição de hash inválido, contador negativo, tipo livre e CR/LF, reverte os 3
-changeSets da aula e confirma que `010-%` desaparece do `databasechangelog`.
-Depois reaplica e remove o banco com `with (force)`. O banco compartilhado
-`alsports_test` não é apagado nem reinicializado.
+aplica os 47 changeSets do estado atual (46 no marco original da aula), verifica
+tabelas/constraints/índices, confirma a rejeição de hash inválido, contador
+negativo, tipo livre e CR/LF, reverte os 3 changeSets da 010 e confirma que
+`010-%` desaparece do `databasechangelog`. Depois reaplica e remove o banco com
+`with (force)`. O banco compartilhado `alsports_test` não é apagado nem
+reinicializado.
+
+---
+
+## Complementação publicada (correções V1–V4)
+
+Após o marco original desta aula, as correções V1–V4 foram publicadas na
+própria branch `aula-17`, sem alterar a explicação pedagógica apresentada
+acima:
+
+- commit `b6043c5386b290dc12bbb9c51360bcb8fd282f02` —
+  `fix: corrige concorrencia e protecao da autenticacao`;
+- tag `aula-17-correcao-seguranca-v1-v4`;
+- migration `011-adicionar-geracao-sessao-conta-acesso.yaml`
+  (`011-01-adicionar-geracao-sessao-conta-acesso`);
+- histórico atual: 47 changeSets (46 no marco original da Aula 17).
+
+Esta seção registra o estado publicado. As seções anteriores continuam
+descrevendo a Aula 17 como ela foi efetivamente conduzida: a correção de
+concorrência e a geração de sessão não faziam parte do plano original da aula.
+A sequência pedagógica oficial, a evolução realizada no projeto e o estado
+atual são camadas distintas; as divergências históricas das Aulas 00, 01, 03,
+04 e 05 permanecem preservadas, sem reescrita de commits, tags ou datas.
 
 ---
 
@@ -305,7 +332,7 @@ justificado.
 ## Postman
 
 A collection
-`docs/postman/AL-Sports-Aula-07.postman_collection.json` preserva as pastas
+`docs/postman/AL-Sports-Aula-17.postman_collection.json` preserva as pastas
 anteriores e acrescenta **`11 — Proteção e auditoria da autenticação`**, com
 sete requisições:
 
@@ -382,7 +409,7 @@ foi exibido. Os testes usam PostgreSQL real, `Clock` controlado e nenhum
 Para verificar a collection:
 
 ```powershell
-node -e "JSON.parse(require('fs').readFileSync('docs/postman/AL-Sports-Aula-07.postman_collection.json','utf8').replace(/^\uFEFF/,''))"
+node -e "JSON.parse(require('fs').readFileSync('docs/postman/AL-Sports-Aula-17.postman_collection.json','utf8').replace(/^\uFEFF/,''))"
 git diff --check
 ```
 
@@ -403,7 +430,7 @@ git diff --check
 - [x] refresh e logout são auditados;
 - [x] operador recebe 403 na consulta e administrador pagina e filtra;
 - [x] migration 010 aplica, reverte e reaplica em banco isolado;
-- [x] 46 changeSets no banco real de teste;
+- [x] 47 changeSets no banco real de teste no estado atual (46 no marco original da aula);
 - [x] Postman é JSON válido e contém a pasta da Aula 17;
 - [x] contrato OpenAPI descreve o endpoint sem expor segredos;
 - [x] cobertura permanece acima do portão da Aula 15 (70% linhas / 40% branches).

@@ -217,8 +217,11 @@ O contrato OpenAPI documenta login, refresh, logout, logout-todos, DTOs
 mensagem genérica e o esquema Bearer apenas no logout global. O teste
 `OpenApiDocumentationTest` verifica esses elementos.
 
-A coleção `docs/postman/AL-Sports-Aula-07.postman_collection.json` preserva as
-pastas anteriores e acrescenta `02 - Autorização e ciclo de tokens`, com 12
+A coleção `docs/postman/AL-Sports-Aula-17.postman_collection.json` preserva as
+pastas anteriores e acrescenta a pasta de autorização e ciclo de tokens, hoje
+numerada `10 - Autorização e ciclo de tokens` (o nome original era
+`02 - Autorização e ciclo de tokens`; a numeração foi ajustada para eliminar a
+duplicidade com `02 - Fornecedores`), com 12
 requests: login admin, captura do par, criação de operador, login do operador,
 rota autorizada, 403 administrativa, renovação, substituição dos tokens,
 logout local, 401 na renovação seguinte, uso do access token até `exp` e

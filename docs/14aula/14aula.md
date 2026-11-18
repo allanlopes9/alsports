@@ -734,10 +734,10 @@ Fluxo no Swagger UI:
 
 ## 14. Postman
 
-A coleção mantém o nome do arquivo:
+O caminho atual da coleção é o seguinte; o arquivo foi renomeado posteriormente para refletir o conteúdo acumulado da Aula 17:
 
 ```text
-docs/postman/AL-Sports-Aula-07.postman_collection.json
+docs/postman/AL-Sports-Aula-17.postman_collection.json
 ```
 
 O nome interno foi atualizado para `AL Sports - Aula 14`. A coleção possui 9 pastas e 25 variáveis.

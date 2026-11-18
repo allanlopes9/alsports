@@ -316,7 +316,7 @@ A migration `010-auditoria-protecao-autenticacao.yaml` acrescenta três changese
 - `evento_seguranca`, com tipo enum fechado por `CHECK`, IDs históricos de conta, hash de correlação opcional e origem de até 45 caracteres sem CR/LF;
 - índices para bloqueios ativos, ordenação por ocorrência e consulta filtrada por tipo.
 
-Todos os changesets da 010 têm rollback explícito. O histórico real passa de 43 para 46 changesets. A aplicação, o rollback e a reaplicação são verificados em um banco PostgreSQL temporário exclusivo, sem apagar o banco de testes compartilhado.
+Todos os changesets da 010 têm rollback explícito. O histórico real passou de 43 para 46 changesets na publicação original da Aula 17; com a complementação publicada das correções V1–V4 e da migration `011-adicionar-geracao-sessao-conta-acesso.yaml`, o estado atual possui 47 changesets. A aplicação, o rollback e a reaplicação são verificados em um banco PostgreSQL temporário exclusivo, sem apagar o banco de testes compartilhado.
 
 O arquivo principal das migrations é:
 
@@ -848,7 +848,7 @@ A suíte possuía 398 testes aprovados no marco da Aula 16. A Aula 16 havia acre
 
 - `ProtecaoAutenticacaoTest`, `EventoSegurancaTest` e `ProtecaoAutenticacaoPropertiesTest` — 15 testes de domínio e configuração, sem Spring e sem banco;
 - `Aula17ProtecaoAuditoriaTest` — integração HTTP com PostgreSQL real e relógio controlado: resposta genérica para login inexistente/senha incorreta/bloqueio, quinta falha, expiração exata, sucesso que limpa o contador, eventos de administração, refresh e logout, consulta paginada/filtrada, 403 para OPERADOR e concorrência com duas transações coordenadas;
-- `Aula17MigrationRollbackTest` — cria e remove banco PostgreSQL temporário, aplica 46 changesets, valida constraints e índices, reverte os três changesets da 010 e reaplica;
+- `Aula17MigrationRollbackTest` — cria e remove banco PostgreSQL temporário, aplica os 47 changesets do estado atual (46 no marco original da Aula 17), valida constraints e índices, reverte os três changesets da 010 e reaplica;
 - `Aula17AuditoriaObrigatoriaTest` — falha na gravação do evento reverte a alteração de status; com a auditoria restaurada, status e evento são confirmados juntos;
 - `OpenApiDocumentationTest` — ampliado para verificar `/api/auditoria-seguranca`, `EventoSegurancaResponse`, ausência de `identificadorHash`/segredos e a tag `Auditoria de segurança`.
 
@@ -917,9 +917,9 @@ Para executar todos os testes:
 
 A collection acumulada para testes manuais da API está em:
 
-docs/postman/AL-Sports-Aula-07.postman_collection.json
+docs/postman/AL-Sports-Aula-17.postman_collection.json
 
-O nome da collection foi atualizado para `AL Sports - Aula 17`.
+O nome da collection foi atualizado para `AL Sports - Aula 17`. O arquivo também foi renomeado de `AL-Sports-Aula-07.postman_collection.json` para `AL-Sports-Aula-17.postman_collection.json`, para alinhar o nome do arquivo ao conteúdo acumulado; os registros históricos das aulas anteriores permanecem em seus documentos, com o caminho atualizado.
 
 A collection mantém o Bearer Token na raiz:
 
@@ -1071,7 +1071,9 @@ Esta aula não implementa WAF, CAPTCHA, MFA, SIEM, proteção distribuída de bo
 
 ## Status do projeto
 
-**Projeto implementado e verificado até a Aula 17**, com as alterações mantidas na working tree da branch `aula-17`, aguardando autorização para publicação. O marco imutável da Aula 16 permanece no commit `d055813c04a7fd18ac646cf62b331460d98a403e` e na tag `aula-16-refresh-token`.
+**Projeto implementado, verificado e publicado até a Aula 17**, incluindo a complementação de segurança das correções V1–V4. O commit publicado é `b6043c5386b290dc12bbb9c51360bcb8fd282f02`, com a mensagem `fix: corrige concorrencia e protecao da autenticacao`, associado à tag `aula-17-correcao-seguranca-v1-v4`. Esse marco inclui a migration `011-adicionar-geracao-sessao-conta-acesso.yaml` e o total de 47 changesets. O marco imutável da Aula 16 permanece no commit `d055813c04a7fd18ac646cf62b331460d98a403e` e na tag `aula-16-refresh-token`.
+
+A sequência pedagógica oficial das Aulas 00–17 descreve a ordem em que os temas foram ensinados. O projeto AL Sports, porém, antecipou algumas camadas em relação ao material de origem: por isso os registros das Aulas 00, 01, 03, 04 e 05 preservam suas divergências históricas, sem reescrita de commits, tags ou datas. O estado atual reflete a evolução efetivamente realizada no projeto — inclusive a complementação publicada das correções V1–V4 —, enquanto a documentação específica de cada aula continua descrevendo o que foi feito naquele marco.
 
 Principais pontos implementados:
 
@@ -1158,8 +1160,9 @@ Principais pontos implementados:
 - `aula-14-autorizacao-perfis`
 - `aula-15-testes-cobertura`
 - `aula-16-refresh-token`
+- `aula-17-correcao-seguranca-v1-v4`
 
-A Aula 17 está implementada na branch `aula-17`, sem tag e sem publicação até autorização explícita.
+A Aula 17 está publicada na branch `aula-17`, no commit `b6043c5386b290dc12bbb9c51360bcb8fd282f02` e na tag `aula-17-correcao-seguranca-v1-v4`.
 
 ## Documentação
 
@@ -1167,9 +1170,9 @@ A documentação complementar do tema do projeto está disponível em:
 
 docs/tema-do-projeto.md
 
-A collection do Postman da Aula 07 está disponível em:
+A collection do Postman da Aula 17 está disponível em:
 
-docs/postman/AL-Sports-Aula-07.postman_collection.json
+docs/postman/AL-Sports-Aula-17.postman_collection.json
 
 A documentação da Aula 11 está disponível em:
 
