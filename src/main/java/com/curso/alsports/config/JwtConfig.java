@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
@@ -24,7 +26,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
  * Nenhum algoritmo é escolhido livremente pelo cabeçalho do token.</p>
  */
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, RefreshTokenProperties.class})
 public class JwtConfig {
 
     private static final int TAMANHO_MINIMO_CHAVE_BYTES = 32;
@@ -62,18 +64,36 @@ public class JwtConfig {
                 .build();
     }
 
-    @Bean
+    /**
+     * Sobrecarga mantida para compatibilidade dos testes unitários que
+     * construem o decoder diretamente.
+     */
     public JwtDecoder jwtDecoder(
             SecretKey jwtSecretKey,
             JwtProperties properties) {
+        return jwtDecoder(jwtSecretKey, properties, Clock.systemUTC());
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(
+            SecretKey jwtSecretKey,
+            JwtProperties properties,
+            Clock clock) {
 
         NimbusJwtDecoder decoder = NimbusJwtDecoder
                 .withSecretKey(jwtSecretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
 
-        decoder.setJwtValidator(
-                JwtValidators.createDefaultWithIssuer(properties.issuer()));
+        // O mesmo relógio é usado para emissão e validação; não há necessidade
+        // de tolerância de skew entre serviços distintos.
+        JwtTimestampValidator timestampValidator =
+                new JwtTimestampValidator(java.time.Duration.ZERO);
+        timestampValidator.setClock(clock);
+
+        decoder.setJwtValidator(JwtValidators.createDefaultWithValidators(
+                new JwtIssuerValidator(properties.issuer()),
+                timestampValidator));
 
         return decoder;
     }

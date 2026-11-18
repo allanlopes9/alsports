@@ -203,6 +203,45 @@ class OpenApiDocumentationTest {
                 .doesNotExist())
             .andExpect(jsonPath(
                 "$.components.schemas.ContaAcessoResponse.properties.senhaHash")
-                .doesNotExist());
+                .doesNotExist())
+
+            // Aula 16 - ciclo de tokens
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/refresh'].post").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/refresh'].post.responses['200']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/refresh'].post.responses['401']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/refresh'].post.security").isEmpty())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/logout'].post").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/logout'].post.responses['204']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/logout'].post.security").isEmpty())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/logout-todos'].post").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/logout-todos'].post.responses['204']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/logout-todos'].post.responses['401']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/autenticacao/logout-todos'].post.security")
+                .isArray())
+            .andExpect(jsonPath(
+                "$.components.schemas.RefreshTokenRequest").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.RefreshTokenRequest.properties.refreshToken.format")
+                .value("password"))
+            .andExpect(jsonPath(
+                "$.components.schemas.TokenResponse.properties.refreshToken").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.TokenResponse.properties.refreshTokenExpiresAt").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.TokenResponse.properties.tokenHash")
+                .doesNotExist())
+            .andExpect(jsonPath(
+                "$.tags[?(@.name == 'Autenticação')]").exists());
     }
 }

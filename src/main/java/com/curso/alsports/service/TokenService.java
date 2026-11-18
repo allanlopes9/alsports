@@ -45,7 +45,22 @@ public class TokenService {
         this.clock = clock;
     }
 
+    /**
+     * Emite um token sem identificador de sessão. Mantido para compatibilidade
+     * dos fluxos que não possuem refresh token; o fluxo da Aula 16 utiliza a
+     * sobrecarga que informa {@code sid}.
+     */
     public TokenAcesso emitir(Authentication authentication) {
+        return emitir(authentication, null);
+    }
+
+    /**
+     * Emite o access token associado a uma família de sessão.
+     *
+     * @param authentication autenticação já validada pelo servidor
+     * @param sessaoId       identificador da família, gravado na claim {@code sid}
+     */
+    public TokenAcesso emitir(Authentication authentication, String sessaoId) {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new IllegalArgumentException(
                     "Autenticação válida é obrigatória para emitir o token");
@@ -64,14 +79,19 @@ public class TokenService {
                 .sorted()
                 .toList();
 
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        JwtClaimsSet.Builder builder = JwtClaimsSet.builder()
                 .issuer(properties.issuer())
                 .subject(authentication.getName())
                 .issuedAt(emitidoEm)
                 .expiresAt(expiraEm)
                 .id(UUID.randomUUID().toString())
-                .claim("perfis", perfis)
-                .build();
+                .claim("perfis", perfis);
+
+        if (sessaoId != null && !sessaoId.isBlank()) {
+            builder.claim("sid", sessaoId);
+        }
+
+        JwtClaimsSet claims = builder.build();
 
         String valor = encoder
                 .encode(JwtEncoderParameters.from(claims))

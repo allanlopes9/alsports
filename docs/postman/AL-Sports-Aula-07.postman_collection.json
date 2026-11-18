@@ -1,4 +1,4 @@
-{
+﻿{
     "info":  {
                  "_postman_id":  "alsports-aula-07",
                  "name":  "AL Sports - Aula 14",
@@ -104,6 +104,22 @@
                      },
                      {
                          "key":  "pessoaAula14Id",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "refreshToken",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "refreshTokenExpiresAt",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "pessoaAula16Id",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "contaAula16Id",
                          "value":  ""
                      }
                  ],
@@ -1859,13 +1875,13 @@
                                                       "auth":  {
                                                                    "type":  "bearer",
                                                                    "bearer":  [
-                                                                       {
-                                                                           "key":  "token",
-                                                                           "value":  "{{adminAccessToken}}",
-                                                                           "type":  "string"
-                                                                       }
-                                                                   ]
-                                                      }
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
                                                   }
                                   },
                                   {
@@ -1915,13 +1931,13 @@
                                                       "auth":  {
                                                                    "type":  "bearer",
                                                                    "bearer":  [
-                                                                       {
-                                                                           "key":  "token",
-                                                                           "value":  "{{adminAccessToken}}",
-                                                                           "type":  "string"
-                                                                       }
-                                                                   ]
-                                                      },
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
                                                                    "raw":  "{\"pessoaId\":{{pessoaBootstrapId}},\"login\":\"{{authLogin}}\",\"senha\":\"{{authPassword}}\"}"
@@ -2042,7 +2058,7 @@
                                                               },
                                                       "auth":  {
                                                                    "type":  "noauth"
-                                                      }
+                                                               }
                                                   }
                                   },
                                   {
@@ -2366,899 +2382,1378 @@
                               ]
                  },
                  {
-                   "name": "08 - Aula 14",
-                   "item": [
-                     {
-                       "name": "01 - Login do administrador e salvar token",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Login do administrador responde 200\", function () {",
-                               "    pm.response.to.have.status(200);",
-                               "});",
-                               "pm.test(\"Contrato do token do administrador está completo\", function () {",
-                               "    var body = pm.response.json();",
-                               "    pm.expect(body.tokenType).to.eql(\"Bearer\");",
-                               "    pm.expect(body.accessToken).to.be.a(\"string\").and.not.empty;",
-                               "    pm.expect(body.senha).to.be.undefined;",
-                               "    pm.expect(body.senhaHash).to.be.undefined;",
-                               "});",
-                               "if (pm.response.code === 200) {",
-                               "    pm.collectionVariables.set(\"adminAccessToken\", pm.response.json().accessToken);",
-                               "}"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "POST",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"login\":\"{{adminLogin}}\",\"senha\":\"{{adminPassword}}\"}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/autenticacao/login",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "autenticacao",
-                             "login"
-                           ]
-                         },
-                         "auth": {
-                           "type": "noauth"
-                         }
-                       }
-                     },
-                     {
-                       "name": "02 - Minha conta do administrador",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Minha conta do administrador responde 200\", function () {",
-                               "    pm.response.to.have.status(200);",
-                               "});",
-                               "pm.test(\"Conta possui ADMINISTRADOR e não expõe segredos\", function () {",
-                               "    var body = pm.response.json();",
-                               "    pm.expect(body.perfis).to.include(\"ADMINISTRADOR\");",
-                               "    pm.expect(body.senha).to.be.undefined;",
-                               "    pm.expect(body.senhaHash).to.be.undefined;",
-                               "});",
-                               "pm.collectionVariables.set(\"adminContaId\", pm.response.json().id);"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "GET",
-                         "header": [],
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso/me",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso",
-                             "me"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "03 - Criar pessoa para a conta de operador",
-                       "event": [
-                         {
-                           "listen": "prerequest",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "function digitoCpf(base, pesoInicial) {",
-                               "    var soma = 0;",
-                               "    for (var i = 0; i < base.length; i++) {",
-                               "        soma += parseInt(base.charAt(i), 10) * (pesoInicial - i);",
-                               "    }",
-                               "    var resto = soma % 11;",
-                               "    return resto < 2 ? 0 : 11 - resto;",
-                               "}",
-                               "var base = String(Math.floor(Math.random() * 900000000) + 100000000);",
-                               "var primeiro = digitoCpf(base, 10);",
-                               "var segundo = digitoCpf(base + primeiro, 11);",
-                               "pm.collectionVariables.set(\"cpfGerado\", base + primeiro + segundo);",
-                               "pm.collectionVariables.set(\"emailGerado\", \"aula14.\" + Date.now() + \"@example.com\");"
-                             ]
-                           }
-                         },
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Pessoa criada com 201 pelo administrador\", function () {",
-                               "    pm.response.to.have.status(201);",
-                               "});",
-                               "pm.collectionVariables.set(\"pessoaAula14Id\", pm.response.json().id);"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "POST",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"nome\":\"Operador Aula 14\",\"email\":\"{{emailGerado}}\",\"cpf\":\"{{cpfGerado}}\"}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/pessoas",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "pessoas"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "04 - Administrador cria conta de operador",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Conta criada com 201 pelo administrador\", function () {",
-                               "    pm.response.to.have.status(201);",
-                               "});",
-                               "pm.test(\"Conta inicia ATIVA e somente com OPERADOR\", function () {",
-                               "    var body = pm.response.json();",
-                               "    pm.expect(body.status).to.eql(\"ATIVA\");",
-                               "    pm.expect(body.perfis).to.eql([\"OPERADOR\"]);",
-                               "    pm.expect(body.senha).to.be.undefined;",
-                               "    pm.expect(body.senhaHash).to.be.undefined;",
-                               "});",
-                               "pm.collectionVariables.set(\"contaOperadorId\", pm.response.json().id);"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "POST",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"pessoaId\":{{pessoaAula14Id}},\"login\":\"operador.aula14\",\"senha\":\"{{authPassword}}\"}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "05 - Administrador promove conta a ADMINISTRADOR",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Perfis substituídos com 200\", function () {",
-                               "    pm.response.to.have.status(200);",
-                               "});",
-                               "pm.test(\"Conta passa a possuir OPERADOR e ADMINISTRADOR\", function () {",
-                               "    var perfis = pm.response.json().perfis;",
-                               "    pm.expect(perfis).to.include(\"OPERADOR\");",
-                               "    pm.expect(perfis).to.include(\"ADMINISTRADOR\");",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "PUT",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"perfis\":[\"OPERADOR\",\"ADMINISTRADOR\"]}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/perfis",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso",
-                             "{{contaOperadorId}}",
-                             "perfis"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "06 - Administrador remove ADMINISTRADOR da outra conta",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Perfis substituídos com 200\", function () {",
-                               "    pm.response.to.have.status(200);",
-                               "});",
-                               "pm.test(\"Outra conta permanece somente com OPERADOR\", function () {",
-                               "    pm.expect(pm.response.json().perfis).to.eql([\"OPERADOR\"]);",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "PUT",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"perfis\":[\"OPERADOR\"]}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/perfis",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso",
-                             "{{contaOperadorId}}",
-                             "perfis"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "07 - Administrador bloqueia a conta do operador",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Bloqueio responde 200\", function () {",
-                               "    pm.response.to.have.status(200);",
-                               "});",
-                               "pm.test(\"Status passa a BLOQUEADA\", function () {",
-                               "    pm.expect(pm.response.json().status).to.eql(\"BLOQUEADA\");",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "PUT",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"status\":\"BLOQUEADA\"}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/status",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso",
-                             "{{contaOperadorId}}",
-                             "status"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "08 - Administrador reativa a conta do operador",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Reativação responde 200\", function () {",
-                               "    pm.response.to.have.status(200);",
-                               "});",
-                               "pm.test(\"Status volta a ATIVA\", function () {",
-                               "    pm.expect(pm.response.json().status).to.eql(\"ATIVA\");",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "PUT",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"status\":\"ATIVA\"}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/status",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso",
-                             "{{contaOperadorId}}",
-                             "status"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "09 - Administrador tenta bloquear a própria conta - 400",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Bloqueio da própria conta retorna 400\", function () {",
-                               "    pm.response.to.have.status(400);",
-                               "});",
-                               "pm.test(\"Mensagem explica a invariante\", function () {",
-                               "    pm.expect(pm.response.json().message).to.eql(\"O administrador não pode bloquear a própria conta\");",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "PUT",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"status\":\"BLOQUEADA\"}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso/{{adminContaId}}/status",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso",
-                             "{{adminContaId}}",
-                             "status"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "10 - Administrador tenta remover o próprio ADMINISTRADOR - 400",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Remoção do próprio perfil retorna 400\", function () {",
-                               "    pm.response.to.have.status(400);",
-                               "});",
-                               "pm.test(\"Mensagem explica a invariante\", function () {",
-                               "    pm.expect(pm.response.json().message).to.eql(\"O administrador não pode remover o próprio perfil ADMINISTRADOR\");",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "PUT",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"perfis\":[\"OPERADOR\"]}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso/{{adminContaId}}/perfis",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso",
-                             "{{adminContaId}}",
-                             "perfis"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "11 - Perfis vazios - 400",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Lista vazia retorna 400\", function () {",
-                               "    pm.response.to.have.status(400);",
-                               "});",
-                               "pm.test(\"Erro aponta o campo perfis\", function () {",
-                               "    pm.expect(pm.response.json().fields.perfis).to.exist;",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "PUT",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"perfis\":[]}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/perfis",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso",
-                             "{{contaOperadorId}}",
-                             "perfis"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "12 - Status ausente - 400",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Status ausente retorna 400\", function () {",
-                               "    pm.response.to.have.status(400);",
-                               "});",
-                               "pm.test(\"Erro aponta o campo status\", function () {",
-                               "    pm.expect(pm.response.json().fields.status).to.exist;",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "PUT",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/status",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso",
-                             "{{contaOperadorId}}",
-                             "status"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "13 - Login do operador e salvar token",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Login do operador responde 200\", function () {",
-                               "    pm.response.to.have.status(200);",
-                               "});",
-                               "if (pm.response.code === 200) {",
-                               "    pm.collectionVariables.set(\"accessToken\", pm.response.json().accessToken);",
-                               "}"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "POST",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{\"login\":\"operador.aula14\",\"senha\":\"{{authPassword}}\"}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/autenticacao/login",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "autenticacao",
-                             "login"
-                           ]
-                         },
-                         "auth": {
-                           "type": "noauth"
-                         }
-                       }
-                     },
-                     {
-                       "name": "14 - Operador tenta criar conta - 403",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Operador recebe 403 ao criar conta\", function () {",
-                               "    pm.response.to.have.status(403);",
-                               "});",
-                               "pm.test(\"Resposta não expõe stack trace\", function () {",
-                               "    pm.expect(pm.response.text()).to.not.include(\"Exception\");",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "POST",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{accessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "15 - Operador tenta excluir categoria - 403",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Operador recebe 403 ao excluir\", function () {",
-                               "    pm.response.to.have.status(403);",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "DELETE",
-                         "header": [],
-                         "url": {
-                           "raw": "{{baseUrl}}/api/categorias/999999",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "categorias",
-                             "999999"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{accessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     },
-                     {
-                       "name": "16 - Requisição administrativa sem token - 401",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Sem token retorna 401\", function () {",
-                               "    pm.response.to.have.status(401);",
-                               "});",
-                               "pm.test(\"Desafio Bearer é anunciado\", function () {",
-                               "    pm.expect(pm.response.headers.get(\"WWW-Authenticate\")).to.include(\"Bearer\");",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "POST",
-                         "header": [
-                           {
-                             "key": "Content-Type",
-                             "value": "application/json"
-                           }
-                         ],
-                         "body": {
-                           "mode": "raw",
-                           "raw": "{}"
-                         },
-                         "url": {
-                           "raw": "{{baseUrl}}/api/contas-acesso",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "contas-acesso"
-                           ]
-                         },
-                         "auth": {
-                           "type": "noauth"
-                         }
-                       }
-                     },
-                     {
-                       "name": "17 - Administrador exclui categoria inexistente - 404",
-                       "event": [
-                         {
-                           "listen": "test",
-                           "script": {
-                             "type": "text/javascript",
-                             "exec": [
-                               "pm.test(\"Administrador autorizado recebe 404, não 403\", function () {",
-                               "    pm.response.to.have.status(404);",
-                               "});"
-                             ]
-                           }
-                         }
-                       ],
-                       "request": {
-                         "method": "DELETE",
-                         "header": [],
-                         "url": {
-                           "raw": "{{baseUrl}}/api/categorias/999999",
-                           "host": [
-                             "{{baseUrl}}"
-                           ],
-                           "path": [
-                             "api",
-                             "categorias",
-                             "999999"
-                           ]
-                         },
-                         "auth": {
-                           "type": "bearer",
-                           "bearer": [
-                             {
-                               "key": "token",
-                               "value": "{{adminAccessToken}}",
-                               "type": "string"
-                             }
-                           ]
-                         }
-                       }
-                     }
-                   ]
-                 }
+                     "name":  "08 - Aula 14",
+                     "item":  [
+                                  {
+                                      "name":  "01 - Login do administrador e salvar token",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Login do administrador responde 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Contrato do token do administrador está completo\", function () {",
+                                                                                    "    var body = pm.response.json();",
+                                                                                    "    pm.expect(body.tokenType).to.eql(\"Bearer\");",
+                                                                                    "    pm.expect(body.accessToken).to.be.a(\"string\").and.not.empty;",
+                                                                                    "    pm.expect(body.senha).to.be.undefined;",
+                                                                                    "    pm.expect(body.senhaHash).to.be.undefined;",
+                                                                                    "});",
+                                                                                    "if (pm.response.code === 200) {",
+                                                                                    "    pm.collectionVariables.set(\"adminAccessToken\", pm.response.json().accessToken);",
+                                                                                    "}"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"login\":\"{{adminLogin}}\",\"senha\":\"{{adminPassword}}\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/login",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "autenticacao",
+                                                                               "login"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "02 - Minha conta do administrador",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Minha conta do administrador responde 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Conta possui ADMINISTRADOR e não expõe segredos\", function () {",
+                                                                                    "    var body = pm.response.json();",
+                                                                                    "    pm.expect(body.perfis).to.include(\"ADMINISTRADOR\");",
+                                                                                    "    pm.expect(body.senha).to.be.undefined;",
+                                                                                    "    pm.expect(body.senhaHash).to.be.undefined;",
+                                                                                    "});",
+                                                                                    "pm.collectionVariables.set(\"adminContaId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
 
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/me",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "me"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "03 - Criar pessoa para a conta de operador",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "function digitoCpf(base, pesoInicial) {",
+                                                                                    "    var soma = 0;",
+                                                                                    "    for (var i = 0; i \u003c base.length; i++) {",
+                                                                                    "        soma += parseInt(base.charAt(i), 10) * (pesoInicial - i);",
+                                                                                    "    }",
+                                                                                    "    var resto = soma % 11;",
+                                                                                    "    return resto \u003c 2 ? 0 : 11 - resto;",
+                                                                                    "}",
+                                                                                    "var base = String(Math.floor(Math.random() * 900000000) + 100000000);",
+                                                                                    "var primeiro = digitoCpf(base, 10);",
+                                                                                    "var segundo = digitoCpf(base + primeiro, 11);",
+                                                                                    "pm.collectionVariables.set(\"cpfGerado\", base + primeiro + segundo);",
+                                                                                    "pm.collectionVariables.set(\"emailGerado\", \"aula14.\" + Date.now() + \"@example.com\");"
+                                                                                ]
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Pessoa criada com 201 pelo administrador\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "pm.collectionVariables.set(\"pessoaAula14Id\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"nome\":\"Operador Aula 14\",\"email\":\"{{emailGerado}}\",\"cpf\":\"{{cpfGerado}}\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/pessoas",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "pessoas"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "04 - Administrador cria conta de operador",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Conta criada com 201 pelo administrador\", function () {",
+                                                                                    "    pm.response.to.have.status(201);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Conta inicia ATIVA e somente com OPERADOR\", function () {",
+                                                                                    "    var body = pm.response.json();",
+                                                                                    "    pm.expect(body.status).to.eql(\"ATIVA\");",
+                                                                                    "    pm.expect(body.perfis).to.eql([\"OPERADOR\"]);",
+                                                                                    "    pm.expect(body.senha).to.be.undefined;",
+                                                                                    "    pm.expect(body.senhaHash).to.be.undefined;",
+                                                                                    "});",
+                                                                                    "pm.collectionVariables.set(\"contaOperadorId\", pm.response.json().id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"pessoaId\":{{pessoaAula14Id}},\"login\":\"operador.aula14\",\"senha\":\"{{authPassword}}\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "05 - Administrador promove conta a ADMINISTRADOR",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Perfis substituídos com 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Conta passa a possuir OPERADOR e ADMINISTRADOR\", function () {",
+                                                                                    "    var perfis = pm.response.json().perfis;",
+                                                                                    "    pm.expect(perfis).to.include(\"OPERADOR\");",
+                                                                                    "    pm.expect(perfis).to.include(\"ADMINISTRADOR\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"perfis\":[\"OPERADOR\",\"ADMINISTRADOR\"]}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/perfis",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "{{contaOperadorId}}",
+                                                                               "perfis"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "06 - Administrador remove ADMINISTRADOR da outra conta",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Perfis substituídos com 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Outra conta permanece somente com OPERADOR\", function () {",
+                                                                                    "    pm.expect(pm.response.json().perfis).to.eql([\"OPERADOR\"]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"perfis\":[\"OPERADOR\"]}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/perfis",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "{{contaOperadorId}}",
+                                                                               "perfis"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "07 - Administrador bloqueia a conta do operador",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Bloqueio responde 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Status passa a BLOQUEADA\", function () {",
+                                                                                    "    pm.expect(pm.response.json().status).to.eql(\"BLOQUEADA\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"status\":\"BLOQUEADA\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/status",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "{{contaOperadorId}}",
+                                                                               "status"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "08 - Administrador reativa a conta do operador",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Reativação responde 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Status volta a ATIVA\", function () {",
+                                                                                    "    pm.expect(pm.response.json().status).to.eql(\"ATIVA\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"status\":\"ATIVA\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/status",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "{{contaOperadorId}}",
+                                                                               "status"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "09 - Administrador tenta bloquear a própria conta - 400",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Bloqueio da própria conta retorna 400\", function () {",
+                                                                                    "    pm.response.to.have.status(400);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Mensagem explica a invariante\", function () {",
+                                                                                    "    pm.expect(pm.response.json().message).to.eql(\"O administrador não pode bloquear a própria conta\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"status\":\"BLOQUEADA\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/{{adminContaId}}/status",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "{{adminContaId}}",
+                                                                               "status"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "10 - Administrador tenta remover o próprio ADMINISTRADOR - 400",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Remoção do próprio perfil retorna 400\", function () {",
+                                                                                    "    pm.response.to.have.status(400);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Mensagem explica a invariante\", function () {",
+                                                                                    "    pm.expect(pm.response.json().message).to.eql(\"O administrador não pode remover o próprio perfil ADMINISTRADOR\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"perfis\":[\"OPERADOR\"]}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/{{adminContaId}}/perfis",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "{{adminContaId}}",
+                                                                               "perfis"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "11 - Perfis vazios - 400",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Lista vazia retorna 400\", function () {",
+                                                                                    "    pm.response.to.have.status(400);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Erro aponta o campo perfis\", function () {",
+                                                                                    "    pm.expect(pm.response.json().fields.perfis).to.exist;",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"perfis\":[]}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/perfis",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "{{contaOperadorId}}",
+                                                                               "perfis"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "12 - Status ausente - 400",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status ausente retorna 400\", function () {",
+                                                                                    "    pm.response.to.have.status(400);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Erro aponta o campo status\", function () {",
+                                                                                    "    pm.expect(pm.response.json().fields.status).to.exist;",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/{{contaOperadorId}}/status",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso",
+                                                                               "{{contaOperadorId}}",
+                                                                               "status"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "13 - Login do operador e salvar token",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Login do operador responde 200\", function () {",
+                                                                                    "    pm.response.to.have.status(200);",
+                                                                                    "});",
+                                                                                    "if (pm.response.code === 200) {",
+                                                                                    "    pm.collectionVariables.set(\"accessToken\", pm.response.json().accessToken);",
+                                                                                    "}"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"login\":\"operador.aula14\",\"senha\":\"{{authPassword}}\"}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/login",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "autenticacao",
+                                                                               "login"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "14 - Operador tenta criar conta - 403",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Operador recebe 403 ao criar conta\", function () {",
+                                                                                    "    pm.response.to.have.status(403);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Resposta não expõe stack trace\", function () {",
+                                                                                    "    pm.expect(pm.response.text()).to.not.include(\"Exception\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{accessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "15 - Operador tenta excluir categoria - 403",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Operador recebe 403 ao excluir\", function () {",
+                                                                                    "    pm.response.to.have.status(403);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/categorias/999999",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "categorias",
+                                                                               "999999"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{accessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "16 - Requisição administrativa sem token - 401",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Sem token retorna 401\", function () {",
+                                                                                    "    pm.response.to.have.status(401);",
+                                                                                    "});",
+                                                                                    "pm.test(\"Desafio Bearer é anunciado\", function () {",
+                                                                                    "    pm.expect(pm.response.headers.get(\"WWW-Authenticate\")).to.include(\"Bearer\");",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "contas-acesso"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "17 - Administrador exclui categoria inexistente - 404",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Administrador autorizado recebe 404, não 403\", function () {",
+                                                                                    "    pm.response.to.have.status(404);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/categorias/999999",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "categorias",
+                                                                               "999999"
+                                                                           ]
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  }
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "02 - AutorizaÃ§Ã£o e ciclo de tokens",
+                     "item":  [
+                                  {
+                                      "name":  "01 - Login do administrador e capturar par de tokens",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/login"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{ \"login\": \"{{adminLogin}}\", \"senha\": \"{{adminPassword}}\" }",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "const data = pm.response.json();\nif (data.accessToken) pm.collectionVariables.set(\"accessToken\", data.accessToken);\nif (data.refreshToken) pm.collectionVariables.set(\"refreshToken\", data.refreshToken);\nif (data.refreshTokenExpiresAt) pm.collectionVariables.set(\"refreshTokenExpiresAt\", data.refreshTokenExpiresAt);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "02 - Criar pessoa para a conta OPERADOR",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/pessoas"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{ \"nome\": \"Operador Aula 16\", \"email\": \"operador.aula16@example.com\", \"cpf\": \"52998224725\", \"dataCadastro\": \"2026-01-01\" }",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "const data = pm.response.json(); if (data.id) pm.collectionVariables.set(\"pessoaAula16Id\", data.id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "03 - Administrador cria conta OPERADOR",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{adminAccessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{ \"pessoaId\": \"{{pessoaAula16Id}}\", \"login\": \"operador.aula16\", \"senha\": \"senha-didatica-2026\", \"perfis\": [\"OPERADOR\"] }",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "const data = pm.response.json(); if (data.id) pm.collectionVariables.set(\"contaAula16Id\", data.id);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "04 - Login do operador e capturar par de tokens",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/login"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{ \"login\": \"operador.aula16\", \"senha\": \"senha-didatica-2026\" }",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "const data = pm.response.json();\nif (data.accessToken) pm.collectionVariables.set(\"accessToken\", data.accessToken);\nif (data.refreshToken) pm.collectionVariables.set(\"refreshToken\", data.refreshToken);\nif (data.refreshTokenExpiresAt) pm.collectionVariables.set(\"refreshTokenExpiresAt\", data.refreshTokenExpiresAt);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "05 - Rota autorizada para OPERADOR",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/me"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{accessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"200\", () =\u003e pm.response.to.have.status(200));"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "06 - Rota administrativa retornando 403",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{accessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"403\", () =\u003e pm.response.to.have.status(403));"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "07 - Renovar e substituir os dois tokens",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/refresh"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{ \"refreshToken\": \"{{refreshToken}}\" }",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "const data = pm.response.json();\nif (data.accessToken) pm.collectionVariables.set(\"accessToken\", data.accessToken);\nif (data.refreshToken) pm.collectionVariables.set(\"refreshToken\", data.refreshToken);\nif (data.refreshTokenExpiresAt) pm.collectionVariables.set(\"refreshTokenExpiresAt\", data.refreshTokenExpiresAt);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "08 - Rotina administrativa com token renovado segue 403",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/me"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{accessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"200 com access token atual\", () =\u003e pm.response.to.have.status(200));"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "09 - Logout local da famÃ­lia",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/logout"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{ \"refreshToken\": \"{{refreshToken}}\" }",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"204\", () =\u003e pm.response.to.have.status(204));"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "10 - RenovaÃ§Ã£o apÃ³s logout retorna 401",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/refresh"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{ \"refreshToken\": \"{{refreshToken}}\" }",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"401\", () =\u003e pm.response.to.have.status(401));"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "11 - Access token jÃ¡ emitido permanece vÃ¡lido atÃ© exp",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/contas-acesso/me"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{accessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"200 atÃ© o exp\", () =\u003e pm.response.to.have.status(200));"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "12 - Logout global exige Bearer e retorna 204",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/autenticacao/logout-todos"
+                                                              },
+                                                      "auth":  {
+                                                                   "type":  "bearer",
+                                                                   "bearer":  [
+                                                                                  {
+                                                                                      "key":  "token",
+                                                                                      "value":  "{{accessToken}}",
+                                                                                      "type":  "string"
+                                                                                  }
+                                                                              ]
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"204\", () =\u003e pm.response.to.have.status(204));"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 }
              ],
     "auth":  {
                  "type":  "bearer",

@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,24 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(RefreshTokenInvalidoException.class)
+    public ResponseEntity<ApiError> tratarRefreshTokenInvalido(
+        RefreshTokenInvalidoException ex,
+        HttpServletRequest request) {
+
+        ApiError erro = new ApiError(
+            Instant.now(),
+            HttpStatus.UNAUTHORIZED.value(),
+            HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+            ex.getMessage(),
+            request.getRequestURI(),
+            null);
+
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(erro);
+    }
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ResponseEntity<ApiError> tratarNaoEncontrado(

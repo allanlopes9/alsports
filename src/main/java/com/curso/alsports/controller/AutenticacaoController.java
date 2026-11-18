@@ -1,22 +1,26 @@
 package com.curso.alsports.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.curso.alsports.dto.LoginRequest;
+import com.curso.alsports.dto.RefreshTokenRequest;
 import com.curso.alsports.dto.TokenResponse;
 import com.curso.alsports.exception.ApiError;
-import com.curso.alsports.service.AutenticacaoService;
-import com.curso.alsports.service.TokenAcesso;
+import com.curso.alsports.service.SessaoAutenticacaoService;
+import com.curso.alsports.service.TokensAutenticacao;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -26,28 +30,27 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/autenticacao")
 @Tag(
     name = "Autenticação",
-    description = "Emissão do access token JWT usado nas rotas protegidas"
+    description = "Emissão, renovação e encerramento de sessões com access JWT e refresh opaco"
 )
 public class AutenticacaoController {
 
-    private final AutenticacaoService service;
+    private final SessaoAutenticacaoService service;
 
-    public AutenticacaoController(AutenticacaoService service) {
+    public AutenticacaoController(SessaoAutenticacaoService service) {
         this.service = service;
     }
 
     @Operation(
-        summary = "Emitir access token JWT",
-        description = "Autentica login e senha com o mesmo provider da Aula 12 e "
-            + "emite um JWT HS256 com validade absoluta de 30 minutos. "
-            + "Credenciais inválidas, conta bloqueada ou pessoa inativa "
-            + "recebem a mesma resposta genérica 401."
+        summary = "Iniciar sessão",
+        description = "Autentica login e senha com o provider da Aula 12 e devolve um par "
+            + "access/refresh. Credenciais inválidas, conta bloqueada ou pessoa "
+            + "inativa recebem a mesma resposta genérica 401."
     )
     @SecurityRequirements
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
-            description = "Credenciais válidas; token emitido",
+            description = "Sessão iniciada; par de tokens emitido",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = TokenResponse.class)
@@ -74,13 +77,92 @@ public class AutenticacaoController {
     public ResponseEntity<TokenResponse> login(
             @Valid @RequestBody LoginRequest request) {
 
-        TokenAcesso token = service.autenticar(
-                request.login(), request.senha());
+        return ResponseEntity.ok(paraResponse(service.iniciar(
+                request.login(), request.senha())));
+    }
 
-        return ResponseEntity.ok(new TokenResponse(
-                token.valor(),
-                "Bearer",
-                token.duracaoSegundos(),
-                token.expiraEm()));
+    @Operation(
+        summary = "Renovar sessão",
+        description = "Consome o refresh token atual, gera novo par na mesma família e "
+            + "revoga a família inteira se um token já utilizado for reapresentado. "
+            + "O cliente deve substituir os dois tokens antigos."
+    )
+    @SecurityRequirements
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Sessão renovada; novo par de tokens emitido",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = TokenResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Refresh token inválido ou expirado",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenResponse> refresh(
+            @RequestBody(required = false) RefreshTokenRequest request) {
+
+        String refreshToken = request == null ? null : request.refreshToken();
+        return ResponseEntity.ok(paraResponse(service.renovar(refreshToken)));
+    }
+
+    @Operation(
+        summary = "Logout local",
+        description = "Revoga a família do refresh token informado. Não exige access token "
+            + "e não revela se o token existia ou já estava revogado."
+    )
+    @SecurityRequirements
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Sessão encerrada"),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Refresh token inválido ou expirado",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiError.class)
+            )
+        )
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @RequestBody(required = false) RefreshTokenRequest request) {
+
+        String refreshToken = request == null ? null : request.refreshToken();
+        service.encerrar(refreshToken);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+        summary = "Logout global",
+        description = "Revoga todas as famílias ainda ativas da conta autenticada. "
+            + "Exige Bearer access token válido."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Todas as sessões da conta foram encerradas"),
+        @ApiResponse(responseCode = "401", description = "Access token ausente ou inválido")
+    })
+    @PostMapping("/logout-todos")
+    public ResponseEntity<Void> logoutTodos(Authentication authentication) {
+        service.encerrarTodas(authentication.getName());
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    private TokenResponse paraResponse(TokensAutenticacao tokens) {
+        return new TokenResponse(
+                tokens.accessToken(),
+                tokens.tokenType(),
+                tokens.expiresIn(),
+                tokens.expiresAt(),
+                tokens.refreshToken(),
+                tokens.refreshTokenExpiresAt());
     }
 }

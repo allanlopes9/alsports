@@ -21,13 +21,14 @@ public class OpenApiConfig {
                 .scheme("bearer")
                 .bearerFormat("JWT")
                 .description(
-                    "Autenticação Bearer com JWT emitido por "
-                        + "POST /api/autenticacao/login. O token tem validade "
-                        + "absoluta de 30 minutos e carrega o claim 'perfis'. "
-                        + "As rotas de negócio exigem OPERADOR ou ADMINISTRADOR; "
-                        + "criação e administração de contas e exclusões exigem "
-                        + "ADMINISTRADOR. Em produção, use somente sobre "
-                        + "HTTPS/TLS.");
+                    "Access token JWT emitido por POST /api/autenticacao/login "
+                        + "ou /refresh, com validade absoluta de 30 minutos e "
+                        + "claims 'perfis' e 'sid'. Renove com o refresh opaco "
+                        + "em /refresh; /logout é público e /logout-todos exige "
+                        + "Bearer. As rotas de negócio exigem OPERADOR ou "
+                        + "ADMINISTRADOR; criação e administração de contas e "
+                        + "exclusões exigem ADMINISTRADOR. Em produção, use "
+                        + "somente sobre HTTPS/TLS.");
 
         return new OpenAPI()
             .info(new Info()

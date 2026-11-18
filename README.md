@@ -787,7 +787,7 @@ As classes de integração mantêm a cadeia de filtros do Spring Security ativa 
 
 Os testes unitários de `ContaAcessoTest`, `ContaAcessoServiceTest` e `ContaAcessoUserDetailsServiceTest` continuam validando as regras de domínio, a geração de hash, a comparação de senhas, a substituição de perfis e o mapeamento de perfis para autoridades.
 
-A suíte possui 353 testes em 28 classes, todos aprovados. O ponto de partida da Aula 14 tinha 338 testes em 27 classes: a Aula 15 acrescentou `ClienteServiceTest` com 11 testes e ampliou `ContaAcessoTest` de 16 para 20 execuções, sem remover testes existentes. Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `AutenticacaoSecurityTest`, `AutorizacaoSecurityTest`, `ContaAcessoSecurityTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
+A suíte possui 396 testes, todos aprovados. O ponto de partida da Aula 15 tinha 353 testes; a Aula 16 acrescentou `SessaoRefreshTokenTest` (16), `RefreshTokenPropertiesTest` (3), `CicloTokenApiTest` (23) e `CicloTokenConcorrenciaTest` (1), sem remover testes existentes. Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `AutenticacaoSecurityTest`, `AutorizacaoSecurityTest`, `ContaAcessoSecurityTest`, `CicloTokenApiTest`, `CicloTokenConcorrenciaTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
 
 ### Testes de domínio da Aula 15
 
@@ -991,9 +991,13 @@ Conversão do claim `perfis` em authorities `ROLE_*`, política HTTP com `OPERAD
 
 Organização da suíte como sistema de evidências: níveis de teste, Arrange–Act–Assert, JUnit Jupiter, testes parametrizados, dublês com Mockito, distinção entre testes unitários e de integração, PostgreSQL real, MockMvc com segurança ativa, TDD e limites da cobertura. O `ContaAcessoTest` foi ampliado e o `ClienteServiceTest` foi criado para uma lacuna real. O JaCoCo 0.8.16 mede linhas, branches, instruções, métodos e classes, com portão de 70% de linhas e 40% de branches na fase `verify`.
 
+### Aula 16 — Ciclo de vida dos tokens
+
+Access token JWT stateless e refresh token opaco de 256 bits, persistido apenas como hash SHA-256. Rotação de uso único em famílias com detecção de reutilização e revogação confirmada mesmo em HTTP 401 (`noRollbackFor`), expiração por inatividade e limite absoluto com relógio controlado, `PESSIMISTIC_WRITE` e concorrência real no PostgreSQL, claim `sid`, logout local e global, contratos HTTP genéricos, OpenAPI, Postman e 43 novos testes.
+
 ## Status do projeto
 
-**Projeto concluído até a Aula 15.**
+**Projeto concluído até a Aula 16.**
 
 Principais pontos implementados:
 
@@ -1102,6 +1106,10 @@ docs/14aula/14aula.md
 A documentação da Aula 15 está disponível em:
 
 docs/15aula/15aula.md
+
+A documentação da Aula 16 está disponível em:
+
+docs/16aula/16aula.md
 
 Os diagramas interativos da Aula 14 estão em:
 
