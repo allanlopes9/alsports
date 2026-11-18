@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -75,10 +76,11 @@ public class AutenticacaoController {
     })
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(
-            @Valid @RequestBody LoginRequest request) {
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest) {
 
         return ResponseEntity.ok(paraResponse(service.iniciar(
-                request.login(), request.senha())));
+                request.login(), request.senha(), origem(httpRequest))));
     }
 
     @Operation(
@@ -108,10 +110,12 @@ public class AutenticacaoController {
     })
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(
-            @RequestBody(required = false) RefreshTokenRequest request) {
+            @RequestBody(required = false) RefreshTokenRequest request,
+            HttpServletRequest httpRequest) {
 
         String refreshToken = request == null ? null : request.refreshToken();
-        return ResponseEntity.ok(paraResponse(service.renovar(refreshToken)));
+        return ResponseEntity.ok(paraResponse(
+                service.renovar(refreshToken, origem(httpRequest))));
     }
 
     @Operation(
@@ -133,10 +137,11 @@ public class AutenticacaoController {
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @RequestBody(required = false) RefreshTokenRequest request) {
+            @RequestBody(required = false) RefreshTokenRequest request,
+            HttpServletRequest httpRequest) {
 
         String refreshToken = request == null ? null : request.refreshToken();
-        service.encerrar(refreshToken);
+        service.encerrar(refreshToken, origem(httpRequest));
         return ResponseEntity.noContent().build();
     }
 
@@ -151,9 +156,21 @@ public class AutenticacaoController {
         @ApiResponse(responseCode = "401", description = "Access token ausente ou inválido")
     })
     @PostMapping("/logout-todos")
-    public ResponseEntity<Void> logoutTodos(Authentication authentication) {
-        service.encerrarTodas(authentication.getName());
+    public ResponseEntity<Void> logoutTodos(
+            Authentication authentication,
+            HttpServletRequest httpRequest) {
+
+        service.encerrarTodas(authentication.getName(), origem(httpRequest));
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    /**
+     * Usa apenas o endereço da conexão observado pelo container. Cabeçalhos
+     * encaminhados não são lidos automaticamente porque podem ser forjados
+     * quando a cadeia de proxies confiáveis não foi configurada.
+     */
+    private String origem(HttpServletRequest httpRequest) {
+        return httpRequest.getRemoteAddr();
     }
 
     private TokenResponse paraResponse(TokensAutenticacao tokens) {

@@ -242,6 +242,57 @@ class OpenApiDocumentationTest {
                 "$.components.schemas.TokenResponse.properties.tokenHash")
                 .doesNotExist())
             .andExpect(jsonPath(
-                "$.tags[?(@.name == 'Autenticação')]").exists());
+                "$.tags[?(@.name == 'Autenticação')]").exists())
+
+            // Aula 17 - proteção e auditoria da autenticação
+            .andExpect(jsonPath(
+                "$.paths['/api/auditoria-seguranca'].get").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/auditoria-seguranca'].get.summary")
+                .value("Consultar eventos de segurança"))
+            .andExpect(jsonPath(
+                "$.paths['/api/auditoria-seguranca'].get.responses['200']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/auditoria-seguranca'].get.responses['400']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/auditoria-seguranca'].get.responses['401']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/auditoria-seguranca'].get.responses['403']").exists())
+            .andExpect(jsonPath(
+                "$.paths['/api/auditoria-seguranca'].get.security").isArray())
+            .andExpect(jsonPath(
+                "$.paths['/api/auditoria-seguranca'].get.parameters[?(@.name == 'tipo')]")
+                .exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.id").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.tipo").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.ocorridoEm").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.atorContaId").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.alvoContaId").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.enderecoOrigem").exists())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.identificadorHash")
+                .doesNotExist())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.senha")
+                .doesNotExist())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.accessToken")
+                .doesNotExist())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.refreshToken")
+                .doesNotExist())
+            .andExpect(jsonPath(
+                "$.components.schemas.EventoSegurancaResponse.properties.mensagem")
+                .doesNotExist())
+            .andExpect(jsonPath(
+                "$.tags[?(@.name == 'Auditoria de segurança')]").exists());
     }
 }

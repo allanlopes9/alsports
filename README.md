@@ -1,12 +1,12 @@
 # AL Sports
 
-Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 15 do curso de Java Spring Boot.
+Sistema para controle de uma loja de artigos esportivos, desenvolvido como projeto acadêmico durante as Aulas 00 a 17 do curso de Java Spring Boot.
 
 ## Objetivo
 
 O AL Sports tem como objetivo permitir o cadastro e o gerenciamento de produtos de uma loja de artigos esportivos, organizando os produtos por categoria e fornecedor.
 
-O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 15:
+O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apresentados nas Aulas 00 a 17:
 
 - configuração do ambiente;
 - criação do projeto Spring Boot;
@@ -31,6 +31,8 @@ O projeto foi desenvolvido de forma incremental, acompanhando os conceitos apres
 - identidade de acesso, hash BCrypt e autenticação Bearer Token com JWT no Spring Security (OAuth2 Resource Server);
 - autorização por perfis, `@PreAuthorize`, política HTTP e administração de contas;
 - administrador inicial provisionado por configuração externa;
+- ciclo de vida dos tokens com refresh token opaco e rotação segura;
+- proteção persistente contra tentativas on-line de autenticação e trilha estruturada de eventos de segurança;
 - estratégia de testes em camadas, JUnit Jupiter, Mockito e cobertura de código com JaCoCo.
 
 ## Tecnologias
@@ -111,6 +113,8 @@ O perfil de acesso é separado da função profissional: `FuncaoColaborador` des
 
 A partir da Aula 14, o cadastro de conta é uma operação administrativa: o administrador cria a conta com status `ATIVA` e perfil inicial `OPERADOR`. Os perfis podem ser substituídos depois por outro administrador. A conta nunca fica sem ao menos um perfil. Uma conta bloqueada ou vinculada a uma pessoa inativa não autentica.
 
+A partir da Aula 17, existe também um **bloqueio temporário automático**, distinto do bloqueio administrativo acima. Cinco falhas em 15 minutos bloqueiam o identificador por 15 minutos. O estado fica em `protecao_autenticacao`, correlacionado apenas pelo hash SHA-256 do login normalizado; nenhum login em texto aberto é gravado. O acesso é liberado automaticamente ao fim do prazo.
+
 ## Organização do projeto
 
 O projeto utiliza separação de responsabilidades entre as principais camadas:
@@ -155,6 +159,7 @@ Atualmente existem controllers para:
 - pessoas, clientes e colaboradores;
 - vendas;
 - contas de acesso;
+- auditoria de segurança;
 - health check.
 
 ### domain
@@ -209,9 +214,12 @@ Repositories atuais:
 - `ClienteRepository`;
 - `ColaboradorRepository`;
 - `VendaRepository`;
-- `ContaAcessoRepository`.
+- `ContaAcessoRepository`;
+- `SessaoRefreshTokenRepository`;
+- `ProtecaoAutenticacaoRepository`;
+- `EventoSegurancaRepository`.
 
-O `ContaAcessoRepository` oferece consultas de unicidade por login sem diferenciar caixa e por pessoa, além de carregar a pessoa e os perfis com `@EntityGraph` na autenticação.
+O `ContaAcessoRepository` oferece consultas de unicidade por login sem diferenciar caixa e por pessoa, além de carregar a pessoa e os perfis com `@EntityGraph` na autenticação. O `ProtecaoAutenticacaoRepository` faz o upsert por hash e a consulta com `PESSIMISTIC_WRITE`; o `EventoSegurancaRepository` pagina a trilha com filtro opcional por tipo.
 
 ### service
 
@@ -227,9 +235,12 @@ Services atuais:
 - `ColaboradorService`;
 - `VendaService`;
 - `ContaAcessoService`;
-- `ContaAcessoUserDetailsService`.
+- `ContaAcessoUserDetailsService`;
+- `SessaoAutenticacaoService`;
+- `ProtecaoAutenticacaoService`;
+- `AuditoriaSegurancaService`.
 
-As operações de persistência que precisam de transação utilizam `@Transactional`.
+As operações de persistência que precisam de transação utilizam `@Transactional`. As interfaces `ProtecaoLogin` e `RegistradorEventosSeguranca` separam os casos de uso da infraestrutura de proteção e auditoria. Falhas e recusas de login usam `REQUIRES_NEW` para sobreviver ao HTTP 401; sucesso e alterações administrativas participam da transação do chamador, de modo que alteração e evento confirmam ou revertem juntos.
 
 ## Banco de dados
 
@@ -261,6 +272,8 @@ Atualmente existem:
 006-consolidate-categorias.yaml
 007-quantidade-decimal.yaml
 008-contas-acesso.yaml
+009-sessoes-refresh-token.yaml
+010-auditoria-protecao-autenticacao.yaml
 
 Entre as alterações realizadas estão:
 
@@ -294,6 +307,16 @@ A migration `008-contas-acesso.yaml` cria `conta_acesso` (`id`, `pessoa_id`, `lo
 - chave estrangeira de `conta_acesso_perfil.conta_acesso_id` para `conta_acesso.id`, com `ON DELETE CASCADE`.
 
 A migration não cria contas, senhas ou hashes reais. O rollback remove as constraints e as tabelas na ordem inversa.
+
+A migration `009-sessoes-refresh-token.yaml` acrescenta três changesets para a família de sessões: tabela `sessao_refresh_token`, chave estrangeira e índices, e restrições de unicidade do hash e dos motivos de revogação. Somente o hash SHA-256 do refresh token é persistido.
+
+A migration `010-auditoria-protecao-autenticacao.yaml` acrescenta três changesets:
+
+- `protecao_autenticacao`, com `chave_login` única no formato `[0-9a-f]{64}`, contador não negativo, janela e prazo de bloqueio;
+- `evento_seguranca`, com tipo enum fechado por `CHECK`, IDs históricos de conta, hash de correlação opcional e origem de até 45 caracteres sem CR/LF;
+- índices para bloqueios ativos, ordenação por ocorrência e consulta filtrada por tipo.
+
+Todos os changesets da 010 têm rollback explícito. O histórico real passa de 43 para 46 changesets. A aplicação, o rollback e a reaplicação são verificados em um banco PostgreSQL temporário exclusivo, sem apagar o banco de testes compartilhado.
 
 O arquivo principal das migrations é:
 
@@ -353,15 +376,25 @@ A configuração tipada fica em `app.security.jwt`:
 
 O algoritmo é fixado em HS256 no encoder e no decoder. O Resource Server valida assinatura, emissor e expiração; o cabeçalho do token não escolhe livremente o algoritmo.
 
-O token tem validade absoluta de 30 minutos: `exp = iat + PT30M`. O uso não renova o prazo. Não há refresh token, logout no servidor, blacklist, revogação por `jti` nem idle timeout. Bloquear a conta ou trocar a senha impede novos logins, mas não invalida um JWT já emitido até a expiração.
+O access token tem validade absoluta de 30 minutos: `exp = iat + PT30M`. O uso não renova o prazo. Desde a Aula 16 existe refresh token opaco de 256 bits, persistido apenas como hash SHA-256, com rotação de uso único, detecção de reutilização, inatividade de 30 minutos e limite absoluto de 8 horas. Há logout local e global da família de sessões. Não há denylist nem revogação de JWT já emitido por `jti`: um access token emitido continua válido até `exp`, mesmo após bloqueio da conta, troca de senha ou logout.
 
-O login é comparado sem diferenciar maiúsculas, minúsculas ou espaços externos. Tentativas com login inexistente, senha incorreta, conta bloqueada ou pessoa inativa recebem a mesma resposta genérica `401 Unauthorized`, sem revelar qual condição falhou.
+O login é comparado sem diferenciar maiúsculas, minúsculas ou espaços externos. Tentativas com login inexistente, senha incorreta, conta bloqueada administrativamente, pessoa inativa ou bloqueio temporário ativo recebem a mesma resposta genérica `401 Unauthorized` com a mensagem `Login ou senha inválidos`, sem revelar qual condição falhou.
 
 As senhas continuam persistidas com `PasswordEncoderFactories.createDelegatingPasswordEncoder()`, que produz hashes BCrypt prefixados com `{bcrypt}`. O hash inclui salt aleatório e fator de trabalho. A senha em texto aberto nunca é armazenada, devolvida, registrada em log ou incluída no token.
 
 Um JWT assinado não é criptografado. O payload é apenas codificado em Base64URL e pode ser lido por qualquer pessoa que possua o token; a assinatura garante integridade e autenticidade, não sigilo. Por isso o token contém somente `iss`, `sub`, `iat`, `exp`, `jti` e `perfis`, sem senha, hash, CPF ou outros dados desnecessários.
 
 Esta aplicação é um Resource Server e também um emissor didático de tokens para o próprio login. Ela não é um Authorization Server completo: não implementa OAuth2, não expõe JWK Set, não usa RSA/RS256 e não atende outros clientes.
+
+### Proteção on-line e auditoria (Aula 17)
+
+A política padrão é `5` falhas em `PT15M`, com bloqueio automático de `PT15M`. Ela é configurada em `app.security.authentication-protection` por propriedades tipadas e validadas: valores menores que um, janela ou duração nulas/zero/negativas impedem a inicialização. As variáveis `AUTHENTICATION_MAX_FAILED_ATTEMPTS`, `AUTHENTICATION_FAILURE_WINDOW` e `AUTHENTICATION_LOCK_DURATION` não são segredos.
+
+O identificador é normalizado e correlacionado apenas por SHA-256 hexadecimal de 64 caracteres. Falhas e recusas são gravadas em transação própria (`REQUIRES_NEW`) para sobreviver ao HTTP 401; sucesso e alterações administrativas usam a transação do chamador. Contador, janela e bloqueio ficam no PostgreSQL, compartilhados entre instâncias.
+
+Os eventos `LOGIN_SUCESSO`, `LOGIN_FALHA`, `LOGIN_RECUSADO_BLOQUEIO`, `BLOQUEIO_TEMPORARIO_ATIVADO`, `CONTA_CRIADA`, `SENHA_ALTERADA`, `PERFIS_ALTERADOS`, `STATUS_ALTERADO`, `REFRESH_SUCESSO`, `REFRESH_FALHA`, `LOGOUT` e `LOGOUT_GLOBAL` são estruturados, sem mensagem livre, senha, hash BCrypt, tokens, cabeçalhos ou corpos de requisição. A origem é limitada a 45 caracteres e rejeita CR/LF.
+
+Não há WAF, CAPTCHA, MFA, SIEM, proteção distribuída de borda ou não repúdio criptográfico. A trilha não é assinada e o bloqueio pode ser usado como negação de serviço; limites e retenção devem ser avaliados por contexto.
 
 ### Autorização por perfis
 
@@ -370,7 +403,7 @@ A partir da Aula 14, o claim `perfis` do JWT é convertido em authorities `ROLE_
 A política é aplicada em duas camadas:
 
 - na cadeia HTTP, antes do controller;
-- no service, com `@EnableMethodSecurity` e `@PreAuthorize("hasRole('ADMINISTRADOR')")` em `cadastrar`, `alterarPerfis` e `alterarStatus`.
+- no service, com `@EnableMethodSecurity` e `@PreAuthorize("hasRole('ADMINISTRADOR')")` em `cadastrar`, `alterarPerfis`, `alterarStatus` e na consulta de auditoria.
 
 `401` indica ausência de autenticação válida; `403` indica identidade autenticada sem o perfil exigido.
 
@@ -523,7 +556,7 @@ Exemplo de resposta `200 OK`:
     "expiresAt": "2026-11-17T21:30:00Z"
 }
 
-Credenciais inválidas, conta bloqueada ou pessoa inativa retornam `401 Unauthorized` com um `ApiError` genérico. Login ou senha em branco e valores acima dos limites retornam `400 Bad Request`.
+Credenciais inválidas, conta bloqueada administrativamente, pessoa inativa ou bloqueio temporário ativo retornam `401 Unauthorized` com o mesmo `ApiError` genérico e a mensagem `Login ou senha inválidos`. Login ou senha em branco e valores acima dos limites retornam `400 Bad Request`. Após cinco falhas em 15 minutos, a sexta tentativa com a senha correta também recebe `401` até o fim do bloqueio.
 
 As rotas de categorias, fornecedores, produtos, pessoas, clientes, colaboradores, vendas, estoque e contas de acesso exigem Bearer Token:
 
@@ -533,7 +566,27 @@ As rotas cotidianas aceitam `OPERADOR` ou `ADMINISTRADOR`. Criação de conta, a
 
 Sem token, com token malformado, adulterado, expirado, assinado com outra chave ou com emissor incorreto, a resposta é `401 Unauthorized` com o cabeçalho `WWW-Authenticate: Bearer`. O Resource Server não informa se o token existiu, se foi revogado ou qual validação falhou. HTTP Basic também retorna `401`.
 
-Para renovar a validade, é necessário autenticar novamente. Não existe refresh token nem renovação automática.
+A resposta de login também contém `refreshToken` e `refreshTokenExpiresAt`. A renovação usa:
+
+POST /api/autenticacao/refresh
+
+{ "refreshToken": "<valor opaco>" }
+
+O encerramento local usa `POST /api/autenticacao/logout` com o mesmo corpo; o global usa `POST /api/autenticacao/logout-todos` com Bearer Token. Um access token já emitido permanece válido até `exp`.
+
+### Auditoria de segurança
+
+Consultar eventos (ADMINISTRADOR):
+
+GET /api/auditoria-seguranca?page=0&size=20&tipo=LOGIN_FALHA
+
+- `page` começa em zero e `size` vai de 1 a 100;
+- `tipo` é opcional e aceita apenas os valores do enum de eventos;
+- a ordenação é estável: `ocorrido_em DESC, id DESC`;
+- a resposta é uma página Spring (`content`, `totalElements`, `totalPages`) com `id`, `tipo`, `ocorridoEm`, `atorContaId`, `alvoContaId` e `enderecoOrigem`;
+- não há `identificadorHash`, senha, token ou mensagem livre na resposta;
+- OPERADOR recebe `403`, ausência de token recebe `401` e parâmetros inválidos recebem `400`;
+- não existem endpoints de escrita, alteração ou exclusão da trilha.
 
 ## DTO de produto
 
@@ -668,12 +721,14 @@ Exemplos no endpoint de login:
 
 - login inexistente;
 - senha incorreta;
-- conta bloqueada;
-- pessoa vinculada à conta está inativa.
+- conta bloqueada administrativamente;
+- pessoa vinculada à conta está inativa;
+- bloqueio temporário ativo após cinco falhas;
+- senha correta apresentada durante o bloqueio temporário.
 
-No login, a resposta é um `ApiError` genérico e não revela senha, hash, existência do login ou motivo específico da falha. Nas rotas protegidas, o Resource Server mantém o comportamento padrão do Spring Security, com `WWW-Authenticate: Bearer` e sem detalhes internos.
+No login, a resposta é um `ApiError` genérico com a mensagem `Login ou senha inválidos`; ela não revela senha, hash, existência do login, duração do bloqueio ou motivo específico da falha. Nas rotas protegidas, o Resource Server mantém o comportamento padrão do Spring Security, com `WWW-Authenticate: Bearer` e sem detalhes internos.
 
-Um JWT já emitido continua válido até `exp`, mesmo que a conta seja bloqueada ou a senha seja alterada. Essa limitação é intencional nesta aula e será tratada em etapas posteriores do curso.
+Um access token já emitido continua válido até `exp`, mesmo que a conta seja bloqueada, a senha seja alterada ou a família de refresh seja encerrada. O bloqueio temporário da Aula 17 impede novos logins, não revoga tokens emitidos.
 
 ### HTTP 500 — Internal Server Error
 
@@ -787,7 +842,17 @@ As classes de integração mantêm a cadeia de filtros do Spring Security ativa 
 
 Os testes unitários de `ContaAcessoTest`, `ContaAcessoServiceTest` e `ContaAcessoUserDetailsServiceTest` continuam validando as regras de domínio, a geração de hash, a comparação de senhas, a substituição de perfis e o mapeamento de perfis para autoridades.
 
-A suíte possui 396 testes, todos aprovados. O ponto de partida da Aula 15 tinha 353 testes; a Aula 16 acrescentou `SessaoRefreshTokenTest` (16), `RefreshTokenPropertiesTest` (3), `CicloTokenApiTest` (23) e `CicloTokenConcorrenciaTest` (1), sem remover testes existentes. Os testes anteriores que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)`. A cadeia de filtros não é desabilitada globalmente; `AutenticacaoSecurityTest`, `AutorizacaoSecurityTest`, `ContaAcessoSecurityTest`, `CicloTokenApiTest`, `CicloTokenConcorrenciaTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
+A suíte possuía 398 testes aprovados no marco da Aula 16. A Aula 16 havia acrescentado `SessaoRefreshTokenTest` (16), `RefreshTokenPropertiesTest` (3), `CicloTokenApiTest` (23) e `CicloTokenConcorrenciaTest` (1), sem remover testes existentes. A Aula 17 acrescenta testes de domínio, integração HTTP, concorrência, migration/rollback e auditoria obrigatória, também sem remover ou desabilitar testes anteriores. Os testes que não avaliam segurança usam `@AutoConfigureMockMvc(addFilters = false)` no próprio caso de uso. A cadeia de filtros não é desabilitada globalmente; `AutenticacaoSecurityTest`, `AutorizacaoSecurityTest`, `ContaAcessoSecurityTest`, `CicloTokenApiTest`, `CicloTokenConcorrenciaTest` e `OpenApiDocumentationTest` permanecem com os filtros ativos.
+
+### Testes de proteção e auditoria da Aula 17
+
+- `ProtecaoAutenticacaoTest`, `EventoSegurancaTest` e `ProtecaoAutenticacaoPropertiesTest` — 15 testes de domínio e configuração, sem Spring e sem banco;
+- `Aula17ProtecaoAuditoriaTest` — integração HTTP com PostgreSQL real e relógio controlado: resposta genérica para login inexistente/senha incorreta/bloqueio, quinta falha, expiração exata, sucesso que limpa o contador, eventos de administração, refresh e logout, consulta paginada/filtrada, 403 para OPERADOR e concorrência com duas transações coordenadas;
+- `Aula17MigrationRollbackTest` — cria e remove banco PostgreSQL temporário, aplica 46 changesets, valida constraints e índices, reverte os três changesets da 010 e reaplica;
+- `Aula17AuditoriaObrigatoriaTest` — falha na gravação do evento reverte a alteração de status; com a auditoria restaurada, status e evento são confirmados juntos;
+- `OpenApiDocumentationTest` — ampliado para verificar `/api/auditoria-seguranca`, `EventoSegurancaResponse`, ausência de `identificadorHash`/segredos e a tag `Auditoria de segurança`.
+
+Nenhum teste usa `Thread.sleep`; o tempo é controlado por `Clock`. Os dados criados são exclusivos e removidos ao final, com limpeza explícita por JDBC. O teste de rollback usa um banco temporário e não apaga `alsports_test`.
 
 ### Testes de domínio da Aula 15
 
@@ -823,9 +888,10 @@ Resultados medidos no AL Sports:
 | Momento | Testes | Linhas | Branches | Instruções | Métodos | Classes |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Baseline antes dos novos testes | 338 | 84,13% | 69,56% | 82,70% | 84,02% | 94,95% |
-| Resultado final | 353 | 85,21% | 71,57% | 84,04% | 85,06% | 94,95% |
+| Resultado da Aula 15 | 353 | 85,21% | 71,57% | 84,04% | 85,06% | 94,95% |
+| Resultado final da Aula 17 | 425 | 87,03% | 75,07% | 86,27% | 85,57% | 95,69% |
 
-O `ClienteService` passou de 28,6% para 88,6% de linhas e 83,3% de branches. O `ContaAcesso` permanece em 100% de linhas e branches.
+O `ClienteService` passou de 28,6% para 88,6% de linhas e 83,3% de branches. O `ContaAcesso` permanece em 100% de linhas e branches. O `mvn -B clean verify` final da Aula 17 analisou 116 classes e aprovou o portão com 87,03% de linhas e 75,07% de branches, acima dos mínimos de 70% e 40%.
 
 Para executar o ciclo completo com cobertura e portão:
 
@@ -853,7 +919,7 @@ A collection acumulada para testes manuais da API está em:
 
 docs/postman/AL-Sports-Aula-07.postman_collection.json
 
-O nome da collection foi atualizado para `AL Sports - Aula 14`.
+O nome da collection foi atualizado para `AL Sports - Aula 17`.
 
 A collection mantém o Bearer Token na raiz:
 
@@ -883,7 +949,9 @@ A pasta `08 - Aula 14` contém 17 requisições:
 
 A pasta `07 - Aula 13` mantém o fluxo de login e validação do Bearer. A pasta `06 - Aula 12` mantém health, OpenAPI, consulta da própria conta, alteração de senha e rota protegida sem credencial; as requisições de bootstrap de pessoa e conta agora usam `{{adminAccessToken}}`.
 
-As variáveis `adminLogin`, `adminPassword`, `authLogin`, `authPassword` e `novaSenha` devem ser preenchidas localmente antes da execução. A collection não contém credenciais reais, chave JWT ou token fixo e não deve ser exportada com valores preenchidos. Como o token expira em 30 minutos, execute novamente o login quando receber 401.
+A pasta `11 — Proteção e auditoria da autenticação` contém sete requisições: login inexistente com verificação da mensagem genérica, falha de senha para ser enviada cinco vezes com conta descartável, senha correta durante o bloqueio, consultas administrativas filtradas por `LOGIN_FALHA` e `BLOQUEIO_TEMPORARIO_ATIVADO`, tentativa de OPERADOR (`403`) e consulta sem token (`401`). Os scripts verificam ausência de `identificadorHash`, senha e tokens na resposta. O bloqueio é persistido: não use a conta OPERADOR das outras pastas no experimento.
+
+As variáveis `adminLogin`, `adminPassword`, `authLogin`, `authPassword`, `novaSenha`, `loginInexistente`, `senhaErrada`, `contaDescartavelLogin` e `contaDescartavelSenha` devem ser preenchidas localmente antes da execução. `loginInexistente` e `senhaErrada` são fictícios. A collection não contém credenciais reais, chave JWT ou token válido fixo e não deve ser exportada com valores preenchidos. Access token expira em 30 minutos e refresh token em 30 minutos de inatividade ou 8 horas absolutos; quando receber 401, renove ou repita o login.
 
 A collection também mantém os cenários anteriores:
 
@@ -995,9 +1063,15 @@ Organização da suíte como sistema de evidências: níveis de teste, Arrange�
 
 Access token JWT stateless e refresh token opaco de 256 bits, persistido apenas como hash SHA-256. Rotação de uso único em famílias com detecção de reutilização e revogação confirmada mesmo em HTTP 401 (`noRollbackFor`), expiração por inatividade e limite absoluto com relógio controlado, `PESSIMISTIC_WRITE` e concorrência real no PostgreSQL, claim `sid`, logout local e global, contratos HTTP genéricos, OpenAPI, Postman e 43 novos testes.
 
+### Aula 17 — Auditoria e proteção da autenticação
+
+Defesa persistente contra tentativas on-line de adivinhar senhas e trilha estruturada de eventos de segurança. Cinco falhas em 15 minutos bloqueiam o login por 15 minutos, com contador correlacionado apenas pelo hash SHA-256 do login normalizado, upsert no PostgreSQL, `PESSIMISTIC_WRITE` e `Clock` controlado. Falhas e recusas usam `REQUIRES_NEW` para sobreviver ao HTTP 401; sucesso e alterações administrativas confirmam ou revertem junto com seus eventos. Doze tipos de evento fechados por enum e `CHECK`, DTO administrativo sem segredos, consulta protegida por perfil na HTTP e por `@PreAuthorize`, migration 010 com rollback explícito, testes isolados de concorrência e rollback, OpenAPI e pasta dedicada no Postman.
+
+Esta aula não implementa WAF, CAPTCHA, MFA, SIEM, proteção distribuída de borda ou não repúdio criptográfico. Os limites, a retenção e o risco de negação de serviço por lockout são registrados como decisões e riscos residuais na documentação específica.
+
 ## Status do projeto
 
-**Projeto concluído até a Aula 16.**
+**Projeto implementado e verificado até a Aula 17**, com as alterações mantidas na working tree da branch `aula-17`, aguardando autorização para publicação. O marco imutável da Aula 16 permanece no commit `d055813c04a7fd18ac646cf62b331460d98a403e` e na tag `aula-16-refresh-token`.
 
 Principais pontos implementados:
 
@@ -1029,9 +1103,16 @@ Principais pontos implementados:
 - [x] Administrador inicial por configuração externa
 - [x] Endpoints de conta e troca de senha
 - [x] Regras explícitas de rotas públicas e protegidas
+- [x] Refresh token opaco com rotação, revogação e logout local/global
 - [x] Testes de segurança com filtros ativos
 - [x] Testes de emissão e validação de JWT
-- [x] OpenAPI com esquema bearerAuth
+- [x] Proteção persistente contra falhas de login (5/PT15M/PT15M)
+- [x] Bloqueio temporário distinto do bloqueio administrativo
+- [x] Trilha estruturada de 12 eventos de segurança
+- [x] Auditoria na mesma transação da alteração sensível
+- [x] Consulta administrativa paginada e filtrável sem segredos
+- [x] Migration 010 com rollback explícito e teste isolado
+- [x] OpenAPI com esquema bearerAuth e endpoint de auditoria
 - [x] Código de barras
 - [x] Repositories
 - [x] Services
@@ -1076,6 +1157,9 @@ Principais pontos implementados:
 - `aula-13-jwt-bearer-token`
 - `aula-14-autorizacao-perfis`
 - `aula-15-testes-cobertura`
+- `aula-16-refresh-token`
+
+A Aula 17 está implementada na branch `aula-17`, sem tag e sem publicação até autorização explícita.
 
 ## Documentação
 
@@ -1111,6 +1195,10 @@ A documentação da Aula 16 está disponível em:
 
 docs/16aula/16aula.md
 
+A documentação da Aula 17 está disponível em:
+
+docs/17aula/17aula.md
+
 Os diagramas interativos da Aula 14 estão em:
 
 - docs/14aula/diagramas/login-jwt.html
@@ -1120,6 +1208,6 @@ Os diagramas interativos da Aula 14 estão em:
 
 ## Projeto acadêmico
 
-Projeto desenvolvido para acompanhamento das Aulas 00 a 15 do curso de Java Spring Boot.
+Projeto desenvolvido para acompanhamento das Aulas 00 a 17 do curso de Java Spring Boot.
 
 **AL Sports — Sistema de controle de loja de artigos esportivos.**

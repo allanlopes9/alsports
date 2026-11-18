@@ -1,9 +1,11 @@
 package com.curso.alsports.service;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import com.curso.alsports.model.ContaAcesso;
 import com.curso.alsports.model.PerfilAcesso;
 import com.curso.alsports.model.Pessoa;
 import com.curso.alsports.model.StatusContaAcesso;
+import com.curso.alsports.model.TipoEventoSeguranca;
 import com.curso.alsports.repository.ContaAcessoRepository;
 import com.curso.alsports.repository.PessoaRepository;
 
@@ -30,23 +33,57 @@ public class ContaAcessoService {
     private static final Pattern LOGIN_PERMITIDO =
             Pattern.compile("^[A-Za-z0-9._-]+$");
 
+    private static final RegistradorEventosSeguranca AUDITORIA_NEUTRA =
+            (tipo, instante, ator, alvo, hash, origem) -> {
+                // sem efeito: apenas para o construtor unitário legado
+            };
+
     private final ContaAcessoRepository repository;
     private final PessoaRepository pessoaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RegistradorEventosSeguranca auditoria;
+    private final Clock clock;
 
+    /**
+     * Construtor de compatibilidade dos testes unitários sem contexto Spring.
+     */
     public ContaAcessoService(
             ContaAcessoRepository repository,
             PessoaRepository pessoaRepository,
             PasswordEncoder passwordEncoder) {
 
+        this(repository, pessoaRepository, passwordEncoder,
+                AUDITORIA_NEUTRA, Clock.systemUTC());
+    }
+
+    @Autowired
+    public ContaAcessoService(
+            ContaAcessoRepository repository,
+            PessoaRepository pessoaRepository,
+            PasswordEncoder passwordEncoder,
+            RegistradorEventosSeguranca auditoria,
+            Clock clock) {
+
         this.repository = repository;
         this.pessoaRepository = pessoaRepository;
         this.passwordEncoder = passwordEncoder;
+        this.auditoria = auditoria;
+        this.clock = clock;
     }
 
     @Transactional
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ContaAcesso cadastrar(ContaAcessoRequest request) {
+        return cadastrar(request, null, null);
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ContaAcesso cadastrar(
+            ContaAcessoRequest request,
+            String loginAdministrador,
+            String enderecoOrigem) {
+
         if (request == null) {
             throw new IllegalArgumentException(
                     "Dados da conta de acesso são obrigatórios");
@@ -78,8 +115,18 @@ public class ContaAcessoService {
         }
 
         String senhaHash = passwordEncoder.encode(request.senha());
+        ContaAcesso salva = repository.save(
+                new ContaAcesso(pessoa, login, senhaHash));
 
-        return repository.save(new ContaAcesso(pessoa, login, senhaHash));
+        auditoria.registrar(
+                TipoEventoSeguranca.CONTA_CRIADA,
+                clock.instant(),
+                idAdministrador(loginAdministrador),
+                salva.getId(),
+                null,
+                enderecoOrigem);
+
+        return salva;
     }
 
     @Transactional(readOnly = true)
@@ -102,6 +149,16 @@ public class ContaAcessoService {
             String senhaAtual,
             String novaSenha) {
 
+        alterarSenha(login, senhaAtual, novaSenha, null);
+    }
+
+    @Transactional
+    public void alterarSenha(
+            String login,
+            String senhaAtual,
+            String novaSenha,
+            String enderecoOrigem) {
+
         if (senhaAtual == null || senhaAtual.isBlank()) {
             throw new IllegalArgumentException("Senha atual é obrigatória");
         }
@@ -120,6 +177,14 @@ public class ContaAcessoService {
         }
 
         conta.alterarSenha(passwordEncoder.encode(novaSenha));
+
+        auditoria.registrar(
+                TipoEventoSeguranca.SENHA_ALTERADA,
+                clock.instant(),
+                conta.getId(),
+                conta.getId(),
+                null,
+                enderecoOrigem);
     }
 
     /**
@@ -132,6 +197,17 @@ public class ContaAcessoService {
             Long contaId,
             Set<PerfilAcesso> novosPerfis,
             String loginAdministrador) {
+
+        return alterarPerfis(contaId, novosPerfis, loginAdministrador, null);
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ContaAcesso alterarPerfis(
+            Long contaId,
+            Set<PerfilAcesso> novosPerfis,
+            String loginAdministrador,
+            String enderecoOrigem) {
 
         if (contaId == null) {
             throw new IllegalArgumentException(
@@ -166,6 +242,14 @@ public class ContaAcessoService {
 
         conta.substituirPerfis(novosPerfis);
 
+        auditoria.registrar(
+                TipoEventoSeguranca.PERFIS_ALTERADOS,
+                clock.instant(),
+                idAdministrador(administrador),
+                conta.getId(),
+                null,
+                enderecoOrigem);
+
         return conta;
     }
 
@@ -180,6 +264,17 @@ public class ContaAcessoService {
             Long contaId,
             StatusContaAcesso novoStatus,
             String loginAdministrador) {
+
+        return alterarStatus(contaId, novoStatus, loginAdministrador, null);
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ContaAcesso alterarStatus(
+            Long contaId,
+            StatusContaAcesso novoStatus,
+            String loginAdministrador,
+            String enderecoOrigem) {
 
         if (contaId == null) {
             throw new IllegalArgumentException(
@@ -211,7 +306,24 @@ public class ContaAcessoService {
             conta.ativar();
         }
 
+        auditoria.registrar(
+                TipoEventoSeguranca.STATUS_ALTERADO,
+                clock.instant(),
+                idAdministrador(administrador),
+                conta.getId(),
+                null,
+                enderecoOrigem);
+
         return conta;
+    }
+
+    private Long idAdministrador(String loginAdministrador) {
+        if (loginAdministrador == null || loginAdministrador.isBlank()) {
+            return null;
+        }
+        return repository.findByLoginIgnoreCase(loginAdministrador.trim())
+                .map(ContaAcesso::getId)
+                .orElse(null);
     }
 
     private ContaAcesso buscarDetalhada(Long contaId) {

@@ -22,7 +22,10 @@ import com.curso.alsports.service.ContaAcessoUserDetailsService;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties(AdministradorInicialProperties.class)
+@EnableConfigurationProperties({
+    AdministradorInicialProperties.class,
+    ProtecaoAutenticacaoProperties.class
+})
 public class SecurityConfig {
 
     @Bean
@@ -112,6 +115,10 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/contas-acesso/*/perfis",
                     "/api/contas-acesso/*/status")
+                .hasRole("ADMINISTRADOR")
+                .requestMatchers(
+                    "/api/auditoria-seguranca",
+                    "/api/auditoria-seguranca/**")
                 .hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.DELETE, "/api/**")
                 .hasRole("ADMINISTRADOR")

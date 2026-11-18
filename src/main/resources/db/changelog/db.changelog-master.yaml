@@ -21,3 +21,5 @@ databaseChangeLog:
       file: db/changelog/changes/008-contas-acesso.yaml
   - include:
       file: db/changelog/changes/009-sessoes-refresh-token.yaml
+  - include:
+      file: db/changelog/changes/010-auditoria-protecao-autenticacao.yaml

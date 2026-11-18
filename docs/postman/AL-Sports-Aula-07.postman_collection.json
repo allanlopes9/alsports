@@ -1,8 +1,8 @@
 ﻿{
     "info":  {
                  "_postman_id":  "alsports-aula-07",
-                 "name":  "AL Sports - Aula 14",
-                 "description":  "Collection acumulada do AL Sports. A partir da Aula 14, a autorização é decidida pelos perfis OPERADOR e ADMINISTRADOR. Execute primeiro o login do administrador em 08 - Aula 14 (adminLogin/adminPassword); o script salva adminAccessToken. O login do operador salva accessToken. Criação de conta, alteração de perfis/status e DELETE exigem ADMINISTRADOR; as demais rotas de /api exigem OPERADOR ou ADMINISTRADOR. Health, OpenAPI e login são públicos; não existe mais cadastro público de pessoa ou conta. O token tem validade absoluta de 30 minutos: se receber 401, repita o login. Preencha as variáveis localmente e nunca exporte credenciais ou tokens reais.",
+                 "name":  "AL Sports - Aula 17",
+                  "description":  "Collection acumulada do AL Sports. A partir da Aula 17, a protecao on-line usa 5 falhas em 15 minutos com bloqueio temporario de 15 minutos, e os eventos de seguranca sao consultados em GET /api/auditoria-seguranca por ADMINISTRADOR. Execute primeiro o login do administrador em 08 - Aula 14 (adminLogin/adminPassword); o script salva adminAccessToken. O login do operador salva accessToken. Criacao de conta, alteracao de perfis/status e DELETE exigem ADMINISTRADOR; as demais rotas de /api exigem OPERADOR ou ADMINISTRADOR. Health, OpenAPI e login sao publicos. A pasta 11 — Proteção e auditoria da autenticação contém o experimento de bloqueio e a consulta auditada; use uma conta descartável (contaDescartavelLogin/ contaDescartavelSenha) para não bloquear o operador. Access token e refresh token têm validade limitada: se receber 401, repita o login. Preencha as variáveis localmente e nunca exporte credenciais ou tokens reais.",
                  "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
              },
     "variable":  [
@@ -120,6 +120,22 @@
                      },
                      {
                          "key":  "contaAula16Id",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "loginInexistente",
+                         "value":  "inexistente.aula17"
+                     },
+                     {
+                         "key":  "senhaErrada",
+                         "value":  "senha-errada-aula17"
+                     },
+                     {
+                         "key":  "contaDescartavelLogin",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "contaDescartavelSenha",
                          "value":  ""
                      }
                  ],
@@ -3281,7 +3297,7 @@
                               ]
                  },
                  {
-                     "name":  "02 - AutorizaÃ§Ã£o e ciclo de tokens",
+                     "name":  "02 - Autorização e ciclo de tokens",
                      "item":  [
                                   {
                                       "name":  "01 - Login do administrador e capturar par de tokens",
@@ -3605,7 +3621,7 @@
                                                 ]
                                   },
                                   {
-                                      "name":  "09 - Logout local da famÃ­lia",
+                                      "name":  "09 - Logout local da família",
                                       "request":  {
                                                       "method":  "POST",
                                                       "header":  [
@@ -3643,7 +3659,7 @@
                                                 ]
                                   },
                                   {
-                                      "name":  "10 - RenovaÃ§Ã£o apÃ³s logout retorna 401",
+                                      "name":  "10 - Renovação após logout retorna 401",
                                       "request":  {
                                                       "method":  "POST",
                                                       "header":  [
@@ -3681,7 +3697,7 @@
                                                 ]
                                   },
                                   {
-                                      "name":  "11 - Access token jÃ¡ emitido permanece vÃ¡lido atÃ© exp",
+                                      "name":  "11 - Access token já emitido permanece válido até exp",
                                       "request":  {
                                                       "method":  "GET",
                                                       "header":  [
@@ -3710,7 +3726,7 @@
                                                         "script":  {
                                                                        "type":  "text/javascript",
                                                                        "exec":  [
-                                                                                    "pm.test(\"200 atÃ© o exp\", () =\u003e pm.response.to.have.status(200));"
+                                                                                    "pm.test(\"200 até o exp\", () =\u003e pm.response.to.have.status(200));"
                                                                                 ]
                                                                    }
                                                     }
@@ -3753,6 +3769,371 @@
                                                 ]
                                   }
                               ]
+                 },
+                 {
+                     "name": "11 — Proteção e auditoria da autenticação",
+                     "description": "Protecao on-line e trilha de seguranca da Aula 17. Use contaDescartavelLogin/contaDescartavelSenha no experimento de bloqueio: envie a requisicao de falha cinco vezes e depois tente a senha correta. A sexta tentativa continua 401 ate o fim da janela de bloqueio. As consultas exigem adminAccessToken; operador recebe 403 e ausencia de token 401.",
+                     "item": [
+                         {
+                             "name": "01 - Login inexistente - 401 generico",
+                             "request": {
+                                 "method": "POST",
+                                 "header": [
+                                     {
+                                         "key": "Content-Type",
+                                         "value": "application/json"
+                                     }
+                                 ],
+                                 "auth": {
+                                     "type": "noauth"
+                                 },
+                                 "url": {
+                                     "raw": "{{baseUrl}}/api/autenticacao/login",
+                                     "host": [
+                                         "{{baseUrl}}"
+                                     ],
+                                     "path": [
+                                         "api",
+                                         "autenticacao",
+                                         "login"
+                                     ]
+                                 },
+                                 "body": {
+                                     "mode": "raw",
+                                     "raw": "{ \"login\": \"{{loginInexistente}}\", \"senha\": \"{{senhaErrada}}\" }",
+                                     "options": {
+                                         "raw": {
+                                             "language": "json"
+                                         }
+                                     }
+                                 }
+                             },
+                             "event": [
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "type": "text/javascript",
+                                         "exec": [
+                                             "pm.test(\"401\", function () { pm.response.to.have.status(401); });",
+                                             "pm.test(\"Mensagem generica\", function () { pm.expect(pm.response.json().message).to.eql(\"Login ou senha inválidos\"); });",
+                                             "pm.test(\"Sem vazamento de credenciais\", function () {\r\n    var texto = pm.response.text();\r\n    pm.expect(texto).to.not.include(pm.collectionVariables.get(\"senhaErrada\"));\r\n    pm.expect(texto).to.not.include(\"accessToken\");\r\n    pm.expect(texto).to.not.include(\"refreshToken\");\r\n});"
+                                         ]
+                                     }
+                                 }
+                             ]
+                         },
+                         {
+                             "name": "02 - Falha de senha - envie 5 vezes",
+                             "request": {
+                                 "method": "POST",
+                                 "header": [
+                                     {
+                                         "key": "Content-Type",
+                                         "value": "application/json"
+                                     }
+                                 ],
+                                 "auth": {
+                                     "type": "noauth"
+                                 },
+                                 "url": {
+                                     "raw": "{{baseUrl}}/api/autenticacao/login",
+                                     "host": [
+                                         "{{baseUrl}}"
+                                     ],
+                                     "path": [
+                                         "api",
+                                         "autenticacao",
+                                         "login"
+                                     ]
+                                 },
+                                 "body": {
+                                     "mode": "raw",
+                                     "raw": "{ \"login\": \"{{contaDescartavelLogin}}\", \"senha\": \"{{senhaErrada}}\" }",
+                                     "options": {
+                                         "raw": {
+                                             "language": "json"
+                                         }
+                                     }
+                                 }
+                             },
+                             "event": [
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "type": "text/javascript",
+                                         "exec": [
+                                             "pm.test(\"401\", function () { pm.response.to.have.status(401); });",
+                                             "pm.test(\"Mensagem generica\", function () { pm.expect(pm.response.json().message).to.eql(\"Login ou senha inválidos\"); });",
+                                             "pm.test(\"Sem vazamento de credenciais\", function () {\r\n    var texto = pm.response.text();\r\n    pm.expect(texto).to.not.include(pm.collectionVariables.get(\"senhaErrada\"));\r\n    pm.expect(texto).to.not.include(\"accessToken\");\r\n    pm.expect(texto).to.not.include(\"refreshToken\");\r\n});"
+                                         ]
+                                     }
+                                 }
+                             ]
+                         },
+                         {
+                             "name": "03 - Senha correta durante bloqueio - 401",
+                             "request": {
+                                 "method": "POST",
+                                 "header": [
+                                     {
+                                         "key": "Content-Type",
+                                         "value": "application/json"
+                                     }
+                                 ],
+                                 "auth": {
+                                     "type": "noauth"
+                                 },
+                                 "url": {
+                                     "raw": "{{baseUrl}}/api/autenticacao/login",
+                                     "host": [
+                                         "{{baseUrl}}"
+                                     ],
+                                     "path": [
+                                         "api",
+                                         "autenticacao",
+                                         "login"
+                                     ]
+                                 },
+                                 "body": {
+                                     "mode": "raw",
+                                     "raw": "{ \"login\": \"{{contaDescartavelLogin}}\", \"senha\": \"{{contaDescartavelSenha}}\" }",
+                                     "options": {
+                                         "raw": {
+                                             "language": "json"
+                                         }
+                                     }
+                                 }
+                             },
+                             "event": [
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "type": "text/javascript",
+                                         "exec": [
+                                             "pm.test(\"401\", function () { pm.response.to.have.status(401); });",
+                                             "pm.test(\"Mensagem generica\", function () { pm.expect(pm.response.json().message).to.eql(\"Login ou senha inválidos\"); });",
+                                             "pm.test(\"Sem token na resposta\", function () { pm.expect(pm.response.text()).to.not.include(\"accessToken\"); });"
+                                         ]
+                                     }
+                                 }
+                             ]
+                         },
+                         {
+                             "name": "04 - Administrador consulta LOGIN_FALHA",
+                             "request": {
+                                 "method": "GET",
+                                 "header": [
+                                     {
+                                         "key": "Content-Type",
+                                         "value": "application/json"
+                                     }
+                                 ],
+                                 "auth": {
+                                     "type": "bearer",
+                                     "bearer": [
+                                         {
+                                             "key": "token",
+                                             "value": "{{adminAccessToken}}",
+                                             "type": "string"
+                                         }
+                                     ]
+                                 },
+                                 "url": {
+                                     "raw": "{{baseUrl}}/api/auditoria-seguranca?tipo=LOGIN_FALHA&page=0&size=20",
+                                     "host": [
+                                         "{{baseUrl}}"
+                                     ],
+                                     "path": [
+                                         "api",
+                                         "auditoria-seguranca"
+                                     ],
+                                     "query": [
+                                         {
+                                             "key": "tipo",
+                                             "value": "LOGIN_FALHA"
+                                         },
+                                         {
+                                             "key": "page",
+                                             "value": "0"
+                                         },
+                                         {
+                                             "key": "size",
+                                             "value": "20"
+                                         }
+                                     ]
+                                 }
+                             },
+                             "event": [
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "type": "text/javascript",
+                                         "exec": [
+                                             "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
+                                             "pm.test(\"DTO sem segredos\", function () {\r\n    var corpo = pm.response.json();\r\n    pm.expect(corpo.content).to.be.an(\"array\");\r\n    corpo.content.forEach(function (evento) {\r\n        pm.expect(evento).to.not.have.property(\"identificadorHash\");\r\n        pm.expect(evento).to.not.have.property(\"senha\");\r\n        pm.expect(evento).to.not.have.property(\"accessToken\");\r\n        pm.expect(evento).to.not.have.property(\"refreshToken\");\r\n        pm.expect(evento).to.not.have.property(\"mensagem\");\r\n    });\r\n    var texto = pm.response.text();\r\n    pm.expect(texto).to.not.include(pm.collectionVariables.get(\"accessToken\"));\r\n    pm.expect(texto).to.not.include(pm.collectionVariables.get(\"refreshToken\"));\r\n});"
+                                         ]
+                                     }
+                                 }
+                             ]
+                         },
+                         {
+                             "name": "05 - Administrador consulta BLOQUEIO_TEMPORARIO_ATIVADO",
+                             "request": {
+                                 "method": "GET",
+                                 "header": [
+                                     {
+                                         "key": "Content-Type",
+                                         "value": "application/json"
+                                     }
+                                 ],
+                                 "auth": {
+                                     "type": "bearer",
+                                     "bearer": [
+                                         {
+                                             "key": "token",
+                                             "value": "{{adminAccessToken}}",
+                                             "type": "string"
+                                         }
+                                     ]
+                                 },
+                                 "url": {
+                                     "raw": "{{baseUrl}}/api/auditoria-seguranca?tipo=BLOQUEIO_TEMPORARIO_ATIVADO&page=0&size=20",
+                                     "host": [
+                                         "{{baseUrl}}"
+                                     ],
+                                     "path": [
+                                         "api",
+                                         "auditoria-seguranca"
+                                     ],
+                                     "query": [
+                                         {
+                                             "key": "tipo",
+                                             "value": "BLOQUEIO_TEMPORARIO_ATIVADO"
+                                         },
+                                         {
+                                             "key": "page",
+                                             "value": "0"
+                                         },
+                                         {
+                                             "key": "size",
+                                             "value": "20"
+                                         }
+                                     ]
+                                 }
+                             },
+                             "event": [
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "type": "text/javascript",
+                                         "exec": [
+                                             "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
+                                             "pm.test(\"DTO sem segredos\", function () {\r\n    var corpo = pm.response.json();\r\n    pm.expect(corpo.content).to.be.an(\"array\");\r\n    corpo.content.forEach(function (evento) {\r\n        pm.expect(evento).to.not.have.property(\"identificadorHash\");\r\n        pm.expect(evento).to.not.have.property(\"senha\");\r\n        pm.expect(evento).to.not.have.property(\"accessToken\");\r\n        pm.expect(evento).to.not.have.property(\"refreshToken\");\r\n        pm.expect(evento).to.not.have.property(\"mensagem\");\r\n    });\r\n    var texto = pm.response.text();\r\n    pm.expect(texto).to.not.include(pm.collectionVariables.get(\"accessToken\"));\r\n    pm.expect(texto).to.not.include(pm.collectionVariables.get(\"refreshToken\"));\r\n});"
+                                         ]
+                                     }
+                                 }
+                             ]
+                         },
+                         {
+                             "name": "06 - Operador tentando consultar auditoria - 403",
+                             "request": {
+                                 "method": "GET",
+                                 "header": [
+                                     {
+                                         "key": "Content-Type",
+                                         "value": "application/json"
+                                     }
+                                 ],
+                                 "auth": {
+                                     "type": "bearer",
+                                     "bearer": [
+                                         {
+                                             "key": "token",
+                                             "value": "{{accessToken}}",
+                                             "type": "string"
+                                         }
+                                     ]
+                                 },
+                                 "url": {
+                                     "raw": "{{baseUrl}}/api/auditoria-seguranca?page=0&size=20",
+                                     "host": [
+                                         "{{baseUrl}}"
+                                     ],
+                                     "path": [
+                                         "api",
+                                         "auditoria-seguranca"
+                                     ],
+                                     "query": [
+                                         {
+                                             "key": "page",
+                                             "value": "0"
+                                         },
+                                         {
+                                             "key": "size",
+                                             "value": "20"
+                                         }
+                                     ]
+                                 }
+                             },
+                             "event": [
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "type": "text/javascript",
+                                         "exec": [
+                                             "pm.test(\"403\", function () { pm.response.to.have.status(403); });"
+                                         ]
+                                     }
+                                 }
+                             ]
+                         },
+                         {
+                             "name": "07 - Auditoria sem token - 401",
+                             "request": {
+                                 "method": "GET",
+                                 "header": [
+                                     {
+                                         "key": "Content-Type",
+                                         "value": "application/json"
+                                     }
+                                 ],
+                                 "auth": {
+                                     "type": "noauth"
+                                 },
+                                 "url": {
+                                     "raw": "{{baseUrl}}/api/auditoria-seguranca?page=0&size=20",
+                                     "host": [
+                                         "{{baseUrl}}"
+                                     ],
+                                     "path": [
+                                         "api",
+                                         "auditoria-seguranca"
+                                     ],
+                                     "query": [
+                                         {
+                                             "key": "page",
+                                             "value": "0"
+                                         },
+                                         {
+                                             "key": "size",
+                                             "value": "20"
+                                         }
+                                     ]
+                                 }
+                             },
+                             "event": [
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "type": "text/javascript",
+                                         "exec": [
+                                             "pm.test(\"401\", function () { pm.response.to.have.status(401); });"
+                                         ]
+                                     }
+                                 }
+                             ]
+                         }
+                     ]
                  }
              ],
     "auth":  {

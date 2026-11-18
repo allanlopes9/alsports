@@ -1,0 +1,183 @@
+databaseChangeLog:
+  - changeSet:
+      id: 010-01-create-protecao-autenticacao
+      author: allan
+      comment: >-
+        Estado persistente da proteção on-line de login. A chave é o SHA-256
+        hexadecimal do login normalizado; o identificador em texto aberto não
+        é gravado. O bloqueio desta tabela é automático e temporário.
+      changes:
+        - createTable:
+            tableName: protecao_autenticacao
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_protecao_autenticacao
+                    nullable: false
+              - column:
+                  name: chave_login
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: falhas_consecutivas
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: janela_iniciada_em
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: bloqueada_ate
+                  type: TIMESTAMP WITH TIME ZONE
+        - addUniqueConstraint:
+            tableName: protecao_autenticacao
+            columnNames: chave_login
+            constraintName: uk_protecao_autenticacao_chave_login
+        - sql:
+            sql: >
+              ALTER TABLE protecao_autenticacao
+              ADD CONSTRAINT ck_protecao_autenticacao_chave_hash
+              CHECK (chave_login ~ '^[0-9a-f]{64}$')
+        - sql:
+            sql: >
+              ALTER TABLE protecao_autenticacao
+              ADD CONSTRAINT ck_protecao_autenticacao_falhas_nao_negativas
+              CHECK (falhas_consecutivas >= 0)
+      rollback:
+        - sql:
+            sql: ALTER TABLE protecao_autenticacao DROP CONSTRAINT IF EXISTS ck_protecao_autenticacao_falhas_nao_negativas
+        - sql:
+            sql: ALTER TABLE protecao_autenticacao DROP CONSTRAINT IF EXISTS ck_protecao_autenticacao_chave_hash
+        - dropUniqueConstraint:
+            tableName: protecao_autenticacao
+            constraintName: uk_protecao_autenticacao_chave_login
+        - dropTable:
+            tableName: protecao_autenticacao
+
+  - changeSet:
+      id: 010-02-create-evento-seguranca
+      author: allan
+      comment: >-
+        Trilha estruturada de eventos de segurança. IDs de conta são valores
+        históricos e não possuem foreign key. Tipos são fechados por CHECK e
+        nenhuma coluna aceita mensagem livre controlada pelo cliente.
+      changes:
+        - createTable:
+            tableName: evento_seguranca
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_evento_seguranca
+                    nullable: false
+              - column:
+                  name: tipo
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ocorrido_em
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ator_conta_id
+                  type: BIGINT
+              - column:
+                  name: alvo_conta_id
+                  type: BIGINT
+              - column:
+                  name: identificador_hash
+                  type: VARCHAR(64)
+              - column:
+                  name: endereco_origem
+                  type: VARCHAR(45)
+        - sql:
+            sql: >
+              ALTER TABLE evento_seguranca
+              ADD CONSTRAINT ck_evento_seguranca_tipo
+              CHECK (tipo IN
+              ('LOGIN_SUCESSO', 'LOGIN_FALHA', 'LOGIN_RECUSADO_BLOQUEIO',
+               'BLOQUEIO_TEMPORARIO_ATIVADO', 'CONTA_CRIADA', 'SENHA_ALTERADA',
+               'PERFIS_ALTERADOS', 'STATUS_ALTERADO', 'REFRESH_SUCESSO',
+               'REFRESH_FALHA', 'LOGOUT', 'LOGOUT_GLOBAL'))
+        - sql:
+            sql: >
+              ALTER TABLE evento_seguranca
+              ADD CONSTRAINT ck_evento_seguranca_ids_positivos
+              CHECK ((ator_conta_id IS NULL OR ator_conta_id > 0)
+              AND (alvo_conta_id IS NULL OR alvo_conta_id > 0))
+        - sql:
+            sql: >
+              ALTER TABLE evento_seguranca
+              ADD CONSTRAINT ck_evento_seguranca_hash
+              CHECK (identificador_hash IS NULL
+              OR identificador_hash ~ '^[0-9a-f]{64}$')
+        - sql:
+            sql: >
+              ALTER TABLE evento_seguranca
+              ADD CONSTRAINT ck_evento_seguranca_origem_sem_quebra_linha
+              CHECK (endereco_origem IS NULL
+              OR (endereco_origem NOT LIKE '%' || chr(13) || '%'
+              AND endereco_origem NOT LIKE '%' || chr(10) || '%'))
+      rollback:
+        - sql:
+            sql: ALTER TABLE evento_seguranca DROP CONSTRAINT IF EXISTS ck_evento_seguranca_origem_sem_quebra_linha
+        - sql:
+            sql: ALTER TABLE evento_seguranca DROP CONSTRAINT IF EXISTS ck_evento_seguranca_hash
+        - sql:
+            sql: ALTER TABLE evento_seguranca DROP CONSTRAINT IF EXISTS ck_evento_seguranca_ids_positivos
+        - sql:
+            sql: ALTER TABLE evento_seguranca DROP CONSTRAINT IF EXISTS ck_evento_seguranca_tipo
+        - dropTable:
+            tableName: evento_seguranca
+
+  - changeSet:
+      id: 010-03-indices-auditoria-protecao
+      author: allan
+      comment: >-
+        Índices para correlacionar bloqueios e para a consulta administrativa
+        paginada, com chave estável para desempate de instantes iguais.
+      changes:
+        - createIndex:
+            tableName: protecao_autenticacao
+            indexName: idx_protecao_autenticacao_bloqueada_ate
+            columns:
+              - column:
+                  name: bloqueada_ate
+        - createIndex:
+            tableName: evento_seguranca
+            indexName: idx_evento_seguranca_ocorrido
+            columns:
+              - column:
+                  name: ocorrido_em
+              - column:
+                  name: id
+        - createIndex:
+            tableName: evento_seguranca
+            indexName: idx_evento_seguranca_tipo_ocorrido
+            columns:
+              - column:
+                  name: tipo
+              - column:
+                  name: ocorrido_em
+              - column:
+                  name: id
+      rollback:
+        - dropIndex:
+            tableName: evento_seguranca
+            indexName: idx_evento_seguranca_tipo_ocorrido
+        - dropIndex:
+            tableName: evento_seguranca
+            indexName: idx_evento_seguranca_ocorrido
+        - dropIndex:
+            tableName: protecao_autenticacao
+            indexName: idx_protecao_autenticacao_bloqueada_ate

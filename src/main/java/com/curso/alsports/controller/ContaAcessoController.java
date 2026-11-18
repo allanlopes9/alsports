@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -98,9 +99,12 @@ public class ContaAcessoController {
     })
     @PostMapping
     public ResponseEntity<ContaAcessoResponse> cadastrar(
-            @Valid @RequestBody ContaAcessoRequest request) {
+            @Valid @RequestBody ContaAcessoRequest request,
+            Authentication authentication,
+            HttpServletRequest httpRequest) {
 
-        ContaAcesso conta = service.cadastrar(request);
+        ContaAcesso conta = service.cadastrar(
+                request, authentication.getName(), httpRequest.getRemoteAddr());
 
         return ResponseEntity
                 .created(URI.create("/api/contas-acesso/" + conta.getId()))
@@ -157,10 +161,12 @@ public class ContaAcessoController {
             )
             @PathVariable Long id,
             @Valid @RequestBody PerfisContaAcessoRequest request,
-            Authentication authentication) {
+            Authentication authentication,
+            HttpServletRequest httpRequest) {
 
         ContaAcesso conta = service.alterarPerfis(
-                id, request.perfis(), authentication.getName());
+                id, request.perfis(), authentication.getName(),
+                httpRequest.getRemoteAddr());
 
         return ResponseEntity.ok(mapper.toResponse(conta));
     }
@@ -214,10 +220,12 @@ public class ContaAcessoController {
             )
             @PathVariable Long id,
             @Valid @RequestBody StatusContaAcessoRequest request,
-            Authentication authentication) {
+            Authentication authentication,
+            HttpServletRequest httpRequest) {
 
         ContaAcesso conta = service.alterarStatus(
-                id, request.status(), authentication.getName());
+                id, request.status(), authentication.getName(),
+                httpRequest.getRemoteAddr());
 
         return ResponseEntity.ok(mapper.toResponse(conta));
     }
@@ -276,12 +284,14 @@ public class ContaAcessoController {
     @PutMapping("/me/senha")
     public ResponseEntity<Void> alterarSenha(
             Authentication authentication,
-            @Valid @RequestBody AlteracaoSenhaRequest request) {
+            @Valid @RequestBody AlteracaoSenhaRequest request,
+            HttpServletRequest httpRequest) {
 
         service.alterarSenha(
                 authentication.getName(),
                 request.senhaAtual(),
-                request.novaSenha());
+                request.novaSenha(),
+                httpRequest.getRemoteAddr());
 
         return ResponseEntity.noContent().build();
     }

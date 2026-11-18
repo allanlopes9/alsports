@@ -29,6 +29,7 @@ import com.curso.alsports.model.ContaAcesso;
 import com.curso.alsports.model.MotivoRevogacaoRefreshToken;
 import com.curso.alsports.model.PerfilAcesso;
 import com.curso.alsports.model.SessaoRefreshToken;
+import com.curso.alsports.model.TipoEventoSeguranca;
 import com.curso.alsports.repository.ContaAcessoRepository;
 import com.curso.alsports.repository.SessaoRefreshTokenRepository;
 
@@ -40,6 +41,9 @@ import com.curso.alsports.repository.SessaoRefreshTokenRepository;
  * identificador da família viaja no claim {@code sid} do access token para
  * rastreabilidade; o Resource Server não consulta a tabela de sessões a cada
  * requisição.</p>
+ *
+ * <p>A Aula 17 acrescenta a proteção por hash do login e os eventos de
+ * segurança sem alterar o contrato HTTP nem a criptografia já existente.</p>
  */
 @Service
 public class SessaoAutenticacaoService {
@@ -50,6 +54,30 @@ public class SessaoAutenticacaoService {
     private static final String MENSAGEM_CREDENCIAIS_INVALIDAS =
             "Login ou senha inválidos";
 
+    private static final ProtecaoLogin PROTECAO_NEUTRA = new ProtecaoLogin() {
+        @Override
+        public boolean permitirTentativa(String login, String enderecoOrigem) {
+            return true;
+        }
+
+        @Override
+        public void registrarFalha(
+                String login, String enderecoOrigem, Long alvoContaId) {
+            // sem efeito: apenas para construtores unitários legados
+        }
+
+        @Override
+        public void registrarSucesso(
+                String login, String enderecoOrigem, Long contaId) {
+            // sem efeito: apenas para construtores unitários legados
+        }
+    };
+
+    private static final RegistradorEventosSeguranca AUDITORIA_NEUTRA =
+            (tipo, instante, ator, alvo, hash, origem) -> {
+                // sem efeito: apenas para construtores unitários legados
+            };
+
     private final AuthenticationManager authenticationManager;
     private final ContaAcessoRepository contaRepository;
     private final SessaoRefreshTokenRepository sessaoRepository;
@@ -57,8 +85,14 @@ public class SessaoAutenticacaoService {
     private final RefreshTokenProperties properties;
     private final Clock clock;
     private final SecureRandom secureRandom;
+    private final ProtecaoLogin protecao;
+    private final RegistradorEventosSeguranca auditoria;
 
-    @Autowired
+    /**
+     * Construtor de compatibilidade usado por testes unitários que não sobem
+     * o contexto Spring. Em produção, o construtor com proteção e auditoria é
+     * o selecionado.
+     */
     public SessaoAutenticacaoService(
             AuthenticationManager authenticationManager,
             ContaAcessoRepository contaRepository,
@@ -67,14 +101,25 @@ public class SessaoAutenticacaoService {
             RefreshTokenProperties properties,
             Clock clock) {
 
-        this(
-                authenticationManager,
-                contaRepository,
-                sessaoRepository,
-                tokenService,
-                properties,
-                clock,
-                new SecureRandom());
+        this(authenticationManager, contaRepository, sessaoRepository,
+                tokenService, properties, clock, new SecureRandom(),
+                PROTECAO_NEUTRA, AUDITORIA_NEUTRA);
+    }
+
+    @Autowired
+    public SessaoAutenticacaoService(
+            AuthenticationManager authenticationManager,
+            ContaAcessoRepository contaRepository,
+            SessaoRefreshTokenRepository sessaoRepository,
+            TokenService tokenService,
+            RefreshTokenProperties properties,
+            Clock clock,
+            ProtecaoLogin protecao,
+            RegistradorEventosSeguranca auditoria) {
+
+        this(authenticationManager, contaRepository, sessaoRepository,
+                tokenService, properties, clock, new SecureRandom(),
+                protecao, auditoria);
     }
 
     SessaoAutenticacaoService(
@@ -84,7 +129,9 @@ public class SessaoAutenticacaoService {
             TokenService tokenService,
             RefreshTokenProperties properties,
             Clock clock,
-            SecureRandom secureRandom) {
+            SecureRandom secureRandom,
+            ProtecaoLogin protecao,
+            RegistradorEventosSeguranca auditoria) {
 
         this.authenticationManager = Objects.requireNonNull(authenticationManager);
         this.contaRepository = Objects.requireNonNull(contaRepository);
@@ -93,6 +140,8 @@ public class SessaoAutenticacaoService {
         this.properties = Objects.requireNonNull(properties);
         this.clock = Objects.requireNonNull(clock);
         this.secureRandom = Objects.requireNonNull(secureRandom);
+        this.protecao = Objects.requireNonNull(protecao);
+        this.auditoria = Objects.requireNonNull(auditoria);
     }
 
     /**
@@ -100,20 +149,49 @@ public class SessaoAutenticacaoService {
      */
     @Transactional
     public TokensAutenticacao iniciar(String login, String senha) {
-        Authentication authentication = autenticar(login, senha);
+        return iniciar(login, senha, null);
+    }
+
+    @Transactional
+    public TokensAutenticacao iniciar(
+            String login, String senha, String enderecoOrigem) {
+
+        if (!protecao.permitirTentativa(login, enderecoOrigem)) {
+            throw new CredenciaisInvalidasException(
+                    MENSAGEM_CREDENCIAIS_INVALIDAS);
+        }
+
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken.unauthenticated(
+                            login, senha));
+        } catch (AuthenticationException ex) {
+            registrarFalha(login, enderecoOrigem, null);
+            throw new CredenciaisInvalidasException(
+                    MENSAGEM_CREDENCIAIS_INVALIDAS);
+        }
 
         ContaAcesso conta = contaRepository
                 .findByLoginIgnoreCase(authentication.getName())
-                .orElseThrow(() -> new CredenciaisInvalidasException(
-                        MENSAGEM_CREDENCIAIS_INVALIDAS));
+                .orElse(null);
 
-        validarConta(conta);
+        if (conta == null || !conta.podeAutenticar()) {
+            registrarFalha(login, enderecoOrigem,
+                    conta == null ? null : conta.getId());
+            throw new CredenciaisInvalidasException(
+                    MENSAGEM_CREDENCIAIS_INVALIDAS);
+        }
 
         Instant agora = clock.instant();
         String familiaId = UUID.randomUUID().toString();
         Instant expiraEm = agora.plus(properties.absoluteExpiration());
 
-        return emitirPar(conta, familiaId, agora, expiraEm);
+        TokensAutenticacao tokens = emitirPar(
+                conta, familiaId, agora, expiraEm);
+
+        protecao.registrarSucesso(login, enderecoOrigem, conta.getId());
+        return tokens;
     }
 
     /**
@@ -125,52 +203,85 @@ public class SessaoAutenticacaoService {
      */
     @Transactional(noRollbackFor = RefreshTokenInvalidoException.class)
     public TokensAutenticacao renovar(String refreshToken) {
-        SessaoRefreshToken sessao = buscarSessao(refreshToken);
-        Instant agora = clock.instant();
+        return renovar(refreshToken, null);
+    }
 
-        if (sessao.getRevogadaEm() != null) {
-            throw new RefreshTokenInvalidoException();
-        }
+    @Transactional(noRollbackFor = RefreshTokenInvalidoException.class)
+    public TokensAutenticacao renovar(
+            String refreshToken, String enderecoOrigem) {
 
-        if (sessao.getUtilizadaEm() != null) {
-            revogarFamilia(
-                    sessao.getFamiliaId(),
+        SessaoRefreshToken sessao = null;
+        try {
+            sessao = buscarSessao(refreshToken);
+            Instant agora = clock.instant();
+
+            if (sessao.getRevogadaEm() != null) {
+                throw new RefreshTokenInvalidoException();
+            }
+
+            if (sessao.getUtilizadaEm() != null) {
+                revogarFamilia(
+                        sessao.getFamiliaId(),
+                        agora,
+                        MotivoRevogacaoRefreshToken.REUTILIZACAO);
+                throw new RefreshTokenInvalidoException();
+            }
+
+            // O limite absoluto prevalece sobre a inatividade: quando ambos
+            // foram atingidos, o motivo auditável é a expiração absoluta da
+            // família.
+            if (sessao.expirouPorLimiteAbsoluto(agora)) {
+                revogarFamilia(
+                        sessao.getFamiliaId(),
+                        agora,
+                        MotivoRevogacaoRefreshToken.EXPIRACAO_ABSOLUTA);
+                throw new RefreshTokenInvalidoException();
+            }
+
+            if (sessao.expirouPorInatividade(agora, properties.idleTimeout())) {
+                revogarFamilia(
+                        sessao.getFamiliaId(),
+                        agora,
+                        MotivoRevogacaoRefreshToken.INATIVIDADE);
+                throw new RefreshTokenInvalidoException();
+            }
+
+            ContaAcesso conta = sessao.getConta();
+            if (!conta.podeAutenticar()) {
+                revogarFamilia(
+                        sessao.getFamiliaId(),
+                        agora,
+                        MotivoRevogacaoRefreshToken.CONTA_INATIVA);
+                throw new RefreshTokenInvalidoException();
+            }
+
+            sessao.marcarUtilizada(agora);
+            sessaoRepository.save(sessao);
+
+            TokensAutenticacao tokens =
+                    emitirPar(conta, sessao.getFamiliaId(), agora,
+                            sessao.getExpiraEm());
+
+            auditoria.registrar(
+                    TipoEventoSeguranca.REFRESH_SUCESSO,
                     agora,
-                    MotivoRevogacaoRefreshToken.REUTILIZACAO);
-            throw new RefreshTokenInvalidoException();
+                    conta.getId(),
+                    conta.getId(),
+                    null,
+                    enderecoOrigem);
+
+            return tokens;
+        } catch (RefreshTokenInvalidoException ex) {
+            auditoria.registrar(
+                    TipoEventoSeguranca.REFRESH_FALHA,
+                    clock.instant(),
+                    null,
+                    sessao == null || sessao.getConta() == null
+                            ? null : sessao.getConta().getId(),
+                    null,
+                    enderecoOrigem);
+            throw ex;
         }
-
-        // O limite absoluto prevalece sobre a inatividade: quando ambos foram
-        // atingidos, o motivo auditável é a expiração absoluta da família.
-        if (sessao.expirouPorLimiteAbsoluto(agora)) {
-            revogarFamilia(
-                    sessao.getFamiliaId(),
-                    agora,
-                    MotivoRevogacaoRefreshToken.EXPIRACAO_ABSOLUTA);
-            throw new RefreshTokenInvalidoException();
-        }
-
-        if (sessao.expirouPorInatividade(agora, properties.idleTimeout())) {
-            revogarFamilia(
-                    sessao.getFamiliaId(),
-                    agora,
-                    MotivoRevogacaoRefreshToken.INATIVIDADE);
-            throw new RefreshTokenInvalidoException();
-        }
-
-        ContaAcesso conta = sessao.getConta();
-        if (!conta.podeAutenticar()) {
-            revogarFamilia(
-                    sessao.getFamiliaId(),
-                    agora,
-                    MotivoRevogacaoRefreshToken.CONTA_INATIVA);
-            throw new RefreshTokenInvalidoException();
-        }
-
-        sessao.marcarUtilizada(agora);
-        sessaoRepository.save(sessao);
-
-        return emitirPar(conta, sessao.getFamiliaId(), agora, sessao.getExpiraEm());
     }
 
     /**
@@ -181,6 +292,11 @@ public class SessaoAutenticacaoService {
      */
     @Transactional
     public void encerrar(String refreshToken) {
+        encerrar(refreshToken, null);
+    }
+
+    @Transactional
+    public void encerrar(String refreshToken, String enderecoOrigem) {
         if (refreshToken == null || refreshToken.isBlank()) {
             return;
         }
@@ -194,10 +310,19 @@ public class SessaoAutenticacaoService {
             return;
         }
 
+        Instant agora = clock.instant();
         revogarFamilia(
                 sessao.getFamiliaId(),
-                clock.instant(),
+                agora,
                 MotivoRevogacaoRefreshToken.LOGOUT);
+
+        auditoria.registrar(
+                TipoEventoSeguranca.LOGOUT,
+                agora,
+                sessao.getConta().getId(),
+                sessao.getConta().getId(),
+                null,
+                enderecoOrigem);
     }
 
     /**
@@ -205,6 +330,11 @@ public class SessaoAutenticacaoService {
      */
     @Transactional
     public void encerrarTodas(String login) {
+        encerrarTodas(login, null);
+    }
+
+    @Transactional
+    public void encerrarTodas(String login, String enderecoOrigem) {
         if (login == null || login.isBlank()) {
             throw new RefreshTokenInvalidoException();
         }
@@ -223,6 +353,26 @@ public class SessaoAutenticacaoService {
             sessao.revogar(agora, MotivoRevogacaoRefreshToken.LOGOUT_GLOBAL);
         }
         sessaoRepository.saveAll(ativas);
+
+        auditoria.registrar(
+                TipoEventoSeguranca.LOGOUT_GLOBAL,
+                agora,
+                conta.getId(),
+                conta.getId(),
+                null,
+                enderecoOrigem);
+    }
+
+    private void registrarFalha(
+            String login, String enderecoOrigem, Long contaId) {
+
+        Long alvo = contaId != null
+                ? contaId
+                : contaRepository.findByLoginIgnoreCase(login)
+                        .map(ContaAcesso::getId)
+                        .orElse(null);
+
+        protecao.registrarFalha(login, enderecoOrigem, alvo);
     }
 
     private TokensAutenticacao emitirPar(
@@ -259,21 +409,6 @@ public class SessaoAutenticacaoService {
 
         return UsernamePasswordAuthenticationToken.authenticated(
                 conta.getLogin(), null, autoridades);
-    }
-
-    private Authentication autenticar(String login, String senha) {
-        try {
-            return authenticationManager.authenticate(
-                    UsernamePasswordAuthenticationToken.unauthenticated(login, senha));
-        } catch (AuthenticationException ex) {
-            throw new CredenciaisInvalidasException(MENSAGEM_CREDENCIAIS_INVALIDAS);
-        }
-    }
-
-    private void validarConta(ContaAcesso conta) {
-        if (!conta.podeAutenticar()) {
-            throw new CredenciaisInvalidasException(MENSAGEM_CREDENCIAIS_INVALIDAS);
-        }
     }
 
     private SessaoRefreshToken buscarSessao(String refreshToken) {
