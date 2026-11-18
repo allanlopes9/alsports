@@ -144,6 +144,32 @@ class AutorizacaoSecurityTest {
     }
 
     @Test
+    void operadorNaoDeveAlterarStatusDePessoa() throws Exception {
+        Pessoa alvo = pessoaRepository.save(criarPessoa("Alvo de Status"));
+        String conteudo = """
+                {
+                  "status": "INATIVO"
+                }
+                """;
+
+        mockMvc.perform(put(
+                        "/api/pessoas/{id}/status", alvo.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenOperador())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(conteudo))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(put(
+                        "/api/pessoas/{id}/status", alvo.getId())
+                        .header(HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tokenAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(conteudo))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void rotaForaDaPoliticaDeveSerNegadaPorPadrao() throws Exception {
         mockMvc.perform(get("/nao-classificado")
                         .header(HttpHeaders.AUTHORIZATION,

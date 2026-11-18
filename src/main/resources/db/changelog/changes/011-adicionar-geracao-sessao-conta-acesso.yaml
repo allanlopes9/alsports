@@ -1,0 +1,57 @@
+databaseChangeLog:
+  - changeSet:
+      id: 011-01-adicionar-geracao-sessao-conta-acesso
+      author: allan
+      comment: >-
+        Geração monotônica da conta de acesso. O valor protege a criação e a
+        rotação de sessões refresh contra logout global concorrente; access
+        tokens JWT já emitidos permanecem stateless até expirar.
+      changes:
+        - addColumn:
+            tableName: conta_acesso
+            columns:
+              - column:
+                  name: sessao_geracao
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: >
+              ALTER TABLE conta_acesso
+              ADD CONSTRAINT ck_conta_acesso_sessao_geracao_nao_negativa
+              CHECK (sessao_geracao >= 0)
+        - sql:
+            sql: >
+              ALTER TABLE evento_seguranca
+              DROP CONSTRAINT ck_evento_seguranca_tipo
+        - sql:
+            sql: >
+              ALTER TABLE evento_seguranca
+              ADD CONSTRAINT ck_evento_seguranca_tipo
+              CHECK (tipo IN
+              ('LOGIN_SUCESSO', 'LOGIN_FALHA', 'LOGIN_RECUSADO_BLOQUEIO',
+               'BLOQUEIO_TEMPORARIO_ATIVADO', 'OPERACAO_RECUSADA',
+               'CONTA_CRIADA', 'SENHA_ALTERADA', 'PERFIS_ALTERADOS',
+               'STATUS_ALTERADO', 'REFRESH_SUCESSO', 'REFRESH_FALHA',
+               'LOGOUT', 'LOGOUT_GLOBAL'))
+      rollback:
+        - sql:
+            sql: >
+              ALTER TABLE evento_seguranca
+              DROP CONSTRAINT IF EXISTS ck_evento_seguranca_tipo
+        - sql:
+            sql: >
+              ALTER TABLE evento_seguranca
+              ADD CONSTRAINT ck_evento_seguranca_tipo
+              CHECK (tipo IN
+              ('LOGIN_SUCESSO', 'LOGIN_FALHA', 'LOGIN_RECUSADO_BLOQUEIO',
+               'BLOQUEIO_TEMPORARIO_ATIVADO', 'CONTA_CRIADA',
+               'SENHA_ALTERADA', 'PERFIS_ALTERADOS', 'STATUS_ALTERADO',
+               'REFRESH_SUCESSO', 'REFRESH_FALHA', 'LOGOUT',
+               'LOGOUT_GLOBAL'))
+        - sql:
+            sql: ALTER TABLE conta_acesso DROP CONSTRAINT IF EXISTS ck_conta_acesso_sessao_geracao_nao_negativa
+        - dropColumn:
+            tableName: conta_acesso
+            columnName: sessao_geracao

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,6 +34,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -229,7 +231,9 @@ public class PessoaController {
 
     @Operation(
         summary = "Alterar status da pessoa",
-        description = "Ativa ou inativa uma pessoa existente. Inativar não remove o histórico de papéis e vendas."
+        description = "Exige ADMINISTRADOR. Ativa ou inativa uma pessoa existente. "
+                + "Inativar não remove o histórico de papéis e vendas e é recusado "
+                + "quando violar a proteção do último administrador."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -265,9 +269,18 @@ public class PessoaController {
                 required = true
             )
             @PathVariable Long id,
-            @Valid @RequestBody StatusRequest request) {
+            @Valid @RequestBody StatusRequest request,
+            Authentication authentication,
+            HttpServletRequest httpRequest) {
 
-        Pessoa pessoaAtualizada = service.alterarStatus(id, request.status());
+        String loginAdministrador = authentication == null
+                ? null
+                : authentication.getName();
+        Pessoa pessoaAtualizada = service.alterarStatus(
+                id,
+                request.status(),
+                loginAdministrador,
+                httpRequest.getRemoteAddr());
 
         return ResponseEntity.ok(
                 pessoaMapper.toResponse(pessoaAtualizada));

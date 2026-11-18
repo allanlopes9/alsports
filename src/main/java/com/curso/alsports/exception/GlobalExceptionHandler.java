@@ -159,11 +159,31 @@ public class GlobalExceptionHandler {
         CredenciaisInvalidasException ex,
         HttpServletRequest request) {
 
+        return resposta401(ex.getMessage(), request);
+    }
+
+    /**
+     * A divergência de geração é uma condição técnica de concorrência: a
+     * resposta permanece genericamente 401 para não revelar o motivo ao
+     * cliente, mas a exceção não é uma credencial inválida e por isso não é
+     * preservada pelo rollback controlado do login.
+     */
+    @ExceptionHandler(SessaoGeracaoDivergenteException.class)
+    public ResponseEntity<ApiError> tratarGeracaoDivergente(
+        SessaoGeracaoDivergenteException ex,
+        HttpServletRequest request) {
+
+        return resposta401("Login ou senha inválidos", request);
+    }
+
+    private ResponseEntity<ApiError> resposta401(
+        String mensagem, HttpServletRequest request) {
+
         ApiError erro = new ApiError(
             Instant.now(),
             HttpStatus.UNAUTHORIZED.value(),
             HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-            ex.getMessage(),
+            mensagem,
             request.getRequestURI(),
             null);
 

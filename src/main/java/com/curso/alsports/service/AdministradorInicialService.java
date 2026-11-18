@@ -2,6 +2,7 @@ package com.curso.alsports.service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +18,9 @@ import com.curso.alsports.model.StatusContaAcesso;
 import com.curso.alsports.repository.ContaAcessoRepository;
 import com.curso.alsports.repository.PessoaRepository;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 /**
  * Provisiona a primeira conta administrativa a partir de configuração
  * externa.
@@ -25,9 +29,10 @@ import com.curso.alsports.repository.PessoaRepository;
  * criado. Pessoa e conta são gravadas na mesma transação. A senha aberta
  * nunca é persistida nem registrada em log.</p>
  *
- * <p>A contagem prévia não substitui locking distribuído. Em múltiplas
- * instâncias simultâneas, o provisionamento deve ser coordenado pela
- * plataforma; este mecanismo é adequado ao laboratório de uma instância.</p>
+ * <p>Para reduzir a janela entre descoberta e decisão, os administradores já
+ * existentes são descobertos por ID, bloqueados em ordem crescente e relidos
+ * depois da limpeza do contexto. Ainda assim, em múltiplas instâncias sem um
+ * administrador prévio, a coordenação deve ser feita pela plataforma.</p>
  */
 @Service
 public class AdministradorInicialService {
@@ -36,6 +41,9 @@ public class AdministradorInicialService {
     private final PessoaRepository pessoaRepository;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public AdministradorInicialService(
             ContaAcessoRepository contaAcessoRepository,
@@ -58,10 +66,9 @@ public class AdministradorInicialService {
                     "Configuração do administrador inicial é obrigatória");
         }
 
-        if (contaAcessoRepository.contarPorPerfilEStatus(
-                PerfilAcesso.ADMINISTRADOR,
-                StatusContaAcesso.ATIVA) > 0) {
+        bloquearAdministradoresExistentes();
 
+        if (contarAdministradoresAtivos() > 0) {
             return Optional.empty();
         }
 
@@ -104,6 +111,35 @@ public class AdministradorInicialService {
         conta.concederPerfil(PerfilAcesso.ADMINISTRADOR);
 
         return Optional.of(contaAcessoRepository.save(conta));
+    }
+
+    /**
+     * Descoberta de IDs, locks em ordem crescente e segunda leitura da contagem
+     * depois de limpar o primeiro nível de cache.
+     */
+    private void bloquearAdministradoresExistentes() {
+        if (entityManager == null) {
+            return;
+        }
+
+        List<Long> ids = contaAcessoRepository.buscarIdsAdministradores()
+                .stream()
+                .sorted()
+                .distinct()
+                .toList();
+
+        for (Long id : ids) {
+            contaAcessoRepository.buscarPorIdParaAtualizacao(id)
+                    .orElse(null);
+        }
+
+        entityManager.clear();
+    }
+
+    private long contarAdministradoresAtivos() {
+        return contaAcessoRepository.contarPorPerfilEStatus(
+                PerfilAcesso.ADMINISTRADOR,
+                StatusContaAcesso.ATIVA);
     }
 
     private static String exigirTexto(String valor, String mensagem) {

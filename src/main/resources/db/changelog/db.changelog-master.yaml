@@ -23,3 +23,5 @@ databaseChangeLog:
       file: db/changelog/changes/009-sessoes-refresh-token.yaml
   - include:
       file: db/changelog/changes/010-auditoria-protecao-autenticacao.yaml
+  - include:
+      file: db/changelog/changes/011-adicionar-geracao-sessao-conta-acesso.yaml

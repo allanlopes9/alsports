@@ -2,6 +2,7 @@ package com.curso.alsports.service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -12,15 +13,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.curso.alsports.dto.ContaAcessoRequest;
+import com.curso.alsports.exception.OperacaoSegurancaRecusadaException;
 import com.curso.alsports.exception.RecursoDuplicadoException;
 import com.curso.alsports.exception.RecursoNaoEncontradoException;
 import com.curso.alsports.model.ContaAcesso;
 import com.curso.alsports.model.PerfilAcesso;
 import com.curso.alsports.model.Pessoa;
+import com.curso.alsports.model.Status;
 import com.curso.alsports.model.StatusContaAcesso;
 import com.curso.alsports.model.TipoEventoSeguranca;
 import com.curso.alsports.repository.ContaAcessoRepository;
 import com.curso.alsports.repository.PessoaRepository;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 @Service
 public class ContaAcessoService {
@@ -43,6 +49,9 @@ public class ContaAcessoService {
     private final PasswordEncoder passwordEncoder;
     private final RegistradorEventosSeguranca auditoria;
     private final Clock clock;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * Construtor de compatibilidade dos testes unitários sem contexto Spring.
@@ -191,7 +200,7 @@ public class ContaAcessoService {
      * Substitui os perfis de uma conta. A conta autenticada é identificada
      * pelo login do token e não por dados enviados no corpo da requisição.
      */
-    @Transactional
+    @Transactional(noRollbackFor = OperacaoSegurancaRecusadaException.class)
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ContaAcesso alterarPerfis(
             Long contaId,
@@ -201,7 +210,7 @@ public class ContaAcessoService {
         return alterarPerfis(contaId, novosPerfis, loginAdministrador, null);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = OperacaoSegurancaRecusadaException.class)
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ContaAcesso alterarPerfis(
             Long contaId,
@@ -218,8 +227,13 @@ public class ContaAcessoService {
             throw new IllegalArgumentException(
                     "A conta deve possuir ao menos um perfil");
         }
+        for (PerfilAcesso perfil : novosPerfis) {
+            if (perfil == null) {
+                throw new IllegalArgumentException("Perfil é obrigatório");
+            }
+        }
 
-        ContaAcesso conta = buscarDetalhada(contaId);
+        ContaAcesso conta = carregarContaBloqueada(contaId);
         String administrador = validarLoginAdministrador(loginAdministrador);
 
         boolean removeAdministrador = conta.possuiPerfil(
@@ -228,16 +242,20 @@ public class ContaAcessoService {
 
         if (removeAdministrador
                 && conta.getLogin().equalsIgnoreCase(administrador)) {
-            throw new IllegalArgumentException(
-                    "O administrador não pode remover o próprio perfil "
-                            + "ADMINISTRADOR");
+            recusar("O administrador não pode remover o próprio perfil "
+                    + "ADMINISTRADOR", administrador, conta.getId(),
+                    enderecoOrigem);
         }
 
         if (removeAdministrador
-                && conta.getStatus() == StatusContaAcesso.ATIVA
-                && contarAdministradoresAtivos() <= 1) {
-            throw new IllegalArgumentException(
-                    "O sistema deve manter ao menos um administrador ativo");
+                && conta.podeAutenticar()
+                && contarAdministradoresEfetivos() <= 1) {
+            recusar("O sistema deve manter ao menos um administrador ativo",
+                    administrador, conta.getId(), enderecoOrigem);
+        }
+
+        if (conta.getPerfis().equals(Set.copyOf(novosPerfis))) {
+            return conta;
         }
 
         conta.substituirPerfis(novosPerfis);
@@ -255,10 +273,10 @@ public class ContaAcessoService {
 
     /**
      * Ativa ou bloqueia uma conta. O bloqueio da própria conta e a remoção do
-     * último administrador ativo são recusados para preservar a capacidade de
-     * administração do sistema.
+     * último administrador efetivo são recusados para preservar a capacidade
+     * de administração do sistema.
      */
-    @Transactional
+    @Transactional(noRollbackFor = OperacaoSegurancaRecusadaException.class)
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ContaAcesso alterarStatus(
             Long contaId,
@@ -268,7 +286,7 @@ public class ContaAcessoService {
         return alterarStatus(contaId, novoStatus, loginAdministrador, null);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = OperacaoSegurancaRecusadaException.class)
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ContaAcesso alterarStatus(
             Long contaId,
@@ -285,22 +303,28 @@ public class ContaAcessoService {
             throw new IllegalArgumentException("Status é obrigatório");
         }
 
-        ContaAcesso conta = buscarDetalhada(contaId);
+        ContaAcesso conta = carregarContaBloqueada(contaId);
         String administrador = validarLoginAdministrador(loginAdministrador);
 
         if (novoStatus == StatusContaAcesso.BLOQUEADA) {
             if (conta.getLogin().equalsIgnoreCase(administrador)) {
-                throw new IllegalArgumentException(
-                        "O administrador não pode bloquear a própria conta");
+                recusar("O administrador não pode bloquear a própria conta",
+                        administrador, conta.getId(), enderecoOrigem);
             }
 
-            if (conta.getStatus() == StatusContaAcesso.ATIVA
+            if (conta.podeAutenticar()
                     && conta.possuiPerfil(PerfilAcesso.ADMINISTRADOR)
-                    && contarAdministradoresAtivos() <= 1) {
-                throw new IllegalArgumentException(
-                        "O sistema deve manter ao menos um administrador ativo");
+                    && contarAdministradoresEfetivos() <= 1) {
+                recusar("O sistema deve manter ao menos um administrador ativo",
+                        administrador, conta.getId(), enderecoOrigem);
             }
+        }
 
+        if (conta.getStatus() == novoStatus) {
+            return conta;
+        }
+
+        if (novoStatus == StatusContaAcesso.BLOQUEADA) {
             conta.bloquear();
         } else {
             conta.ativar();
@@ -315,6 +339,50 @@ public class ContaAcessoService {
                 enderecoOrigem);
 
         return conta;
+    }
+
+    /**
+     * Protocolo: descoberta dos IDs, lock na ordem crescente, limpeza do
+     * contexto e segunda leitura autoritativa dentro da mesma transação.
+     *
+     * <p>Todas as contas administrativas são bloqueadas porque a contagem do
+     * último administrador é uma decisão global. Bloquear apenas a conta alvo
+     * permitiria que duas transações removessem administradores diferentes ao
+     * mesmo tempo, cada uma vendo a outra ainda ativa.</p>
+     */
+    private ContaAcesso carregarContaBloqueada(Long contaId) {
+        if (entityManager == null) {
+            return buscarDetalhada(contaId);
+        }
+
+        List<Long> ids = new java.util.ArrayList<>(List.of(contaId));
+        ids.addAll(repository.buscarIdsAdministradores());
+        ids = ids.stream().sorted().distinct().toList();
+
+        for (Long id : ids) {
+            repository.buscarPorIdParaAtualizacao(id)
+                    .orElseThrow(() -> new RecursoNaoEncontradoException(
+                            "Conta de acesso não encontrada: " + id));
+        }
+
+        entityManager.clear();
+        return buscarDetalhada(contaId);
+    }
+
+    private void recusar(
+            String mensagem,
+            String loginAdministrador,
+            Long alvoContaId,
+            String enderecoOrigem) {
+
+        auditoria.registrar(
+                TipoEventoSeguranca.OPERACAO_RECUSADA,
+                clock.instant(),
+                idAdministrador(loginAdministrador),
+                alvoContaId,
+                null,
+                enderecoOrigem);
+        throw new OperacaoSegurancaRecusadaException(mensagem);
     }
 
     private Long idAdministrador(String loginAdministrador) {
@@ -332,10 +400,11 @@ public class ContaAcessoService {
                         "Conta de acesso não encontrada: " + contaId));
     }
 
-    private long contarAdministradoresAtivos() {
-        return repository.contarPorPerfilEStatus(
+    private long contarAdministradoresEfetivos() {
+        return repository.contarAdministradoresEfetivos(
                 PerfilAcesso.ADMINISTRADOR,
-                StatusContaAcesso.ATIVA);
+                StatusContaAcesso.ATIVA,
+                Status.ATIVO);
     }
 
     private static String validarLoginAdministrador(String login) {

@@ -64,6 +64,13 @@ public class ContaAcesso {
     @Column(nullable = false, length = 20)
     private StatusContaAcesso status;
 
+    /**
+     * Geração da sessão refresh. Toda revogação global incrementa este valor;
+     * login e rotação leem e revalidam a geração sob lock da conta.
+     */
+    @Column(name = "sessao_geracao", nullable = false)
+    private long sessaoGeracao;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "conta_acesso_perfil",
@@ -84,6 +91,7 @@ public class ContaAcesso {
         this.login = validarLogin(login);
         this.senhaHash = validarSenhaHash(senhaHash);
         this.status = StatusContaAcesso.ATIVA;
+        this.sessaoGeracao = 0L;
         this.perfis.add(PerfilAcesso.OPERADOR);
     }
 
@@ -101,6 +109,19 @@ public class ContaAcesso {
 
     public void ativar() {
         this.status = StatusContaAcesso.ATIVA;
+    }
+
+    public long getSessaoGeracao() {
+        return sessaoGeracao;
+    }
+
+    /**
+     * Incrementa a geração de sessões. O cálculo com
+     * {@link Math#incrementExact} impede estouro silencioso para um valor
+     * negativo.
+     */
+    public void incrementarSessaoGeracao() {
+        this.sessaoGeracao = Math.incrementExact(sessaoGeracao);
     }
 
     /**

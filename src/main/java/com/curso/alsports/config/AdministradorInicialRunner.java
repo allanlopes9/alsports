@@ -4,7 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.curso.alsports.model.ContaAcesso;
@@ -17,9 +19,12 @@ import com.curso.alsports.service.AdministradorInicialService;
  * hash nunca são registrados.</p>
  */
 @Component
+@Order(200)
 @ConditionalOnProperty(
         name = "app.security.initial-admin.enabled",
         havingValue = "true")
+@ConditionalOnExpression(
+        "'${app.security.admin-recovery.enabled:false}' == 'false'")
 public class AdministradorInicialRunner implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(

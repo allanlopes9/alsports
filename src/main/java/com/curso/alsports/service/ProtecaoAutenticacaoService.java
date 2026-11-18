@@ -4,12 +4,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.curso.alsports.config.ProtecaoAutenticacaoProperties;
@@ -20,11 +18,11 @@ import com.curso.alsports.repository.ProtecaoAutenticacaoRepository;
 /**
  * Proteção persistente contra tentativas on-line de adivinhar senhas.
  *
- * <p>Falhas e recusas usam transação própria ({@code REQUIRES_NEW}) porque a
- * resposta HTTP é 401: se o registro fizesse parte da transação do caso de
- * uso, o rollback da exceção apagaria o contador. O sucesso participa da
- * transação do chamador para que o evento não afirme uma operação que depois
- * sofreu rollback.</p>
+ * <p>Todos os métodos participam da transação do caso de uso de autenticação.
+ * O lock da linha é adquirido uma única vez, no início do login, e mantido até
+ * o commit ou rollback da transação inteira. Os registros posteriores reutilizam
+ * a entidade gerenciada pelo primeiro nível de cache, sem {@code REQUIRES_NEW}
+ * e sem nova aquisição de lock.</p>
  */
 @Service
 public class ProtecaoAutenticacaoService implements ProtecaoLogin {
@@ -64,15 +62,22 @@ public class ProtecaoAutenticacaoService implements ProtecaoLogin {
         }
     }
 
+    /**
+     * Adquire o lock de proteção antes de qualquer lock de conta. O upsert
+     * atômico evita corrida de insert na primeira tentativa de um login.
+     */
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public boolean permitirTentativa(String login, String enderecoOrigem) {
         String chave = calcularHashLogin(login);
-        ProtecaoAutenticacao protecao = repository
-                .findByChaveLogin(chave)
-                .orElse(null);
+        repository.criarSeNecessario(chave);
 
-        if (protecao != null && protecao.estaBloqueada(clock.instant())) {
+        ProtecaoAutenticacao protecao = repository
+                .buscarParaAtualizacao(chave)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Falha ao localizar contador de autenticação"));
+
+        if (protecao.estaBloqueada(clock.instant())) {
             auditoria.registrar(
                     TipoEventoSeguranca.LOGIN_RECUSADO_BLOQUEIO,
                     clock.instant(),
@@ -85,16 +90,18 @@ public class ProtecaoAutenticacaoService implements ProtecaoLogin {
         return true;
     }
 
+    /**
+     * Reutiliza a entidade já bloqueada por {@link #permitirTentativa} na mesma
+     * transação. Não há {@code REQUIRES_NEW} nem novo {@code FOR UPDATE}.
+     */
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void registrarFalha(
             String login, String enderecoOrigem, Long alvoContaId) {
 
         String chave = calcularHashLogin(login);
-        repository.criarSeNecessario(chave);
-
         ProtecaoAutenticacao protecao = repository
-                .buscarParaAtualizacao(chave)
+                .findByChaveLogin(chave)
                 .orElseThrow(() -> new IllegalStateException(
                         "Falha ao localizar contador de autenticação"));
 
@@ -124,6 +131,9 @@ public class ProtecaoAutenticacaoService implements ProtecaoLogin {
         }
     }
 
+    /**
+     * Reutiliza o mesmo lock de proteção adquirido antes da autenticação.
+     */
     @Override
     @Transactional
     public void registrarSucesso(

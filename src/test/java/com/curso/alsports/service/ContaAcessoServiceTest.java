@@ -25,6 +25,7 @@ import com.curso.alsports.exception.RecursoNaoEncontradoException;
 import com.curso.alsports.model.ContaAcesso;
 import com.curso.alsports.model.PerfilAcesso;
 import com.curso.alsports.model.Pessoa;
+import com.curso.alsports.model.Status;
 import com.curso.alsports.model.StatusContaAcesso;
 import com.curso.alsports.repository.ContaAcessoRepository;
 import com.curso.alsports.repository.PessoaRepository;
@@ -305,9 +306,10 @@ class ContaAcessoServiceTest {
     void naoDeveRemoverAdministradorDoUltimoAdminAtivo() {
         ContaAcesso outroAdmin = contaAdministrativa("outro.admin");
         when(repository.findById(10L)).thenReturn(Optional.of(outroAdmin));
-        when(repository.contarPorPerfilEStatus(
+        when(repository.contarAdministradoresEfetivos(
                 PerfilAcesso.ADMINISTRADOR,
-                StatusContaAcesso.ATIVA)).thenReturn(1L);
+                StatusContaAcesso.ATIVA,
+                Status.ATIVO)).thenReturn(1L);
 
         assertThatThrownBy(() -> service.alterarPerfis(
                 10L, Set.of(PerfilAcesso.OPERADOR), "admin.teste"))
@@ -322,9 +324,10 @@ class ContaAcessoServiceTest {
     void deveRemoverAdministradorQuandoHaOutroAdminAtivo() {
         ContaAcesso outroAdmin = contaAdministrativa("outro.admin");
         when(repository.findById(10L)).thenReturn(Optional.of(outroAdmin));
-        when(repository.contarPorPerfilEStatus(
+        when(repository.contarAdministradoresEfetivos(
                 PerfilAcesso.ADMINISTRADOR,
-                StatusContaAcesso.ATIVA)).thenReturn(2L);
+                StatusContaAcesso.ATIVA,
+                Status.ATIVO)).thenReturn(2L);
 
         ContaAcesso alterada = service.alterarPerfis(
                 10L, Set.of(PerfilAcesso.OPERADOR), "admin.teste");
@@ -360,9 +363,10 @@ class ContaAcessoServiceTest {
     void naoDeveBloquearUltimoAdministradorAtivo() {
         ContaAcesso outroAdmin = contaAdministrativa("outro.admin");
         when(repository.findById(10L)).thenReturn(Optional.of(outroAdmin));
-        when(repository.contarPorPerfilEStatus(
+        when(repository.contarAdministradoresEfetivos(
                 PerfilAcesso.ADMINISTRADOR,
-                StatusContaAcesso.ATIVA)).thenReturn(1L);
+                StatusContaAcesso.ATIVA,
+                Status.ATIVO)).thenReturn(1L);
 
         assertThatThrownBy(() -> service.alterarStatus(
                 10L, StatusContaAcesso.BLOQUEADA, "admin.teste"))

@@ -22,11 +22,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.curso.alsports.model.ContaAcesso;
@@ -90,6 +92,10 @@ class CicloTokenConcorrenciaTest {
     @AfterEach
     void limpar() {
         jdbcTemplate.update(
+                "delete from evento_seguranca "
+                + "where ator_conta_id = ? or alvo_conta_id = ?",
+                contaId, contaId);
+        jdbcTemplate.update(
                 "delete from sessao_refresh_token where conta_acesso_id = ?",
                 contaId);
         jdbcTemplate.update("delete from conta_acesso where id = ?", contaId);
@@ -146,6 +152,178 @@ class CicloTokenConcorrenciaTest {
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    @Test
+    void logoutGlobalConcorrenteComRefreshDeveRevogarFamiliaEIncrementarGeracao()
+            throws Exception {
+
+        String primeiro = login();
+        String refresh = JsonPath.read(primeiro, "$.refreshToken");
+        String access = JsonPath.read(primeiro, "$.accessToken");
+        String familia = familia(hash(refresh));
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            CountDownLatch largada = new CountDownLatch(1);
+            Callable<Integer> renovar = () -> {
+                largada.await();
+                return status(post("/api/autenticacao/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\": \"%s\"}"
+                                .formatted(refresh)));
+            };
+            Callable<Integer> logout = () -> {
+                largada.await();
+                return status(post("/api/autenticacao/logout-todos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + access));
+            };
+
+            Future<Integer> fRefresh = executor.submit(renovar);
+            Future<Integer> fLogout = executor.submit(logout);
+            largada.countDown();
+
+            assertThat(fLogout.get(60, SECONDS)).isEqualTo(204);
+            assertThat(fRefresh.get(60, SECONDS)).isIn(200, 401);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(geracao()).isEqualTo(1L);
+        assertThat(contarSessoesAtivas()).isZero();
+        assertThat(sessaoRepository.findByFamiliaId(familia))
+                .isNotEmpty()
+                .allSatisfy(sessao ->
+                        assertThat(sessao.getRevogadaEm()).isNotNull());
+    }
+
+    @Test
+    void doisLogoutGlobaisConcorrentesNaoDevemPerderIncrementoDaGeracao()
+            throws Exception {
+
+        String access = JsonPath.read(login(), "$.accessToken");
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            CountDownLatch largada = new CountDownLatch(1);
+            Callable<Integer> logout = () -> {
+                largada.await();
+                return status(post("/api/autenticacao/logout-todos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + access));
+            };
+
+            Future<Integer> f1 = executor.submit(logout);
+            Future<Integer> f2 = executor.submit(logout);
+            largada.countDown();
+
+            assertThat(List.of(f1.get(60, SECONDS), f2.get(60, SECONDS)))
+                    .containsExactly(204, 204);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(geracao()).isEqualTo(2L);
+        assertThat(contarSessoesAtivas()).isZero();
+        assertThat(contarEventos("LOGOUT_GLOBAL")).isEqualTo(2L);
+    }
+
+    @Test
+    void loginConcorrenteComLogoutGlobalDeveRespeitarGeracaoCapturada()
+            throws Exception {
+
+        String primeiro = login();
+        String refresh = JsonPath.read(primeiro, "$.refreshToken");
+        String access = JsonPath.read(primeiro, "$.accessToken");
+        String login = contaRepository.findById(contaId)
+                .orElseThrow().getLogin();
+
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        try {
+            CountDownLatch largada = new CountDownLatch(1);
+            Callable<Integer> entrar = () -> {
+                largada.await();
+                return status(post("/api/autenticacao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"login\": \"%s\", \"senha\": \"%s\"}"
+                                .formatted(login, SENHA)));
+            };
+            Callable<Integer> logout = () -> {
+                largada.await();
+                return status(post("/api/autenticacao/logout-todos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + access));
+            };
+
+            Future<Integer> fLogin1 = executor.submit(entrar);
+            Future<Integer> fLogin2 = executor.submit(entrar);
+            Future<Integer> fLogout = executor.submit(logout);
+            largada.countDown();
+
+            assertThat(fLogout.get(60, SECONDS)).isEqualTo(204);
+            assertThat(fLogin1.get(60, SECONDS)).isIn(200, 401);
+            assertThat(fLogin2.get(60, SECONDS)).isIn(200, 401);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(geracao()).isEqualTo(1L);
+
+        java.sql.Timestamp revogadaEm = jdbcTemplate.queryForObject(
+                "select revogada_em from sessao_refresh_token "
+                + "where token_hash = ?",
+                java.sql.Timestamp.class, hash(refresh));
+        assertThat(revogadaEm).isNotNull();
+    }
+
+    private String login() throws Exception {
+        return mockMvc.perform(post("/api/autenticacao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"login\": \"%s\", \"senha\": \"%s\"}"
+                                .formatted(
+                                        contaRepository.findById(contaId)
+                                                .orElseThrow().getLogin(),
+                                        SENHA)))
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    private int status(MockHttpServletRequestBuilder requisicao)
+            throws Exception {
+
+        return mockMvc.perform(requisicao)
+                .andReturn().getResponse().getStatus();
+    }
+
+    private String hash(String refresh) throws Exception {
+        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(refresh.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private String familia(String hash) {
+        return transactionTemplate.execute(status ->
+                sessaoRepository.buscarPorHashParaAtualizacao(hash)
+                        .orElseThrow().getFamiliaId());
+    }
+
+    private long geracao() {
+        Long valor = jdbcTemplate.queryForObject(
+                "select sessao_geracao from conta_acesso where id = ?",
+                Long.class, contaId);
+        return valor == null ? 0L : valor;
+    }
+
+    private long contarSessoesAtivas() {
+        Long total = jdbcTemplate.queryForObject(
+                "select count(*) from sessao_refresh_token "
+                + "where conta_acesso_id = ? and revogada_em is null",
+                Long.class, contaId);
+        return total == null ? 0L : total;
+    }
+
+    private long contarEventos(String tipo) {
+        Long total = jdbcTemplate.queryForObject(
+                "select count(*) from evento_seguranca "
+                + "where tipo = ? and alvo_conta_id = ?",
+                Long.class, tipo, contaId);
+        return total == null ? 0L : total;
     }
 
     private static String cpfValido(long semente) {
